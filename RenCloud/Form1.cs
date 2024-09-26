@@ -19,30 +19,41 @@ namespace RenCloud
 {
     public partial class Form1 : Form
     {
+
+        // Import dwmapi.dll and define DwmSetWindowAttribute.
+        [DllImport("dwmapi.dll", CharSet = CharSet.Unicode, PreserveSig = false)]
+        internal static extern void DwmSetWindowAttribute(IntPtr hwnd, DWMWINDOWATTRIBUTE attribute, ref int pvAttribute,uint cbAttribute);
+
         public Form1()
         {
             InitializeComponent();
-            this.FormBorderStyle = FormBorderStyle.None; // Removes the border
-            this.BackColor = Color.FromArgb(67, 38, 88); // Set background color
-            this.Paint += Form1_Paint;
-            panel1.Paint += Panel1_Paint;
-            pictureBox3.Paint += PictureBox3_Paint;
-        }
-        private void Form1_Paint(object sender, PaintEventArgs e)
-        {
-            RoundAllCorners(this, 45);
-        }
-        private void PictureBox3_Paint(object sender, PaintEventArgs e)
-        {
-            RoundAllCorners(this.pictureBox3, 45);
-        }
-        private void Panel1_Paint(object sender, PaintEventArgs e)
-        {
-            RoundTopCorners(panel1, 45);
-        }
+        }  
+
         private void Form1_Load(object sender, EventArgs e)
         {
+            //Pass attributes for DWMWINDOWATTRIBUTE
+            IntPtr hWnd = this.Handle;
+            int cornerPreference = (int)DWM_WINDOW_CORNER_PREFERENCE.DWMWCP_ROUND;
+            DwmSetWindowAttribute(hWnd, DWMWINDOWATTRIBUTE.DWMWA_WINDOW_CORNER_PREFERENCE, ref cornerPreference, sizeof(int));
+            Color borderColor = Color.FromArgb(255, 153, 164);
+            int colorValue = (borderColor.B << 16) | (borderColor.G << 8) | borderColor.R;
+            DwmSetWindowAttribute(hWnd, DWMWINDOWATTRIBUTE.DWMWA_BORDER_COLOR, ref colorValue, sizeof(int));
+        }
 
+        // The DWM_WINDOW_CORNER_PREFERENCE enum for DwmSetWindowAttribute's third parameter.
+        public enum DWM_WINDOW_CORNER_PREFERENCE
+        {
+            DWMWCP_DEFAULT = 0,
+            DWMWCP_DONOTROUND = 1,
+            DWMWCP_ROUND = 2,
+            DWMWCP_ROUNDSMALL = 3
+        }
+
+        // The DWMWINDOWATTRIBUTE enum parameters to be set
+        public enum DWMWINDOWATTRIBUTE
+        {
+            DWMWA_WINDOW_CORNER_PREFERENCE = 33,
+            DWMWA_BORDER_COLOR = 34
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -73,39 +84,6 @@ namespace RenCloud
         private void pictureBox3_Click(object sender, EventArgs e)
         {
 
-        }
-        private void RoundTopCorners(Control control, int cornerRadius)
-        {
-            GraphicsPath path = new GraphicsPath();
-
-            // Ensure the control's width and height are positive
-            if (control.Width > 0 && control.Height > 0)
-            {
-                path.AddArc(0, 0, cornerRadius, cornerRadius, 180, 90); // Top left corner
-                path.AddArc(control.Width - cornerRadius, 0, cornerRadius, cornerRadius, 270, 90); // Top right corner
-                path.AddLine(control.Width, cornerRadius, control.Width, control.Height); // Right vertical line
-                path.AddLine(control.Width, control.Height, 0, control.Height); // Bottom horizontal line
-                path.AddLine(0, control.Height, 0, cornerRadius); // Left vertical line
-
-                path.CloseFigure();
-
-                control.Region = new Region(path);
-            }
-        }
-        private void RoundAllCorners(Control control, int cornerRadius)
-        {
-            GraphicsPath path = new GraphicsPath();
-
-            // Ensure the control's width and height are positive
-            if (control.Width > 0 && control.Height > 0)
-            {
-                path.AddArc(0, 0, cornerRadius, cornerRadius, 180, 90);
-                path.AddArc(control.Width - cornerRadius, 0, cornerRadius, cornerRadius, 270, 90);
-                path.AddArc(control.Width - cornerRadius, control.Height - cornerRadius, cornerRadius, cornerRadius, 0, 90);
-                path.AddArc(0, control.Height - cornerRadius, cornerRadius, cornerRadius, 90, 90);
-                path.CloseFigure();
-                control.Region = new Region(path);
-            }
         }
     }
 }
