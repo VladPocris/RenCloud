@@ -1,4 +1,4 @@
-﻿namespace AnimatedLoginForm
+﻿namespace RenCloud
 {
     partial class Form1
     {

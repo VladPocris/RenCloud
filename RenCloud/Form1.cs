@@ -15,7 +15,7 @@ using System.Runtime.Remoting.Messaging;
 using System.Security.Policy;
 using System.Windows.Forms.VisualStyles;
 using System.Xml.Linq;
-namespace AnimatedLoginForm
+namespace RenCloud
 {
     public partial class Form1 : Form
     {
