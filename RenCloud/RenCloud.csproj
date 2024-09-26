@@ -101,5 +101,8 @@
   <ItemGroup>
     <None Include="Resources\NetworkconnectionBackgroundHDDarkGeometricAbstractBackdrop-ezgif.com-speed.gif" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Background.gif" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
