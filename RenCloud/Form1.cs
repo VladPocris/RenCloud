@@ -92,24 +92,6 @@ namespace RenCloud
                 control.Region = new Region(path);
             }
         }
-        private void RoundBottomCorners(Control control, int cornerRadius)
-        {
-            GraphicsPath path = new GraphicsPath();
-
-            // Ensure the control's width and height are positive
-            if (control.Width > 0 && control.Height > 0)
-            {
-                path.AddArc(0, 0, cornerRadius, cornerRadius, 180, 90); // Top left corner
-                path.AddArc(control.Width - cornerRadius, 0, cornerRadius, cornerRadius, 270, 90); // Top right corner
-                path.AddLine(control.Width, cornerRadius, control.Width, control.Height); // Right vertical line
-                path.AddLine(control.Width, control.Height, 0, control.Height); // Bottom horizontal line
-                path.AddLine(0, control.Height, 0, cornerRadius); // Left vertical line
-
-                path.CloseFigure();
-
-                control.Region = new Region(path);
-            }
-        }
         private void RoundAllCorners(Control control, int cornerRadius)
         {
             GraphicsPath path = new GraphicsPath();
