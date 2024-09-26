@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace AnimatedLoginForm
+namespace RenCloud
 {
     internal static class Program
     {
