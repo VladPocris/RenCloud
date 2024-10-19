@@ -13,7 +13,11 @@ namespace RenCloud
 
         // Import dwmapi.dll and define DwmSetWindowAttribute.
         [DllImport("dwmapi.dll", CharSet = CharSet.Unicode, PreserveSig = false)]
-        internal static extern void DwmSetWindowAttribute(IntPtr hwnd, DWMWINDOWATTRIBUTE attribute, ref int pvAttribute,uint cbAttribute);
+        internal static extern void DwmSetWindowAttribute(IntPtr hwnd, DWMWINDOWATTRIBUTE attribute, ref int pvAttribute, uint cbAttribute);
+        
+        //Variables
+        private bool isActive = false;
+
         // The DWM_WINDOW_CORNER_PREFERENCE enum for DwmSetWindowAttribute's third parameter.
         public enum DWM_WINDOW_CORNER_PREFERENCE
         {
@@ -32,12 +36,24 @@ namespace RenCloud
         // Pass attributes for DWMWINDOWATTRIBUTE.
         public void AttributesRoundCorners()
         {
+            Color borderColor = isActive ? Color.FromArgb(255, 153, 164) : Color.FromArgb(89, 76, 255);
             IntPtr hWnd = this.Handle;
             int cornerPreference = (int)DWM_WINDOW_CORNER_PREFERENCE.DWMWCP_ROUND;
             DwmSetWindowAttribute(hWnd, DWMWINDOWATTRIBUTE.DWMWA_WINDOW_CORNER_PREFERENCE, ref cornerPreference, sizeof(int));
-            Color borderColor = Color.FromArgb(255, 153, 164);
             int colorValue = (borderColor.B << 16) | (borderColor.G << 8) | borderColor.R;
             DwmSetWindowAttribute(hWnd, DWMWINDOWATTRIBUTE.DWMWA_BORDER_COLOR, ref colorValue, sizeof(int));
+        }
+        protected override void OnActivated(EventArgs e)
+        {
+            base.OnActivated(e);
+            isActive = false;
+            AttributesRoundCorners();
+        }
+        protected override void OnDeactivate(EventArgs e)
+        {
+            base.OnDeactivate(e);
+            isActive = true;
+            AttributesRoundCorners();
         }
 
         //SMOOTHGIFANIMATION//
