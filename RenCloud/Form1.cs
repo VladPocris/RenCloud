@@ -54,7 +54,7 @@ namespace RenCloud
         // Initializaton for smooth gif animation.
         private void InitializeGifAnimation()
         {
-            animatedImage = animatedImage = Properties.Resources.Background;
+            animatedImage = Properties.Resources.Background;
             currentFrame = 0;
             frameTimer = new Timer();
             frameTimer.Interval = 1;
@@ -88,7 +88,7 @@ namespace RenCloud
                 currentFrame = 0;
             }
             animatedImage.SelectActiveFrame(System.Drawing.Imaging.FrameDimension.Time, currentFrame);
-            pictureBox1.Invalidate();
+            pictureBox3.Invalidate();
         }
 
         //LOGIN//
@@ -148,6 +148,7 @@ namespace RenCloud
             AttachDraggingEvent();
             // Attach the Smooth gif event to the panel control.
             AttachGifEvent();
+            this.DoubleBuffered = true;
         }
 
         private void panel1_MouseDown(object sender, MouseEventArgs e)
