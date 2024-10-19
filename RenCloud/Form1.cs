@@ -72,8 +72,10 @@ namespace RenCloud
         {
             animatedImage = Properties.Resources.Background;
             currentFrame = 0;
-            frameTimer = new Timer();
-            frameTimer.Interval = 1;
+            frameTimer = new Timer
+            {
+                Interval = 1
+            };
             frameTimer.Tick += new EventHandler(OnFrameChanged);
             frameTimer.Start();
         }
@@ -124,6 +126,11 @@ namespace RenCloud
         }
 
         //DRAGGING//
+
+        //Variables
+        private bool isDragging = false;
+        private Point dragCursorPoint;
+        private Point dragFormPoint;
         public static class FormDrag
         {
             // Import the SendMessage and ReleaseCapture functions.
@@ -149,12 +156,18 @@ namespace RenCloud
         public void AttachDraggingEvent()
         {
             panel1.MouseDown += new MouseEventHandler(panel1_MouseDown);
-            label1.MouseDown += new MouseEventHandler(label1_MouseDown);
+            label1.MouseDown += new MouseEventHandler(panel1_MouseDown);
+            panel1.MouseMove += new MouseEventHandler(panel1_MouseMove);
+            label1.MouseMove += new MouseEventHandler(panel1_MouseMove);
+            panel1.MouseUp += new MouseEventHandler(panel1_MouseUp);
+            label1.MouseUp += new MouseEventHandler(panel1_MouseUp);
         }
+
         public Form1()
         {
             InitializeComponent();
             InitializeGifAnimation();
+            this.DoubleBuffered = true;
         }  
 
         private void Form1_Load(object sender, EventArgs e)
@@ -164,14 +177,34 @@ namespace RenCloud
             AttachDraggingEvent();
             // Attach the Smooth gif event to the panel control.
             AttachGifEvent();
-            this.DoubleBuffered = true;
         }
 
         private void panel1_MouseDown(object sender, MouseEventArgs e)
         {
-            InitializeDragging(e);
+            if (e.Button == MouseButtons.Left)
+            {
+                isDragging = true;
+                dragCursorPoint = Cursor.Position;
+                dragFormPoint = this.Location;
+            }
         }
-
+        private void panel1_MouseUp(object sender, MouseEventArgs e)
+        {
+            // Stop dragging
+            if (e.Button == MouseButtons.Left)
+            {
+                isDragging = false;
+            }
+        }
+        private void panel1_MouseMove(object sender, MouseEventArgs e)
+        {
+            // Perform dragging
+            if (isDragging)
+            {
+                Point dif = Point.Subtract(Cursor.Position, new Size(dragCursorPoint));
+                this.Location = Point.Add(dragFormPoint, new Size(dif));
+            }
+        }
         private void OnFrameChanged(object sender, EventArgs e)
         {
             TickUpdate();
@@ -229,10 +262,6 @@ namespace RenCloud
         private void label1_Click(object sender, EventArgs e)
         {
 
-        }
-        private void label1_MouseDown(object sender, MouseEventArgs e)
-        {
-            InitializeDragging(e);
         }
     }
 }
