@@ -83,6 +83,16 @@ namespace RenCloud.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap _09242 {
+            get {
+                object obj = ResourceManager.GetObject("09242", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap Anonymous_Mask {
             get {
                 object obj = ResourceManager.GetObject("Anonymous Mask", resourceCulture);
@@ -136,6 +146,16 @@ namespace RenCloud.Properties {
         internal static System.Drawing.Bitmap NetworkconnectionBackgroundHDDarkGeometricAbstractBackdrop_ezgif_com_speed {
             get {
                 object obj = ResourceManager.GetObject("NetworkconnectionBackgroundHDDarkGeometricAbstractBackdrop-ezgif.com-speed", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap output_onlinegiftools {
+            get {
+                object obj = ResourceManager.GetObject("output-onlinegiftools", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
