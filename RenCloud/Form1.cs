@@ -11,51 +11,22 @@ namespace RenCloud
 
         //ROUNDCORNERS//
 
-        // Import dwmapi.dll and define DwmSetWindowAttribute.
-        [DllImport("dwmapi.dll", CharSet = CharSet.Unicode, PreserveSig = false)]
-        internal static extern void DwmSetWindowAttribute(IntPtr hwnd, DWMWINDOWATTRIBUTE attribute, ref int pvAttribute, uint cbAttribute);
-        
         //Variables
         private bool isActive = false;
         private Form2 loadForm;
         private Form1 loginForm;
 
-        // The DWM_WINDOW_CORNER_PREFERENCE enum for DwmSetWindowAttribute's third parameter.
-        public enum DWM_WINDOW_CORNER_PREFERENCE
-        {
-            DWMWCP_DEFAULT = 0,
-            DWMWCP_DONOTROUND = 1,
-            DWMWCP_ROUND = 2,
-            DWMWCP_ROUNDSMALL = 3
-        }
-
-        // The DWMWINDOWATTRIBUTE enum parameters to be set
-        public enum DWMWINDOWATTRIBUTE
-        {
-            DWMWA_WINDOW_CORNER_PREFERENCE = 33,
-            DWMWA_BORDER_COLOR = 34
-        }
-        // Pass attributes for DWMWINDOWATTRIBUTE.
-        public void AttributesRoundCorners()
-        {
-            Color borderColor = isActive ? Color.FromArgb(255, 153, 164) : Color.FromArgb(89, 76, 255);
-            IntPtr hWnd = this.Handle;
-            int cornerPreference = (int)DWM_WINDOW_CORNER_PREFERENCE.DWMWCP_ROUND;
-            DwmSetWindowAttribute(hWnd, DWMWINDOWATTRIBUTE.DWMWA_WINDOW_CORNER_PREFERENCE, ref cornerPreference, sizeof(int));
-            int colorValue = (borderColor.B << 16) | (borderColor.G << 8) | borderColor.R;
-            DwmSetWindowAttribute(hWnd, DWMWINDOWATTRIBUTE.DWMWA_BORDER_COLOR, ref colorValue, sizeof(int));
-        }
         protected override void OnActivated(EventArgs e)
         {
             base.OnActivated(e);
             isActive = false;
-            AttributesRoundCorners();
+            Program.Corners.AttributesRoundCorners(this, isActive);
         }
         protected override void OnDeactivate(EventArgs e)
         {
             base.OnDeactivate(e);
             isActive = true;
-            AttributesRoundCorners();
+            Program.Corners.AttributesRoundCorners(this, isActive);
         }
 
         //SMOOTHGIFANIMATION//
@@ -174,7 +145,7 @@ namespace RenCloud
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            AttributesRoundCorners();
+            Program.Corners.AttributesRoundCorners(this, isActive);
             // Attach the MouseDown event to the panel control.
             AttachDraggingEvent();
             // Attach the Smooth gif event to the panel control.
