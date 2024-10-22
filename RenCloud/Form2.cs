@@ -10,11 +10,17 @@ using System.Windows.Forms;
 
 namespace RenCloud
 {
+    
     public partial class Form2 : Form
     {
         public Form2()
         {
             InitializeComponent();
+        }
+
+        private void pictureBox1_Click(object sender, EventArgs e)
+        {
+            
         }
     }
 }
