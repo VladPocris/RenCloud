@@ -17,6 +17,8 @@ namespace RenCloud
         
         //Variables
         private bool isActive = false;
+        private Form2 loadForm;
+        private Form1 loginForm;
 
         // The DWM_WINDOW_CORNER_PREFERENCE enum for DwmSetWindowAttribute's third parameter.
         public enum DWM_WINDOW_CORNER_PREFERENCE
@@ -70,11 +72,11 @@ namespace RenCloud
         // Initializaton for smooth gif animation.
         private void InitializeGifAnimation()
         {
-            animatedImage = Properties.Resources.Background;
+            animatedImage = Properties.Resources.NetworkconnectionBackgroundHDDarkGeometricAbstractBackdrop_ezgif_com_speed;
             currentFrame = 0;
             frameTimer = new Timer
             {
-                Interval = 1
+                Interval = 15
             };
             frameTimer.Tick += new EventHandler(OnFrameChanged);
             frameTimer.Start();
@@ -251,7 +253,10 @@ namespace RenCloud
 
         private void button2_Click(object sender, EventArgs e)
         {
+            loadForm = new Form2();
+            loadForm.Show();
             LogIn();
+            this.Hide();
         }
 
         private void tbpassword_TextChanged(object sender, EventArgs e)
@@ -260,6 +265,11 @@ namespace RenCloud
         }
 
         private void label1_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void pictureBox5_Click(object sender, EventArgs e)
         {
 
         }

@@ -165,7 +165,7 @@
             // 
             this.linkLabel2.AutoSize = true;
             this.linkLabel2.LinkColor = System.Drawing.Color.FromArgb(((int)(((byte)(231)))), ((int)(((byte)(198)))), ((int)(((byte)(54)))));
-            this.linkLabel2.Location = new System.Drawing.Point(142, 325);
+            this.linkLabel2.Location = new System.Drawing.Point(133, 325);
             this.linkLabel2.Name = "linkLabel2";
             this.linkLabel2.Size = new System.Drawing.Size(178, 23);
             this.linkLabel2.TabIndex = 10;
