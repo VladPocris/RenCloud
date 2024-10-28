@@ -93,6 +93,26 @@ namespace RenCloud.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap _09242_ezgif_com_optimize {
+            get {
+                object obj = ResourceManager.GetObject("09242-ezgif.com-optimize", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap _092421 {
+            get {
+                object obj = ResourceManager.GetObject("092421", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap Anonymous_Mask {
             get {
                 object obj = ResourceManager.GetObject("Anonymous Mask", resourceCulture);
