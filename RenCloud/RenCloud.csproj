@@ -119,5 +119,11 @@
   <ItemGroup>
     <None Include="Resources\output-onlinegiftools.gif" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\092421.gif" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\09242-ezgif.com-optimize.gif" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

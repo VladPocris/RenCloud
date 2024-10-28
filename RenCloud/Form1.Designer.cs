@@ -88,7 +88,7 @@
             this.button1.Location = new System.Drawing.Point(828, 0);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(44, 40);
-            this.button1.TabIndex = 0;
+            this.button1.TabIndex = 12;
             this.button1.UseVisualStyleBackColor = true;
             this.button1.Click += new System.EventHandler(this.button1_Click);
             // 
@@ -104,7 +104,7 @@
             this.button2.Location = new System.Drawing.Point(97, 271);
             this.button2.Name = "button2";
             this.button2.Size = new System.Drawing.Size(192, 51);
-            this.button2.TabIndex = 1;
+            this.button2.TabIndex = 3;
             this.button2.Text = "Login";
             this.button2.UseVisualStyleBackColor = true;
             this.button2.Click += new System.EventHandler(this.button2_Click);
@@ -200,7 +200,7 @@
             this.tbusername.Location = new System.Drawing.Point(73, 130);
             this.tbusername.Name = "tbusername";
             this.tbusername.Size = new System.Drawing.Size(274, 31);
-            this.tbusername.TabIndex = 7;
+            this.tbusername.TabIndex = 0;
             // 
             // label4
             // 
@@ -218,7 +218,7 @@
             this.tbpassword.Name = "tbpassword";
             this.tbpassword.PasswordChar = '*';
             this.tbpassword.Size = new System.Drawing.Size(274, 31);
-            this.tbpassword.TabIndex = 5;
+            this.tbpassword.TabIndex = 2;
             this.tbpassword.UseSystemPasswordChar = true;
             this.tbpassword.TextChanged += new System.EventHandler(this.tbpassword_TextChanged);
             // 
@@ -247,14 +247,17 @@
             // 
             // Form1
             // 
+            this.AllowDrop = true;
             this.AutoScaleDimensions = new System.Drawing.SizeF(10F, 23F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.AutoValidate = System.Windows.Forms.AutoValidate.Disable;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(67)))), ((int)(((byte)(38)))), ((int)(((byte)(88)))));
             this.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
             this.ClientSize = new System.Drawing.Size(872, 792);
             this.Controls.Add(this.panel2);
             this.Controls.Add(this.panel1);
             this.Controls.Add(this.pictureBox3);
+            this.DoubleBuffered = true;
             this.Font = new System.Drawing.Font("Microsoft JhengHei Light", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(67)))), ((int)(((byte)(38)))), ((int)(((byte)(88)))));
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
