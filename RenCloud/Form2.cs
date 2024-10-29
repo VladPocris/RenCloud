@@ -15,6 +15,7 @@ namespace RenCloud
     
     public partial class Form2 : Form
     {
+
         //Variables&Objects
         private bool isActive = false;
         private Corners applyCorners;
@@ -39,38 +40,49 @@ namespace RenCloud
         public Form2()
         {
             InitializeComponent();
+            //START FROM CENTER//
             this.StartPosition = FormStartPosition.CenterScreen;
+            //ENABLE DOUBLE BUFFER//
             this.DoubleBuffered = true;
+            //GIF ANIMATION INIT//
             gifAnimation = new GifAnimation(pictureBox1);
             gifAnimation.InitializeGifAnimation(Properties.Resources._09242_ezgif_com_optimize);
+            //APPLY ROUND CORNERS//
             applyCorners = new Corners();
+            //APPLY DRAGGING FUNCTIONALITY//
             dragFunctionality = new DragFunctionality();
-            // Attach load event handler
+            //NECESSARY STARTUP SETTINGS//
             this.Load += Form2_Load;
         }
 
         private void Form2_Load(object sender, EventArgs e)
         {
+            //ATTACHMENTS AND ON-LOAD FEATURES//
             applyCorners.AttributesRoundCorners(this, isActive);
             dragFunctionality.AttachDraggingEvent(pictureBox1, this);
             LoadingTime_Logic(sender, e);
         }
 
+        //TEMP LOADING FINISH//
         private void LoadingTimer_Tick(object sender, EventArgs e)
         {
             // Stop the timer
             loadingTimer.Stop();
             loadingTimer.Dispose();
-
-            // Close the loading form and terminate the application
+            //Terminate the application.
             Application.Exit();
         }
 
+        //TEMP LOADING FUNCTIONALITY//
         private void LoadingTime_Logic(object sender, EventArgs e)
         {
+            //NEW TIMER CREATION//
             loadingTimer = new Timer();
-            loadingTimer.Interval = 3000; // Set the loading duration (3000 ms = 3 seconds)
+            //LOADING DURATION (3000MS = 3S)//
+            loadingTimer.Interval = 3000;
+            //AT THE END OF DURATION//
             loadingTimer.Tick += LoadingTimer_Tick;
+            //START THE TIMER//
             loadingTimer.Start();
         }
 

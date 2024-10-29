@@ -9,6 +9,7 @@ namespace RenCloud
 {
     public partial class Form1 : Form
     {
+
         //Variables&Objects
         private bool isActive = false;
         private Form loadForm;
@@ -31,38 +32,13 @@ namespace RenCloud
             applyCorners.AttributesRoundCorners(this, isActive);
         }
 
-        public Form1()
-        {
-            InitializeComponent();
-            this.DoubleBuffered = true;
-            gifAnimation = new GifAnimation(pictureBox3);
-            gifAnimation.InitializeGifAnimation(Properties.Resources.NetworkconnectionBackgroundHDDarkGeometricAbstractBackdrop_ezgif_com_speed);
-            applyCorners = new Corners();
-            dragFunctionality = new DragFunctionality();
-            loginProcess = new Login();
-            this.Shown += Form1_Shown;
-        }  
-
-        private void Form1_Load(object sender, EventArgs e)
-        {
-            applyCorners.AttributesRoundCorners(this, isActive);
-            dragFunctionality.AttachDraggingEvent(panel1, this);
-            dragFunctionality.AttachDraggingEvent(label1, this);
-            // Attach KeyDown events
-            tbusername.KeyDown += tbusername_KeyDown;
-            tbpassword.KeyDown += tbpassword_KeyDown;
-        }
-        private void Form1_Shown(Object sender, EventArgs e)
-        {
-
-            tbusername.Focus();
-        }
+        //LOGIN FUNCTIONALITY//
         private void tbusername_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Enter)
             {
                 // Trigger the login button click event
-                button2.PerformClick(); // Assuming button2 is your login button
+                button2.PerformClick();
                 e.SuppressKeyPress = true; // Optional: suppress the key press so it doesn't add a newline
             }
         }
@@ -71,10 +47,65 @@ namespace RenCloud
             if (e.KeyCode == Keys.Enter)
             {
                 // Trigger the login button click event
-                button2.PerformClick(); // Assuming button2 is your login button
+                button2.PerformClick();
                 e.SuppressKeyPress = true; // Optional: suppress the key press so it doesn't add a newline
             }
         }
+
+        //FORM//
+        public Form1()
+        {
+            InitializeComponent();
+            //ENABLE DOUBLE BUFFER//
+            this.DoubleBuffered = true;
+            //GIF ANIMATION INIT//
+            gifAnimation = new GifAnimation(pictureBox3);
+            gifAnimation.InitializeGifAnimation(Properties.Resources.NetworkconnectionBackgroundHDDarkGeometricAbstractBackdrop_ezgif_com_speed);
+            //APPLY ROUND CORNERS//
+            applyCorners = new Corners();
+            //APPLY DRAGGING FUNCTIONALITY//
+            dragFunctionality = new DragFunctionality();
+            //LOGIN PROCESS INIT//
+            loginProcess = new Login();
+            //NECESSARY STARTUP SETTINGS//
+            this.Shown += Form1_Shown;
+        }  
+        private void Form1_Load(object sender, EventArgs e)
+        {
+            //ATTACHMENTS AND ON-LOAD FEATURES//
+            applyCorners.AttributesRoundCorners(this, isActive);
+            dragFunctionality.AttachDraggingEvent(panel1, this);
+            dragFunctionality.AttachDraggingEvent(label1, this);
+            tbusername.KeyDown += tbusername_KeyDown;
+            tbpassword.KeyDown += tbpassword_KeyDown;
+        }
+
+        //LOGIN BUTTON//
+        private void button2_Click(object sender, EventArgs e)
+        {
+            string username = tbusername.Text;
+            string password = tbpassword.Text;
+
+            bool loginSuccess = loginProcess.LogIn(username, password);
+
+            if (!loginSuccess)
+            {
+                tbusername.Clear();
+                tbpassword.Clear();
+                tbusername.Focus();
+            }
+            else
+            {
+                loadForm = new Form2();
+                loadForm.Show();
+                this.Hide();
+            }
+        }
+        private void Form1_Shown(Object sender, EventArgs e)
+        {
+            tbusername.Focus();
+        }
+
         private void OnFrameChanged(object sender, EventArgs e)
         {
         }
@@ -114,27 +145,6 @@ namespace RenCloud
         private void pictureBox3_Click(object sender, EventArgs e)
         {
 
-        }
-
-        private void button2_Click(object sender, EventArgs e)
-        {
-            string username = tbusername.Text;
-            string password = tbpassword.Text;
-
-            bool loginSuccess = loginProcess.LogIn(username, password);
-
-            if (!loginSuccess)
-            {
-                tbusername.Clear();
-                tbpassword.Clear();
-                tbusername.Focus();
-            }
-            else
-            {
-                loadForm = new Form2();
-                loadForm.Show();
-                this.Hide();
-            }
         }
 
         private void tbpassword_TextChanged(object sender, EventArgs e)
