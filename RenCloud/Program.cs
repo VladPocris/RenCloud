@@ -58,8 +58,6 @@ namespace RenCloud
         }
 
         //SMOOTHGIFANIMATION//
-
-        // Timer for GIF animation.
         public class GifAnimation
         {
             private Timer frameTimer;
@@ -177,6 +175,8 @@ namespace RenCloud
                 }
             }
         }
+
+        //LOGIN//
         public class Login
         {
             //LOGIN LOGIC//
@@ -186,7 +186,6 @@ namespace RenCloud
             {
                 if (username == correctUsername && password == correctPassword)
                 {
-                    MessageBox.Show("Logged In Successfully");
                     return true;
                 }
                 else
