@@ -13,7 +13,7 @@ using static RenCloud.Program;
 namespace RenCloud
 {
     
-    public partial class Form2 : Form
+    public partial class LoadForm : Form
     {
 
         //Variables&Objects
@@ -37,7 +37,7 @@ namespace RenCloud
             applyCorners.AttributesRoundCorners(this, isActive);
         }
 
-        public Form2()
+        public LoadForm()
         {
             InitializeComponent();
             //START FROM CENTER//

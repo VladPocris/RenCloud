@@ -5,14 +5,16 @@ using System.Drawing;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.TrayNotify;
 using System.IO;
 using static RenCloud.Program;
+
 namespace RenCloud
 {
-    public partial class Form1 : Form
+    public partial class LogInForm : Form
     {
 
         //Variables&Objects
         private bool isActive = false;
         private Form loadForm;
+        private Form registerForm;
         private Corners applyCorners;
         private GifAnimation gifAnimation;
         private DragFunctionality dragFunctionality;
@@ -53,7 +55,7 @@ namespace RenCloud
         }
 
         //FORM//
-        public Form1()
+        public LogInForm()
         {
             InitializeComponent();
             //ENABLE DOUBLE BUFFER//
@@ -96,7 +98,7 @@ namespace RenCloud
             }
             else
             {
-                loadForm = new Form2();
+                loadForm = new LoadForm();
                 loadForm.Show();
                 this.Hide();
             }
@@ -119,7 +121,7 @@ namespace RenCloud
         }
         private void button1_Click(object sender, EventArgs e)
         {
-            Close();
+            Application.Exit();
         }
 
         private void pictureBox1_Click(object sender, EventArgs e)
@@ -129,7 +131,8 @@ namespace RenCloud
 
         private void linkLabel2_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
-
+            registerForm = new RegisterForm();
+            registerForm.ShowDialog(this);
         }
 
         private void label5_Click(object sender, EventArgs e)
