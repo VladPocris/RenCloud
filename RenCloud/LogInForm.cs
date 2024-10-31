@@ -70,9 +70,9 @@ namespace RenCloud
             //LOGIN PROCESS INIT//
             loginProcess = new Login();
             //NECESSARY STARTUP SETTINGS//
-            this.Shown += Form1_Shown;
+            this.Shown += LogInForm_Shown;
         }  
-        private void Form1_Load(object sender, EventArgs e)
+        private void LogInForm_Load(object sender, EventArgs e)
         {
             //ATTACHMENTS AND ON-LOAD FEATURES//
             applyCorners.AttributesRoundCorners(this, isActive);
@@ -103,7 +103,7 @@ namespace RenCloud
                 this.Hide();
             }
         }
-        private void Form1_Shown(Object sender, EventArgs e)
+        private void LogInForm_Shown(Object sender, EventArgs e)
         {
             tbusername.Focus();
         }
