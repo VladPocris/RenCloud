@@ -134,5 +134,17 @@
   <ItemGroup>
     <None Include="Resources\09242-ezgif.com-optimize.gif" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Mailbox.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Cancel.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\User Male.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Password.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
