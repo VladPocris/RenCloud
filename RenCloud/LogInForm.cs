@@ -39,18 +39,16 @@ namespace RenCloud
         {
             if (e.KeyCode == Keys.Enter)
             {
-                // Trigger the login button click event
                 button2.PerformClick();
-                e.SuppressKeyPress = true; // Optional: suppress the key press so it doesn't add a newline
+                e.SuppressKeyPress = true;
             }
         }
         private void tbpassword_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Enter)
             {
-                // Trigger the login button click event
                 button2.PerformClick();
-                e.SuppressKeyPress = true; // Optional: suppress the key press so it doesn't add a newline
+                e.SuppressKeyPress = true;
             }
         }
 
