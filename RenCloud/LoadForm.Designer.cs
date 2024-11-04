@@ -36,9 +36,9 @@
             // 
             this.pictureBox1.BackColor = System.Drawing.Color.Transparent;
             this.pictureBox1.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
-            this.pictureBox1.Location = new System.Drawing.Point(-13, -212);
+            this.pictureBox1.Location = new System.Drawing.Point(-27, -199);
             this.pictureBox1.Name = "pictureBox1";
-            this.pictureBox1.Size = new System.Drawing.Size(912, 951);
+            this.pictureBox1.Size = new System.Drawing.Size(750, 702);
             this.pictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
             this.pictureBox1.TabIndex = 0;
             this.pictureBox1.TabStop = false;
@@ -51,7 +51,7 @@
             this.AutoValidate = System.Windows.Forms.AutoValidate.Disable;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(67)))), ((int)(((byte)(38)))), ((int)(((byte)(88)))));
             this.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
-            this.ClientSize = new System.Drawing.Size(889, 518);
+            this.ClientSize = new System.Drawing.Size(643, 300);
             this.Controls.Add(this.pictureBox1);
             this.DoubleBuffered = true;
             this.Font = new System.Drawing.Font("Microsoft JhengHei Light", 9F);

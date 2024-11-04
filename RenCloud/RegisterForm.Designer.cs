@@ -30,53 +30,53 @@
         {
             this.panel1 = new System.Windows.Forms.Panel();
             this.label1 = new System.Windows.Forms.Label();
+            this.button1 = new System.Windows.Forms.Button();
             this.label2 = new System.Windows.Forms.Label();
             this.flowLayoutPanel1 = new System.Windows.Forms.FlowLayoutPanel();
+            this.pictureBox1 = new System.Windows.Forms.PictureBox();
             this.panel2 = new System.Windows.Forms.Panel();
+            this.pictureBox3 = new System.Windows.Forms.PictureBox();
             this.label3 = new System.Windows.Forms.Label();
             this.tbemail = new System.Windows.Forms.TextBox();
+            this.pictureBox2 = new System.Windows.Forms.PictureBox();
             this.panel3 = new System.Windows.Forms.Panel();
+            this.pictureBox4 = new System.Windows.Forms.PictureBox();
             this.label4 = new System.Windows.Forms.Label();
             this.tbemailcon = new System.Windows.Forms.TextBox();
+            this.pictureBox5 = new System.Windows.Forms.PictureBox();
             this.panel4 = new System.Windows.Forms.Panel();
+            this.pictureBox6 = new System.Windows.Forms.PictureBox();
             this.label5 = new System.Windows.Forms.Label();
             this.tbusername = new System.Windows.Forms.TextBox();
+            this.pictureBox7 = new System.Windows.Forms.PictureBox();
             this.panel5 = new System.Windows.Forms.Panel();
+            this.pictureBox8 = new System.Windows.Forms.PictureBox();
             this.label6 = new System.Windows.Forms.Label();
             this.tbpassword = new System.Windows.Forms.TextBox();
+            this.pictureBox9 = new System.Windows.Forms.PictureBox();
             this.panel6 = new System.Windows.Forms.Panel();
+            this.pictureBox10 = new System.Windows.Forms.PictureBox();
             this.label7 = new System.Windows.Forms.Label();
             this.tbpasswordcon = new System.Windows.Forms.TextBox();
-            this.pictureBox1 = new System.Windows.Forms.PictureBox();
-            this.pictureBox3 = new System.Windows.Forms.PictureBox();
-            this.pictureBox2 = new System.Windows.Forms.PictureBox();
-            this.pictureBox4 = new System.Windows.Forms.PictureBox();
-            this.pictureBox5 = new System.Windows.Forms.PictureBox();
-            this.pictureBox6 = new System.Windows.Forms.PictureBox();
-            this.pictureBox7 = new System.Windows.Forms.PictureBox();
-            this.pictureBox8 = new System.Windows.Forms.PictureBox();
-            this.pictureBox9 = new System.Windows.Forms.PictureBox();
-            this.pictureBox10 = new System.Windows.Forms.PictureBox();
             this.pictureBox11 = new System.Windows.Forms.PictureBox();
-            this.button1 = new System.Windows.Forms.Button();
             this.button2 = new System.Windows.Forms.Button();
             this.pictureBox12 = new System.Windows.Forms.PictureBox();
             this.panel1.SuspendLayout();
             this.flowLayoutPanel1.SuspendLayout();
-            this.panel2.SuspendLayout();
-            this.panel3.SuspendLayout();
-            this.panel4.SuspendLayout();
-            this.panel5.SuspendLayout();
-            this.panel6.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
+            this.panel2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox3)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).BeginInit();
+            this.panel3.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox4)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox5)).BeginInit();
+            this.panel4.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox6)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox7)).BeginInit();
+            this.panel5.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox8)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox9)).BeginInit();
+            this.panel6.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox10)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox11)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox12)).BeginInit();
@@ -106,6 +106,21 @@
             this.label1.Size = new System.Drawing.Size(127, 30);
             this.label1.TabIndex = 1;
             this.label1.Text = "RenCloud";
+            // 
+            // button1
+            // 
+            this.button1.BackgroundImage = global::RenCloud.Properties.Resources.Close;
+            this.button1.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Center;
+            this.button1.Dock = System.Windows.Forms.DockStyle.Right;
+            this.button1.FlatAppearance.BorderSize = 0;
+            this.button1.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(192)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
+            this.button1.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.button1.Location = new System.Drawing.Point(618, 0);
+            this.button1.Name = "button1";
+            this.button1.Size = new System.Drawing.Size(44, 40);
+            this.button1.TabIndex = 12;
+            this.button1.UseVisualStyleBackColor = true;
+            this.button1.Click += new System.EventHandler(this.button1_Click);
             // 
             // label2
             // 
@@ -139,6 +154,17 @@
             this.flowLayoutPanel1.Size = new System.Drawing.Size(469, 457);
             this.flowLayoutPanel1.TabIndex = 3;
             // 
+            // pictureBox1
+            // 
+            this.pictureBox1.Anchor = System.Windows.Forms.AnchorStyles.None;
+            this.pictureBox1.BackColor = System.Drawing.Color.Cyan;
+            this.pictureBox1.Location = new System.Drawing.Point(1, 61);
+            this.pictureBox1.Margin = new System.Windows.Forms.Padding(0);
+            this.pictureBox1.Name = "pictureBox1";
+            this.pictureBox1.Size = new System.Drawing.Size(464, 5);
+            this.pictureBox1.TabIndex = 3;
+            this.pictureBox1.TabStop = false;
+            // 
             // panel2
             // 
             this.panel2.Controls.Add(this.pictureBox3);
@@ -150,6 +176,16 @@
             this.panel2.Name = "panel2";
             this.panel2.Size = new System.Drawing.Size(467, 77);
             this.panel2.TabIndex = 4;
+            // 
+            // pictureBox3
+            // 
+            this.pictureBox3.Image = global::RenCloud.Properties.Resources.Cancel;
+            this.pictureBox3.Location = new System.Drawing.Point(401, 48);
+            this.pictureBox3.Name = "pictureBox3";
+            this.pictureBox3.Size = new System.Drawing.Size(14, 14);
+            this.pictureBox3.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
+            this.pictureBox3.TabIndex = 3;
+            this.pictureBox3.TabStop = false;
             // 
             // label3
             // 
@@ -167,6 +203,7 @@
             // 
             this.tbemail.Anchor = System.Windows.Forms.AnchorStyles.None;
             this.tbemail.Font = new System.Drawing.Font("Microsoft JhengHei", 11F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.tbemail.ForeColor = System.Drawing.SystemColors.InactiveCaption;
             this.tbemail.Location = new System.Drawing.Point(111, 43);
             this.tbemail.Margin = new System.Windows.Forms.Padding(0);
             this.tbemail.Multiline = true;
@@ -174,6 +211,18 @@
             this.tbemail.Size = new System.Drawing.Size(274, 23);
             this.tbemail.TabIndex = 1;
             this.tbemail.Text = "Please type your email.";
+            this.tbemail.TextChanged += new System.EventHandler(this.tbemail_TextChanged);
+            // 
+            // pictureBox2
+            // 
+            this.pictureBox2.BackgroundImage = global::RenCloud.Properties.Resources.Mailbox;
+            this.pictureBox2.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
+            this.pictureBox2.Location = new System.Drawing.Point(39, 29);
+            this.pictureBox2.Name = "pictureBox2";
+            this.pictureBox2.Size = new System.Drawing.Size(59, 45);
+            this.pictureBox2.SizeMode = System.Windows.Forms.PictureBoxSizeMode.CenterImage;
+            this.pictureBox2.TabIndex = 0;
+            this.pictureBox2.TabStop = false;
             // 
             // panel3
             // 
@@ -186,6 +235,16 @@
             this.panel3.Name = "panel3";
             this.panel3.Size = new System.Drawing.Size(467, 77);
             this.panel3.TabIndex = 5;
+            // 
+            // pictureBox4
+            // 
+            this.pictureBox4.Image = global::RenCloud.Properties.Resources.Cancel;
+            this.pictureBox4.Location = new System.Drawing.Point(401, 48);
+            this.pictureBox4.Name = "pictureBox4";
+            this.pictureBox4.Size = new System.Drawing.Size(14, 14);
+            this.pictureBox4.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
+            this.pictureBox4.TabIndex = 3;
+            this.pictureBox4.TabStop = false;
             // 
             // label4
             // 
@@ -204,6 +263,7 @@
             // 
             this.tbemailcon.Anchor = System.Windows.Forms.AnchorStyles.None;
             this.tbemailcon.Font = new System.Drawing.Font("Microsoft JhengHei", 11F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.tbemailcon.ForeColor = System.Drawing.SystemColors.InactiveCaption;
             this.tbemailcon.Location = new System.Drawing.Point(111, 43);
             this.tbemailcon.Margin = new System.Windows.Forms.Padding(0);
             this.tbemailcon.Multiline = true;
@@ -211,6 +271,18 @@
             this.tbemailcon.Size = new System.Drawing.Size(274, 23);
             this.tbemailcon.TabIndex = 1;
             this.tbemailcon.Text = "Please re-type email.";
+            this.tbemailcon.TextChanged += new System.EventHandler(this.tbemailcon_TextChanged);
+            // 
+            // pictureBox5
+            // 
+            this.pictureBox5.BackgroundImage = global::RenCloud.Properties.Resources.Mailbox;
+            this.pictureBox5.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
+            this.pictureBox5.Location = new System.Drawing.Point(39, 29);
+            this.pictureBox5.Name = "pictureBox5";
+            this.pictureBox5.Size = new System.Drawing.Size(59, 45);
+            this.pictureBox5.SizeMode = System.Windows.Forms.PictureBoxSizeMode.CenterImage;
+            this.pictureBox5.TabIndex = 0;
+            this.pictureBox5.TabStop = false;
             // 
             // panel4
             // 
@@ -223,6 +295,16 @@
             this.panel4.Name = "panel4";
             this.panel4.Size = new System.Drawing.Size(467, 77);
             this.panel4.TabIndex = 6;
+            // 
+            // pictureBox6
+            // 
+            this.pictureBox6.Image = global::RenCloud.Properties.Resources.Cancel;
+            this.pictureBox6.Location = new System.Drawing.Point(401, 48);
+            this.pictureBox6.Name = "pictureBox6";
+            this.pictureBox6.Size = new System.Drawing.Size(14, 14);
+            this.pictureBox6.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
+            this.pictureBox6.TabIndex = 3;
+            this.pictureBox6.TabStop = false;
             // 
             // label5
             // 
@@ -240,6 +322,7 @@
             // 
             this.tbusername.Anchor = System.Windows.Forms.AnchorStyles.None;
             this.tbusername.Font = new System.Drawing.Font("Microsoft JhengHei", 11F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.tbusername.ForeColor = System.Drawing.SystemColors.InactiveCaption;
             this.tbusername.Location = new System.Drawing.Point(111, 43);
             this.tbusername.Margin = new System.Windows.Forms.Padding(0);
             this.tbusername.Multiline = true;
@@ -247,6 +330,17 @@
             this.tbusername.Size = new System.Drawing.Size(274, 23);
             this.tbusername.TabIndex = 1;
             this.tbusername.Text = "Type a username.";
+            // 
+            // pictureBox7
+            // 
+            this.pictureBox7.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
+            this.pictureBox7.Image = global::RenCloud.Properties.Resources.User_Male;
+            this.pictureBox7.Location = new System.Drawing.Point(39, 23);
+            this.pictureBox7.Name = "pictureBox7";
+            this.pictureBox7.Size = new System.Drawing.Size(59, 51);
+            this.pictureBox7.SizeMode = System.Windows.Forms.PictureBoxSizeMode.CenterImage;
+            this.pictureBox7.TabIndex = 0;
+            this.pictureBox7.TabStop = false;
             // 
             // panel5
             // 
@@ -259,6 +353,16 @@
             this.panel5.Name = "panel5";
             this.panel5.Size = new System.Drawing.Size(467, 77);
             this.panel5.TabIndex = 7;
+            // 
+            // pictureBox8
+            // 
+            this.pictureBox8.Image = global::RenCloud.Properties.Resources.Cancel;
+            this.pictureBox8.Location = new System.Drawing.Point(401, 48);
+            this.pictureBox8.Name = "pictureBox8";
+            this.pictureBox8.Size = new System.Drawing.Size(14, 14);
+            this.pictureBox8.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
+            this.pictureBox8.TabIndex = 3;
+            this.pictureBox8.TabStop = false;
             // 
             // label6
             // 
@@ -276,6 +380,7 @@
             // 
             this.tbpassword.Anchor = System.Windows.Forms.AnchorStyles.None;
             this.tbpassword.Font = new System.Drawing.Font("Microsoft JhengHei", 11F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.tbpassword.ForeColor = System.Drawing.SystemColors.InactiveCaption;
             this.tbpassword.Location = new System.Drawing.Point(111, 43);
             this.tbpassword.Margin = new System.Windows.Forms.Padding(0);
             this.tbpassword.Multiline = true;
@@ -283,6 +388,17 @@
             this.tbpassword.Size = new System.Drawing.Size(274, 23);
             this.tbpassword.TabIndex = 1;
             this.tbpassword.Text = "Please type your password.";
+            // 
+            // pictureBox9
+            // 
+            this.pictureBox9.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
+            this.pictureBox9.Image = global::RenCloud.Properties.Resources.Password1;
+            this.pictureBox9.Location = new System.Drawing.Point(39, 29);
+            this.pictureBox9.Name = "pictureBox9";
+            this.pictureBox9.Size = new System.Drawing.Size(59, 45);
+            this.pictureBox9.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
+            this.pictureBox9.TabIndex = 0;
+            this.pictureBox9.TabStop = false;
             // 
             // panel6
             // 
@@ -295,6 +411,16 @@
             this.panel6.Name = "panel6";
             this.panel6.Size = new System.Drawing.Size(467, 77);
             this.panel6.TabIndex = 8;
+            // 
+            // pictureBox10
+            // 
+            this.pictureBox10.Image = global::RenCloud.Properties.Resources.Cancel;
+            this.pictureBox10.Location = new System.Drawing.Point(401, 48);
+            this.pictureBox10.Name = "pictureBox10";
+            this.pictureBox10.Size = new System.Drawing.Size(14, 14);
+            this.pictureBox10.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
+            this.pictureBox10.TabIndex = 3;
+            this.pictureBox10.TabStop = false;
             // 
             // label7
             // 
@@ -312,6 +438,7 @@
             // 
             this.tbpasswordcon.Anchor = System.Windows.Forms.AnchorStyles.None;
             this.tbpasswordcon.Font = new System.Drawing.Font("Microsoft JhengHei", 11F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.tbpasswordcon.ForeColor = System.Drawing.SystemColors.InactiveCaption;
             this.tbpasswordcon.Location = new System.Drawing.Point(111, 43);
             this.tbpasswordcon.Margin = new System.Windows.Forms.Padding(0);
             this.tbpasswordcon.Multiline = true;
@@ -319,111 +446,6 @@
             this.tbpasswordcon.Size = new System.Drawing.Size(274, 23);
             this.tbpasswordcon.TabIndex = 1;
             this.tbpasswordcon.Text = "Please re-type password.";
-            // 
-            // pictureBox1
-            // 
-            this.pictureBox1.Anchor = System.Windows.Forms.AnchorStyles.None;
-            this.pictureBox1.BackColor = System.Drawing.Color.Cyan;
-            this.pictureBox1.Location = new System.Drawing.Point(1, 61);
-            this.pictureBox1.Margin = new System.Windows.Forms.Padding(0);
-            this.pictureBox1.Name = "pictureBox1";
-            this.pictureBox1.Size = new System.Drawing.Size(464, 5);
-            this.pictureBox1.TabIndex = 3;
-            this.pictureBox1.TabStop = false;
-            // 
-            // pictureBox3
-            // 
-            this.pictureBox3.Image = global::RenCloud.Properties.Resources.Cancel;
-            this.pictureBox3.Location = new System.Drawing.Point(401, 48);
-            this.pictureBox3.Name = "pictureBox3";
-            this.pictureBox3.Size = new System.Drawing.Size(14, 14);
-            this.pictureBox3.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
-            this.pictureBox3.TabIndex = 3;
-            this.pictureBox3.TabStop = false;
-            // 
-            // pictureBox2
-            // 
-            this.pictureBox2.BackgroundImage = global::RenCloud.Properties.Resources.Mailbox;
-            this.pictureBox2.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
-            this.pictureBox2.Location = new System.Drawing.Point(39, 29);
-            this.pictureBox2.Name = "pictureBox2";
-            this.pictureBox2.Size = new System.Drawing.Size(59, 45);
-            this.pictureBox2.SizeMode = System.Windows.Forms.PictureBoxSizeMode.CenterImage;
-            this.pictureBox2.TabIndex = 0;
-            this.pictureBox2.TabStop = false;
-            // 
-            // pictureBox4
-            // 
-            this.pictureBox4.Image = global::RenCloud.Properties.Resources.Cancel;
-            this.pictureBox4.Location = new System.Drawing.Point(401, 48);
-            this.pictureBox4.Name = "pictureBox4";
-            this.pictureBox4.Size = new System.Drawing.Size(14, 14);
-            this.pictureBox4.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
-            this.pictureBox4.TabIndex = 3;
-            this.pictureBox4.TabStop = false;
-            // 
-            // pictureBox5
-            // 
-            this.pictureBox5.BackgroundImage = global::RenCloud.Properties.Resources.Mailbox;
-            this.pictureBox5.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
-            this.pictureBox5.Location = new System.Drawing.Point(39, 29);
-            this.pictureBox5.Name = "pictureBox5";
-            this.pictureBox5.Size = new System.Drawing.Size(59, 45);
-            this.pictureBox5.SizeMode = System.Windows.Forms.PictureBoxSizeMode.CenterImage;
-            this.pictureBox5.TabIndex = 0;
-            this.pictureBox5.TabStop = false;
-            // 
-            // pictureBox6
-            // 
-            this.pictureBox6.Image = global::RenCloud.Properties.Resources.Cancel;
-            this.pictureBox6.Location = new System.Drawing.Point(401, 48);
-            this.pictureBox6.Name = "pictureBox6";
-            this.pictureBox6.Size = new System.Drawing.Size(14, 14);
-            this.pictureBox6.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
-            this.pictureBox6.TabIndex = 3;
-            this.pictureBox6.TabStop = false;
-            // 
-            // pictureBox7
-            // 
-            this.pictureBox7.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
-            this.pictureBox7.Image = global::RenCloud.Properties.Resources.User_Male;
-            this.pictureBox7.Location = new System.Drawing.Point(39, 23);
-            this.pictureBox7.Name = "pictureBox7";
-            this.pictureBox7.Size = new System.Drawing.Size(59, 51);
-            this.pictureBox7.SizeMode = System.Windows.Forms.PictureBoxSizeMode.CenterImage;
-            this.pictureBox7.TabIndex = 0;
-            this.pictureBox7.TabStop = false;
-            // 
-            // pictureBox8
-            // 
-            this.pictureBox8.Image = global::RenCloud.Properties.Resources.Cancel;
-            this.pictureBox8.Location = new System.Drawing.Point(401, 48);
-            this.pictureBox8.Name = "pictureBox8";
-            this.pictureBox8.Size = new System.Drawing.Size(14, 14);
-            this.pictureBox8.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
-            this.pictureBox8.TabIndex = 3;
-            this.pictureBox8.TabStop = false;
-            // 
-            // pictureBox9
-            // 
-            this.pictureBox9.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
-            this.pictureBox9.Image = global::RenCloud.Properties.Resources.Password1;
-            this.pictureBox9.Location = new System.Drawing.Point(39, 29);
-            this.pictureBox9.Name = "pictureBox9";
-            this.pictureBox9.Size = new System.Drawing.Size(59, 45);
-            this.pictureBox9.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
-            this.pictureBox9.TabIndex = 0;
-            this.pictureBox9.TabStop = false;
-            // 
-            // pictureBox10
-            // 
-            this.pictureBox10.Image = global::RenCloud.Properties.Resources.Cancel;
-            this.pictureBox10.Location = new System.Drawing.Point(401, 48);
-            this.pictureBox10.Name = "pictureBox10";
-            this.pictureBox10.Size = new System.Drawing.Size(14, 14);
-            this.pictureBox10.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
-            this.pictureBox10.TabIndex = 3;
-            this.pictureBox10.TabStop = false;
             // 
             // pictureBox11
             // 
@@ -435,21 +457,6 @@
             this.pictureBox11.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
             this.pictureBox11.TabIndex = 0;
             this.pictureBox11.TabStop = false;
-            // 
-            // button1
-            // 
-            this.button1.BackgroundImage = global::RenCloud.Properties.Resources.Close;
-            this.button1.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Center;
-            this.button1.Dock = System.Windows.Forms.DockStyle.Right;
-            this.button1.FlatAppearance.BorderSize = 0;
-            this.button1.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(192)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
-            this.button1.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.button1.Location = new System.Drawing.Point(618, 0);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(44, 40);
-            this.button1.TabIndex = 12;
-            this.button1.UseVisualStyleBackColor = true;
-            this.button1.Click += new System.EventHandler(this.button1_Click);
             // 
             // button2
             // 
@@ -500,25 +507,25 @@
             this.panel1.ResumeLayout(false);
             this.panel1.PerformLayout();
             this.flowLayoutPanel1.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             this.panel2.ResumeLayout(false);
             this.panel2.PerformLayout();
-            this.panel3.ResumeLayout(false);
-            this.panel3.PerformLayout();
-            this.panel4.ResumeLayout(false);
-            this.panel4.PerformLayout();
-            this.panel5.ResumeLayout(false);
-            this.panel5.PerformLayout();
-            this.panel6.ResumeLayout(false);
-            this.panel6.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox3)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).EndInit();
+            this.panel3.ResumeLayout(false);
+            this.panel3.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox4)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox5)).EndInit();
+            this.panel4.ResumeLayout(false);
+            this.panel4.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox6)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox7)).EndInit();
+            this.panel5.ResumeLayout(false);
+            this.panel5.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox8)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox9)).EndInit();
+            this.panel6.ResumeLayout(false);
+            this.panel6.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox10)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox11)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox12)).EndInit();

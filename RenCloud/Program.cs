@@ -3,10 +3,13 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Net.Mail;
 using System.Reflection.Emit;
 using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Xml.Linq;
 
 namespace RenCloud
 { 
@@ -191,6 +194,66 @@ namespace RenCloud
                 else
                 {
                     MessageBox.Show("     Username or Password incorrect.\n\t    Please try again.");
+                    return false;
+                }
+            }
+        }
+
+        //PLACEHOLDER//
+        public class Placeholder
+        {
+            public void PlaceholderOut(object sender, EventArgs e, TextBox box, string placeholder)
+            {
+                // Check if the current text is the placeholder
+                if (box.ForeColor == SystemColors.InactiveCaption)
+                {
+                    box.Text = "";
+                    box.ForeColor = Color.Black;
+                }
+            }
+            public void PlaceholderIn(object sender, EventArgs e, TextBox box, string placeholder)
+            {
+                // Check if the current text is the placeholder
+                if (box.Text == string.Empty)
+                {
+                    box.Text = placeholder;
+                    box.ForeColor = SystemColors.InactiveCaption;
+                }
+            }
+        }
+        //EMAILVALIDATOR//
+        public class Email
+        {
+            public bool IsValidEmail(string email)
+            {
+                if (string.IsNullOrWhiteSpace(email))
+                    return false;
+                try
+                {
+                    var mailAddress = new MailAddress(email);
+                    var parts = email.Split('@');
+                    if (parts.Length != 2 || string.IsNullOrWhiteSpace(parts[1]) || !parts[1].Contains("."))
+                    {
+                        return false;
+                    }
+                    var domainParts = parts[1].Split('.');
+                    if (domainParts.Length < 2 ||
+                        domainParts[domainParts.Length - 1].Length < 2 ||
+                        domainParts[domainParts.Length - 1].Length > 5 ||
+                        Regex.IsMatch(parts[1], @"\d") ||
+                        !Regex.IsMatch(parts[1], @"^[a-zA-Z0-9.-]+$"))
+                    {
+                        return false;
+                    }
+                    string tld = domainParts[1];
+                    if (string.IsNullOrWhiteSpace(tld) || !Regex.IsMatch(tld, @"^[a-zA-Z]+$"))
+                    {
+                        return false;
+                    }
+                    return true;
+                }
+                catch
+                {
                     return false;
                 }
             }
