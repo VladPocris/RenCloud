@@ -330,6 +330,7 @@
             this.tbusername.Size = new System.Drawing.Size(274, 23);
             this.tbusername.TabIndex = 1;
             this.tbusername.Text = "Type a username.";
+            this.tbusername.TextChanged += new System.EventHandler(this.tbusername_TextChanged);
             // 
             // pictureBox7
             // 
@@ -388,6 +389,7 @@
             this.tbpassword.Size = new System.Drawing.Size(274, 23);
             this.tbpassword.TabIndex = 1;
             this.tbpassword.Text = "Please type your password.";
+            this.tbpassword.TextChanged += new System.EventHandler(this.tbpassword_TextChanged);
             // 
             // pictureBox9
             // 
@@ -446,6 +448,7 @@
             this.tbpasswordcon.Size = new System.Drawing.Size(274, 23);
             this.tbpasswordcon.TabIndex = 1;
             this.tbpasswordcon.Text = "Please re-type password.";
+            this.tbpasswordcon.TextChanged += new System.EventHandler(this.tbpasswordcon_TextChanged);
             // 
             // pictureBox11
             // 
@@ -461,6 +464,7 @@
             // button2
             // 
             this.button2.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
+            this.button2.Enabled = false;
             this.button2.FlatAppearance.BorderColor = System.Drawing.Color.White;
             this.button2.FlatAppearance.BorderSize = 2;
             this.button2.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(199)))), ((int)(((byte)(81)))), ((int)(((byte)(116)))));
@@ -473,6 +477,7 @@
             this.button2.TabIndex = 4;
             this.button2.Text = "Register";
             this.button2.UseVisualStyleBackColor = true;
+            this.button2.Click += new System.EventHandler(this.button2_Click);
             // 
             // pictureBox12
             // 

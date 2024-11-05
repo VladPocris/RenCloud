@@ -17,11 +17,16 @@ namespace RenCloud
 
         //Variables&Objects
         private bool isActive = false;
+        private int isValid = 0;
+        private PictureBox[] pictureBoxes;
         private Corners applyCorners;
         private GifAnimation gifAnimation;
         private DragFunctionality dragFunctionality;
         private Placeholder placeholder;
-        private Email emailValid;
+        private EmailValidator emailValidator;
+        private UsernameValidator usernameValidator;
+        private PasswordValidator passwordValidator;
+        private RegistrationValid registrationValid;
 
         //ROUNDCORNERS LOGIC//
         protected override void OnActivated(EventArgs e)
@@ -64,7 +69,11 @@ namespace RenCloud
             tbpasswordcon.Leave += tbpasswordcon_Leave;
             //REGISTER OBJECT//
             placeholder = new Placeholder();
-            emailValid = new Email();
+            emailValidator = new EmailValidator();
+            usernameValidator = new UsernameValidator();
+            passwordValidator = new PasswordValidator();
+            registrationValid = new RegistrationValid();
+            pictureBoxes = new PictureBox[] { pictureBox4, pictureBox3, pictureBox6, pictureBox8, pictureBox10 };
         }
 
         private void RegisterForm_Load(object sender, EventArgs e)
@@ -109,25 +118,31 @@ namespace RenCloud
         {
             string email = tbemail.Text;
 
-            if (emailValid.IsValidEmail(email))
+            if (emailValidator.IsValidEmail(email))
             {
                 pictureBox3.Image = Properties.Resources.Check_Mark;
+                pictureBox3.Tag = "Valid";
             }
             else
             {
                 pictureBox3.Image = Properties.Resources.Cancel;
+                pictureBox3.Tag = "Invalid";
             }
+            button2.Enabled = registrationValid.IsValidRegistration(pictureBoxes);
         }
         private void tbemailcon_TextChanged(object sender, EventArgs e)
         {
             if (tbemail.Text == tbemailcon.Text)
             {
                 pictureBox4.Image = Properties.Resources.Check_Mark;
+                pictureBox4.Tag = "Valid";
             }
             else
             {
                 pictureBox4.Image = Properties.Resources.Cancel;
+                pictureBox4.Tag = "Invalid";
             }
+            button2.Enabled = registrationValid.IsValidRegistration(pictureBoxes);
         }
 
         private void tbemail_Enter(object sender, EventArgs e)
@@ -157,6 +172,7 @@ namespace RenCloud
         private void tbpassword_Enter(object sender, EventArgs e)
         {
             placeholder.PlaceholderOut(sender, e, tbpassword, "Please type your password.");
+            tbpassword.PasswordChar = '*';
         }
         private void tbpassword_Leave(object sender, EventArgs e)
         {
@@ -165,10 +181,71 @@ namespace RenCloud
         private void tbpasswordcon_Enter(object sender, EventArgs e)
         {
             placeholder.PlaceholderOut(sender, e, tbpasswordcon, "Please re-type password.");
+            tbpasswordcon.PasswordChar = '*';
         }
         private void tbpasswordcon_Leave(object sender, EventArgs e)
         {
             placeholder.PlaceholderIn(sender, e, tbpasswordcon, "Please re-type password.");
+        }
+
+        private void tbusername_TextChanged(object sender, EventArgs e)
+        {
+            if (usernameValidator.IsValidInput(tbusername.Text))
+            {
+                pictureBox6.Image = Properties.Resources.Check_Mark;
+                pictureBox6.Tag = "Valid";
+            }
+            else
+            {
+                pictureBox6.Image = Properties.Resources.Cancel;
+                pictureBox6.Tag = "Invalid";
+            }
+            button2.Enabled = registrationValid.IsValidRegistration(pictureBoxes);
+        }
+
+        private void tbpassword_TextChanged(object sender, EventArgs e)
+        {
+            if (passwordValidator.IsValidPassword(tbpassword.Text))
+            {
+                pictureBox8.Image = Properties.Resources.Check_Mark;
+                pictureBox8.Tag = "Valid";
+            }
+            else
+            {
+                pictureBox8.Image = Properties.Resources.Cancel;
+                pictureBox8.Tag = "Invalid";
+            }
+            if (tbpassword.Text == tbpasswordcon.Text)
+            {
+                pictureBox10.Image = Properties.Resources.Check_Mark;
+                pictureBox10.Tag = "Valid";
+            }
+            else
+            {
+                pictureBox10.Image = Properties.Resources.Cancel;
+                pictureBox10.Tag = "Invalid";
+            }
+            button2.Enabled = registrationValid.IsValidRegistration(pictureBoxes);
+        }
+
+        private void tbpasswordcon_TextChanged(object sender, EventArgs e)
+        {
+            if (tbpassword.Text == tbpasswordcon.Text)
+            {
+                pictureBox10.Image = Properties.Resources.Check_Mark;
+                pictureBox10.Tag = "Valid";
+            }
+            else
+            {
+                pictureBox10.Image = Properties.Resources.Cancel;
+                pictureBox10.Tag = "Invalid";
+            }
+            button2.Enabled = registrationValid.IsValidRegistration(pictureBoxes);
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+
         }
     }
 }
