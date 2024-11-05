@@ -218,11 +218,12 @@ namespace RenCloud
                 {
                     box.Text = placeholder;
                     box.ForeColor = SystemColors.InactiveCaption;
+                    box.PasswordChar = '\0';
                 }
             }
         }
         //EMAILVALIDATOR//
-        public class Email
+        public class EmailValidator
         {
             public bool IsValidEmail(string email)
             {
@@ -256,6 +257,51 @@ namespace RenCloud
                 {
                     return false;
                 }
+            }
+        }
+        //USERNAMEVALIDATOR//
+        public class UsernameValidator
+        {
+            public bool IsValidInput(string input)
+            {
+                string pattern = "^[a-zA-Z0-9]*$";
+                if(!Regex.IsMatch(input, pattern) || string.IsNullOrWhiteSpace(input) || input.Length < 4)
+                {
+                    return false;
+                }
+                else
+                {
+                    return true;
+                }
+            }
+        }
+        //PASSWORDVALIDATOR//
+        public class PasswordValidator
+        {
+            public bool IsValidPassword(string password)
+            {
+                if (password.Length <= 7)
+                    return false;
+                if (!Regex.IsMatch(password, "[A-Z]"))
+                    return false;
+                if (!Regex.IsMatch(password, "[0-9]"))
+                    return false;
+                return true;
+            }
+        }
+        //REGISTRATIONVALID
+        public class RegistrationValid
+        {
+            public bool IsValidRegistration(PictureBox[] picture)
+            {
+                foreach (PictureBox pictureBox in picture) 
+                {
+                    if (pictureBox.Tag == null || (string)pictureBox.Tag != "Valid")
+                    {
+                        return false;
+                    }
+                }
+                return true;
             }
         }
     }
