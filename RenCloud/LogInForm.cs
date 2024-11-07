@@ -67,6 +67,7 @@ namespace RenCloud
             dragFunctionality = new DragFunctionality();
             //LOGIN PROCESS INIT//
             loginProcess = new Login();
+            registerForm = new RegisterForm();
             //NECESSARY STARTUP SETTINGS//
             this.Shown += LogInForm_Shown;
         }  
@@ -97,10 +98,12 @@ namespace RenCloud
             else
             {
                 loadForm = new LoadForm();
-                loadForm.Show();
-                this.Hide();
+                loadForm.ShowDialog();
+                registerForm = new RegisterForm();
+                registerForm.Show();
             }
         }
+
         private void LogInForm_Shown(Object sender, EventArgs e)
         {
             tbusername.Focus();
@@ -130,7 +133,7 @@ namespace RenCloud
         private void linkLabel2_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
             registerForm = new RegisterForm();
-            registerForm.ShowDialog(this);
+            registerForm.ShowDialog();
         }
 
         private void label5_Click(object sender, EventArgs e)
@@ -161,6 +164,26 @@ namespace RenCloud
         private void pictureBox5_Click(object sender, EventArgs e)
         {
 
+        }
+
+        private void tbusername_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+        private void LogInForm_Closing(object sender, FormClosingEventArgs e)
+        {
+            this.Dispose();
+            gifAnimation.StopAnimation();
+            gifAnimation = null;
+            dragFunctionality = null;
+            applyCorners = null;
+            loginProcess = null;
+            registerForm.Dispose();
+            registerForm = null;
+            loadForm.Dispose();
+            loadForm = null;
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
         }
     }
 }

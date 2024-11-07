@@ -27,6 +27,8 @@ namespace RenCloud
         private UsernameValidator usernameValidator;
         private PasswordValidator passwordValidator;
         private RegistrationValid registrationValid;
+        private Form loadForm;
+        private Form loginForm;
 
         //ROUNDCORNERS LOGIC//
         protected override void OnActivated(EventArgs e)
@@ -45,7 +47,7 @@ namespace RenCloud
         {
             InitializeComponent();
             //ENABLE DOUBLE BUFFER//
-            this.DoubleBuffered = true;
+            this.DoubleBuffered = false;
             //GIF ANIMATION INIT//
             gifAnimation = new GifAnimation(pictureBox12);
             gifAnimation.InitializeGifAnimation(Properties.Resources.NetworkconnectionBackgroundHDDarkGeometricAbstractBackdrop_ezgif_com_speed);
@@ -74,6 +76,7 @@ namespace RenCloud
             passwordValidator = new PasswordValidator();
             registrationValid = new RegistrationValid();
             pictureBoxes = new PictureBox[] { pictureBox4, pictureBox3, pictureBox6, pictureBox8, pictureBox10 };
+            this.FormClosing += RegisterForm_Closing;
         }
 
         private void RegisterForm_Load(object sender, EventArgs e)
@@ -129,6 +132,7 @@ namespace RenCloud
                 pictureBox3.Tag = "Invalid";
             }
             button2.Enabled = registrationValid.IsValidRegistration(pictureBoxes);
+            button2.Enabled = true;
         }
         private void tbemailcon_TextChanged(object sender, EventArgs e)
         {
@@ -245,7 +249,31 @@ namespace RenCloud
 
         private void button2_Click(object sender, EventArgs e)
         {
-
+            this.Close();
+            loadForm = new LoadForm();
+            loadForm.ShowDialog();
+            loadForm.Dispose();
+        }
+        private void RegisterForm_Closing(object sender, FormClosingEventArgs e)
+        {
+            this.Dispose();
+            gifAnimation.StopAnimation();
+            gifAnimation = null;
+            dragFunctionality = null;
+            applyCorners = null;
+            placeholder = null;
+            emailValidator = null;
+            usernameValidator = null;
+            passwordValidator = null;
+            registrationValid = null;
+            foreach (var picBox in pictureBoxes)
+            {
+                picBox.Dispose();
+            }
+            pictureBoxes = null;
+            pictureBox12 = null;
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
         }
     }
 }

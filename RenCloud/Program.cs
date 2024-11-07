@@ -80,12 +80,25 @@ namespace RenCloud
             // Initializaton for smooth gif animation.
             public void InitializeGifAnimation(Bitmap customGif)
             {
+                if (frameTimer != null)
+                {
+                    frameTimer.Stop();
+                    frameTimer.Dispose();
+                }
+
+                // Dispose of previous image if it exists
+                if (animatedImage != null)
+                {
+                    animatedImage.Dispose();
+                }
+
+                // Set the gif and reset frame count
                 animatedImage = customGif;
                 currentFrame = 0;
-                frameTimer = new Timer
-                {
-                    Interval = 15
-                };
+
+                // Create a new frame timer and start the animation
+                frameTimer = new Timer();
+                frameTimer.Interval = 15;
                 frameTimer.Tick += new EventHandler(OnFrameChanged);
                 frameTimer.Start();
             }
@@ -112,6 +125,17 @@ namespace RenCloud
                 }
                 animatedImage.SelectActiveFrame(System.Drawing.Imaging.FrameDimension.Time, currentFrame);
                 targetPictureBox.Invalidate();
+            }
+            public void StopAnimation()
+            {
+                    frameTimer.Stop();
+                    frameTimer.Tick -= OnFrameChanged; // Unsubscribe from the event handler
+                    frameTimer.Dispose();
+                    frameTimer = null;
+                    animatedImage.Dispose();
+                    animatedImage = null;
+                    targetPictureBox.Paint -= FrameUpdate;
+                    targetPictureBox.Image = null;
             }
         }
 

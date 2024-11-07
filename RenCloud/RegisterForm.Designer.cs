@@ -464,7 +464,6 @@
             // button2
             // 
             this.button2.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
-            this.button2.Enabled = false;
             this.button2.FlatAppearance.BorderColor = System.Drawing.Color.White;
             this.button2.FlatAppearance.BorderSize = 2;
             this.button2.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(199)))), ((int)(((byte)(81)))), ((int)(((byte)(116)))));
