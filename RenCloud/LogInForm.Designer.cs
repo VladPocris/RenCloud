@@ -203,6 +203,7 @@
             this.tbusername.Name = "tbusername";
             this.tbusername.Size = new System.Drawing.Size(274, 31);
             this.tbusername.TabIndex = 0;
+            this.tbusername.TextChanged += new System.EventHandler(this.tbusername_TextChanged);
             // 
             // label4
             // 

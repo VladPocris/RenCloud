@@ -53,6 +53,7 @@ namespace RenCloud
             dragFunctionality = new DragFunctionality();
             //NECESSARY STARTUP SETTINGS//
             this.Load += Form2_Load;
+            this.FormClosing += LoadForm_Closing;
         }
 
         private void Form2_Load(object sender, EventArgs e)
@@ -70,7 +71,7 @@ namespace RenCloud
             loadingTimer.Stop();
             loadingTimer.Dispose();
             //Terminate the application.
-            Application.Exit();
+            this.Close();
         }
 
         //TEMP LOADING FUNCTIONALITY//
@@ -84,6 +85,18 @@ namespace RenCloud
             loadingTimer.Tick += LoadingTimer_Tick;
             //START THE TIMER//
             loadingTimer.Start();
+        }
+
+        private void LoadForm_Closing(object sender, FormClosingEventArgs e)
+        {
+            this.Dispose();
+            gifAnimation.StopAnimation();
+            gifAnimation = null;
+            dragFunctionality = null;
+            applyCorners = null;
+            pictureBox1.Dispose();
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
         }
 
         private void pictureBox1_Click(object sender, EventArgs e)
