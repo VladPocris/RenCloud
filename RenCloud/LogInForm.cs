@@ -13,8 +13,6 @@ namespace RenCloud
 
         //Variables&Objects
         private bool isActive = false;
-        private Form loadForm;
-        private Form registerForm;
         private Corners applyCorners;
         private GifAnimation gifAnimation;
         private DragFunctionality dragFunctionality;
@@ -67,7 +65,6 @@ namespace RenCloud
             dragFunctionality = new DragFunctionality();
             //LOGIN PROCESS INIT//
             loginProcess = new Login();
-            registerForm = new RegisterForm();
             //NECESSARY STARTUP SETTINGS//
             this.Shown += LogInForm_Shown;
         }  
@@ -97,10 +94,9 @@ namespace RenCloud
             }
             else
             {
-                loadForm = new LoadForm();
-                loadForm.ShowDialog();
-                registerForm = new RegisterForm();
-                registerForm.Show();
+                this.Hide();
+                FormManager.LoadFormInstance.ShowDialog();
+                FormManager.RegisterFormInstance.ShowDialog();
             }
         }
 
@@ -132,8 +128,8 @@ namespace RenCloud
 
         private void linkLabel2_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
-            registerForm = new RegisterForm();
-            registerForm.ShowDialog();
+            this.Hide();
+            FormManager.RegisterFormInstance.Show();
         }
 
         private void label5_Click(object sender, EventArgs e)
@@ -178,10 +174,6 @@ namespace RenCloud
             dragFunctionality = null;
             applyCorners = null;
             loginProcess = null;
-            registerForm.Dispose();
-            registerForm = null;
-            loadForm.Dispose();
-            loadForm = null;
             GC.Collect();
             GC.WaitForPendingFinalizers();
         }

@@ -27,8 +27,6 @@ namespace RenCloud
         private UsernameValidator usernameValidator;
         private PasswordValidator passwordValidator;
         private RegistrationValid registrationValid;
-        private Form loadForm;
-        private Form loginForm;
 
         //ROUNDCORNERS LOGIC//
         protected override void OnActivated(EventArgs e)
@@ -100,6 +98,7 @@ namespace RenCloud
         private void button1_Click(object sender, EventArgs e)
         {
             Close();
+            FormManager.LogInFormInstance.Show();
         }
 
         private void label2_Click(object sender, EventArgs e)
@@ -250,9 +249,8 @@ namespace RenCloud
         private void button2_Click(object sender, EventArgs e)
         {
             this.Close();
-            loadForm = new LoadForm();
-            loadForm.ShowDialog();
-            loadForm.Dispose();
+            FormManager.LoadFormInstance.ShowDialog();
+            FormManager.LogInFormInstance.Show();
         }
         private void RegisterForm_Closing(object sender, FormClosingEventArgs e)
         {
