@@ -109,7 +109,7 @@ namespace RenCloud
             {
                 this.Hide();
                 FormManager.LoadFormInstance.ShowDialog();
-                FormManager.RegisterFormInstance.ShowDialog();
+                FormManager.LogInFormInstance.Show();
             }
         }
 
