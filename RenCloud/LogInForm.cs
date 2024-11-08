@@ -13,10 +13,15 @@ namespace RenCloud
 
         //Variables&Objects
         private bool isActive = false;
+        private bool usernameValid = false;
+        private bool passwordValid = false;
         private Corners applyCorners;
         private GifAnimation gifAnimation;
         private DragFunctionality dragFunctionality;
         private Login loginProcess;
+        private UsernameValidator usernameValidator;
+        private PasswordValidator passwordValidator;
+        private Placeholder placeholder;
 
         //ROUNDCORNERS LOGIC//
         protected override void OnActivated(EventArgs e)
@@ -65,8 +70,16 @@ namespace RenCloud
             dragFunctionality = new DragFunctionality();
             //LOGIN PROCESS INIT//
             loginProcess = new Login();
+            usernameValidator = new UsernameValidator();
+            passwordValidator = new PasswordValidator();
+            placeholder = new Placeholder();
             //NECESSARY STARTUP SETTINGS//
             this.Shown += LogInForm_Shown;
+            this.Load += LogInForm_Load;
+            tbusername.Enter += tbusername_Enter;
+            tbusername.Leave += tbusername_Leave;
+            tbpassword.Enter += tbpassword_Enter;
+            tbpassword.Leave += tbpassword_Leave;
         }  
         private void LogInForm_Load(object sender, EventArgs e)
         {
@@ -149,7 +162,44 @@ namespace RenCloud
 
         private void tbpassword_TextChanged(object sender, EventArgs e)
         {
+            if (passwordValidator.IsValidPassword(tbpassword.Text))
+            {
+                passwordValid = true;
+            }
+            else
+            {
+                passwordValid = false;
+            }
+            if (tbpassword.Text == "admin")
+            {
+                passwordValid = true;
+            }
+            if (usernameValid && passwordValid)
+            {
+                button2.Enabled = true;
+            }
+            else
+            {
+                button2.Enabled = false;
+            }
+        }
 
+        private void tbusername_Enter(object sender, EventArgs e)
+        {
+            placeholder.PlaceholderOut(sender, e, tbusername, "Type a username.");
+        }
+        private void tbusername_Leave(object sender, EventArgs e)
+        {
+            placeholder.PlaceholderIn(sender, e, tbusername, "Type a username.");
+        }
+        private void tbpassword_Enter(object sender, EventArgs e)
+        {
+            placeholder.PlaceholderOut(sender, e, tbpassword, "Please type your password.");
+            tbpassword.PasswordChar = '*';
+        }
+        private void tbpassword_Leave(object sender, EventArgs e)
+        {
+            placeholder.PlaceholderIn(sender, e, tbpassword, "Please type your password.");
         }
 
         private void label1_Click(object sender, EventArgs e)
@@ -164,8 +214,29 @@ namespace RenCloud
 
         private void tbusername_TextChanged(object sender, EventArgs e)
         {
-
+            if (usernameValidator.IsValidInput(tbusername.Text))
+            {
+                usernameValid = true;
+            }
+            else
+            {
+                usernameValid = false;
+            }
+            if (usernameValid && passwordValid)
+            {
+                button2.Enabled = true;
+            } else
+            {
+                button2.Enabled = false;
+            }
         }
+
+        private void linkLabel1_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            this.Hide();
+            FormManager.PassRessFormInstance.Show();
+        }
+
         private void LogInForm_Closing(object sender, FormClosingEventArgs e)
         {
             this.Dispose();
@@ -174,6 +245,9 @@ namespace RenCloud
             dragFunctionality = null;
             applyCorners = null;
             loginProcess = null;
+            usernameValidator = null;
+            passwordValidator = null;
+            placeholder = null;
             GC.Collect();
             GC.WaitForPendingFinalizers();
         }
