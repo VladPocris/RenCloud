@@ -29,6 +29,7 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(LogInForm));
             this.panel1 = new System.Windows.Forms.Panel();
             this.label1 = new System.Windows.Forms.Label();
             this.button1 = new System.Windows.Forms.Button();
@@ -97,6 +98,7 @@
             // button2
             // 
             this.button2.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
+            this.button2.Enabled = false;
             this.button2.FlatAppearance.BorderColor = System.Drawing.Color.White;
             this.button2.FlatAppearance.BorderSize = 2;
             this.button2.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(199)))), ((int)(((byte)(81)))), ((int)(((byte)(116)))));
@@ -108,7 +110,7 @@
             this.button2.Size = new System.Drawing.Size(192, 51);
             this.button2.TabIndex = 3;
             this.button2.Text = "Login";
-            this.button2.UseVisualStyleBackColor = true;
+            this.button2.UseVisualStyleBackColor = false;
             this.button2.Click += new System.EventHandler(this.button2_Click);
             // 
             // label2
@@ -185,6 +187,7 @@
             this.linkLabel1.TabIndex = 9;
             this.linkLabel1.TabStop = true;
             this.linkLabel1.Text = "Forgot Password/Login";
+            this.linkLabel1.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.linkLabel1_LinkClicked);
             // 
             // label5
             // 
@@ -199,10 +202,13 @@
             // 
             // tbusername
             // 
+            this.tbusername.Font = new System.Drawing.Font("Microsoft JhengHei", 11F);
+            this.tbusername.ForeColor = System.Drawing.SystemColors.InactiveCaption;
             this.tbusername.Location = new System.Drawing.Point(73, 130);
             this.tbusername.Name = "tbusername";
-            this.tbusername.Size = new System.Drawing.Size(274, 31);
+            this.tbusername.Size = new System.Drawing.Size(274, 37);
             this.tbusername.TabIndex = 0;
+            this.tbusername.Text = "Type a username.";
             this.tbusername.TextChanged += new System.EventHandler(this.tbusername_TextChanged);
             // 
             // label4
@@ -217,12 +223,13 @@
             // 
             // tbpassword
             // 
+            this.tbpassword.Font = new System.Drawing.Font("Microsoft JhengHei", 11F);
+            this.tbpassword.ForeColor = System.Drawing.SystemColors.InactiveCaption;
             this.tbpassword.Location = new System.Drawing.Point(73, 189);
             this.tbpassword.Name = "tbpassword";
-            this.tbpassword.PasswordChar = '*';
-            this.tbpassword.Size = new System.Drawing.Size(274, 31);
+            this.tbpassword.Size = new System.Drawing.Size(274, 37);
             this.tbpassword.TabIndex = 2;
-            this.tbpassword.UseSystemPasswordChar = true;
+            this.tbpassword.Text = "Please type your password.";
             this.tbpassword.TextChanged += new System.EventHandler(this.tbpassword_TextChanged);
             // 
             // pictureBox4
@@ -270,6 +277,7 @@
             this.Font = new System.Drawing.Font("Microsoft JhengHei Light", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(67)))), ((int)(((byte)(38)))), ((int)(((byte)(88)))));
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.Name = "LogInForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;

@@ -17,7 +17,6 @@ namespace RenCloud
 
         //Variables&Objects
         private bool isActive = false;
-        private int isValid = 0;
         private PictureBox[] pictureBoxes;
         private Corners applyCorners;
         private GifAnimation gifAnimation;
@@ -45,7 +44,7 @@ namespace RenCloud
         {
             InitializeComponent();
             //ENABLE DOUBLE BUFFER//
-            this.DoubleBuffered = false;
+            this.DoubleBuffered = true;
             //GIF ANIMATION INIT//
             gifAnimation = new GifAnimation(pictureBox12);
             gifAnimation.InitializeGifAnimation(Properties.Resources.NetworkconnectionBackgroundHDDarkGeometricAbstractBackdrop_ezgif_com_speed);
@@ -67,6 +66,11 @@ namespace RenCloud
             tbpassword.Leave += tbpassword_Leave;
             tbpasswordcon.Enter += tbpasswordcon_Enter;
             tbpasswordcon.Leave += tbpasswordcon_Leave;
+            tbemail.KeyDown += tbemail_KeyDown;
+            tbemailcon.KeyDown += tbemailcon_KeyDown;
+            tbusername.KeyDown += tbusername_KeyDown;
+            tbpassword.KeyDown += tbpassword_KeyDown;
+            tbpasswordcon.KeyDown += tbpasswordcon_KeyDown;
             //REGISTER OBJECT//
             placeholder = new Placeholder();
             emailValidator = new EmailValidator();
@@ -130,8 +134,17 @@ namespace RenCloud
                 pictureBox3.Image = Properties.Resources.Cancel;
                 pictureBox3.Tag = "Invalid";
             }
+            if (tbemail.Text == tbemailcon.Text)
+            {
+                pictureBox4.Image = Properties.Resources.Check_Mark;
+                pictureBox4.Tag = "Valid";
+            }
+            else
+            {
+                pictureBox4.Image = Properties.Resources.Cancel;
+                pictureBox4.Tag = "Invalid";
+            }
             button2.Enabled = registrationValid.IsValidRegistration(pictureBoxes);
-            button2.Enabled = true;
         }
         private void tbemailcon_TextChanged(object sender, EventArgs e)
         {
@@ -244,6 +257,49 @@ namespace RenCloud
                 pictureBox10.Tag = "Invalid";
             }
             button2.Enabled = registrationValid.IsValidRegistration(pictureBoxes);
+        }
+
+        private void tbemail_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
+            {
+                button2.PerformClick();
+                e.SuppressKeyPress = true;
+            }
+        }
+
+        private void tbemailcon_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
+            {
+                button2.PerformClick();
+                e.SuppressKeyPress = true;
+            }
+        }
+        private void tbpasswordcon_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
+            {
+                button2.PerformClick();
+                e.SuppressKeyPress = true;
+            }
+        }
+
+        private void tbusername_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
+            {
+                button2.PerformClick();
+                e.SuppressKeyPress = true;
+            }
+        }
+        private void tbpassword_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
+            {
+                button2.PerformClick();
+                e.SuppressKeyPress = true;
+            }
         }
 
         private void button2_Click(object sender, EventArgs e)
