@@ -76,6 +76,12 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="UserInterfaceForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UserInterfaceForm.Designer.cs">
+      <DependentUpon>UserInterfaceForm.cs</DependentUpon>
+    </Compile>
     <EmbeddedResource Include="LogInForm.resx">
       <DependentUpon>LogInForm.cs</DependentUpon>
     </EmbeddedResource>
@@ -97,6 +103,9 @@
     </Compile>
     <EmbeddedResource Include="RegisterForm.resx">
       <DependentUpon>RegisterForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UserInterfaceForm.resx">
+      <DependentUpon>UserInterfaceForm.cs</DependentUpon>
     </EmbeddedResource>
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -163,6 +172,15 @@
     <None Include="Resources\Check Mark.png" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Resources\NoBG %282%29.png" />
+    <None Include="Resources\NoBG.png" />
+    <None Include="Resources\0924.png" />
+    <None Include="Resources\output-onlinegiftools-ezgif.com-reverse1.gif" />
+    <None Include="Resources\output-onlinegiftools-ezgif.com-reverse.gif" />
+    <None Include="Media\Box.png" />
+    <None Include="Media\Box2.png" />
+    <None Include="Media\Dashboard.png" />
+    <None Include="Media\DashboardV2.png" />
     <Content Include="RenCloud.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
