@@ -5,11 +5,17 @@ using System.Drawing;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.TrayNotify;
 using System.IO;
 using static RenCloud.Program;
+using System.Runtime.CompilerServices;
 
 namespace RenCloud
 {
     public partial class LogInForm : Form
     {
+        //Properties
+        public TextBox UsernameTextBox
+        {
+            get { return tbusername; }
+        }
 
         //Variables&Objects
         private bool isActive = false;
