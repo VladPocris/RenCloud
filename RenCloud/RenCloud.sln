@@ -5,6 +5,8 @@ VisualStudioVersion = 17.11.35312.102
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RenCloud", "RenCloud.csproj", "{79D353A7-9A80-4C28-84A9-1D66B8E93348}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestRenCloud", "..\TestRenCloud\TestRenCloud.csproj", "{50A03281-BD33-4AF7-8A1B-46B1CDFD4B39}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{79D353A7-9A80-4C28-84A9-1D66B8E93348}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{79D353A7-9A80-4C28-84A9-1D66B8E93348}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{79D353A7-9A80-4C28-84A9-1D66B8E93348}.Release|Any CPU.Build.0 = Release|Any CPU
+		{50A03281-BD33-4AF7-8A1B-46B1CDFD4B39}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{50A03281-BD33-4AF7-8A1B-46B1CDFD4B39}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{50A03281-BD33-4AF7-8A1B-46B1CDFD4B39}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{50A03281-BD33-4AF7-8A1B-46B1CDFD4B39}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

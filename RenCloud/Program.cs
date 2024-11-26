@@ -5,11 +5,15 @@ using System.Drawing;
 using System.Linq;
 using System.Net.Mail;
 using System.Reflection.Emit;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Xml.Linq;
+
+//Make it visible to UnitTest without affecting it's accessibility.
+[assembly: InternalsVisibleTo("TestRenCloud")]
 
 namespace RenCloud
 { 
