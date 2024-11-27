@@ -206,7 +206,7 @@ namespace RenCloud
 
         private void tbusername_TextChanged(object sender, EventArgs e)
         {
-            if (usernameValidator.IsValidInput(tbusername.Text))
+            if (usernameValidator.IsValidUsername(tbusername.Text))
             {
                 pictureBox6.Image = Properties.Resources.Check_Mark;
                 pictureBox6.Tag = "Valid";
