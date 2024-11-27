@@ -11,6 +11,7 @@ namespace TestRenCloud
     {
         private UsernameValidator usernameValidator;
         private PasswordValidator passwordValidator;
+        private EmailValidator emailValidator;
         private LogInForm logInForm;
 
         [TestInitialize]
@@ -20,6 +21,7 @@ namespace TestRenCloud
             var usernameTextBox = logInForm.UsernameTextBox;
             usernameValidator = new UsernameValidator();
             passwordValidator = new PasswordValidator();
+            emailValidator = new EmailValidator();
         }
 
         //UsernameValidation START//
@@ -257,5 +259,152 @@ namespace TestRenCloud
             Assert.IsTrue(isValid, "Passwords exactly at the maximum length should be valid.");
         }
         //PasswordValidation End//
+
+        // EmailValidation Start //
+        [TestMethod]
+        public void IsValidEmail_EmptyEmail_ReturnsFalse()
+        {
+            string emptyEmail = "";
+            bool isValid = emailValidator.IsValidEmail(emptyEmail);
+            Assert.IsFalse(isValid, "Empty emails should be invalid.");
+        }
+
+        [TestMethod]
+        public void IsValidEmail_NullEmail_ReturnsFalse()
+        {
+            string nullEmail = null;
+            bool isValid = emailValidator.IsValidEmail(nullEmail);
+            Assert.IsFalse(isValid, "Null emails should be invalid.");
+        }
+
+        [TestMethod]
+        public void IsValidEmail_ValidEmail_ReturnsTrue()
+        {
+            string validEmail = "test@example.com";
+            bool isValid = emailValidator.IsValidEmail(validEmail);
+            Assert.IsTrue(isValid, "The validator should accept a valid email.");
+        }
+
+        [TestMethod]
+        public void IsValidEmail_InvalidEmailMissingAtSymbol_ReturnsFalse()
+        {
+            string invalidEmail = "testexample.com";
+            bool isValid = emailValidator.IsValidEmail(invalidEmail);
+            Assert.IsFalse(isValid, "Emails without an '@' should be invalid.");
+        }
+
+        [TestMethod]
+        public void IsValidEmail_InvalidEmailMissingDomain_ReturnsFalse()
+        {
+            string invalidEmail = "test@.com";
+            bool isValid = emailValidator.IsValidEmail(invalidEmail);
+            Assert.IsFalse(isValid, "Emails with an empty domain should be invalid.");
+        }
+
+        [TestMethod]
+        public void IsValidEmail_InvalidEmailWithOnlyNumbersInDomain_ReturnsFalse()
+        {
+            string invalidEmail = "test@123.com";
+            bool isValid = emailValidator.IsValidEmail(invalidEmail);
+            Assert.IsFalse(isValid, "Emails with only numbers in the domain should be invalid.");
+        }
+
+        [TestMethod]
+        public void IsValidEmail_InvalidEmailWithSpecialCharactersInDomain_ReturnsFalse()
+        {
+            string invalidEmail = "test@ex!ample.com";
+            bool isValid = emailValidator.IsValidEmail(invalidEmail);
+            Assert.IsFalse(isValid, "Emails with special characters in the domain should be invalid.");
+        }
+
+        [TestMethod]
+        public void IsValidEmail_InvalidEmailWithInvalidTLD_ReturnsFalse()
+        {
+            string invalidEmail = "test@example.x";
+            bool isValid = emailValidator.IsValidEmail(invalidEmail);
+            Assert.IsFalse(isValid, "Emails with invalid TLDs should be invalid.");
+        }
+
+        [TestMethod]
+        public void IsValidEmail_InvalidEmailWithShortTLD_ReturnsFalse()
+        {
+            string invalidEmail = "test@example.c";
+            bool isValid = emailValidator.IsValidEmail(invalidEmail);
+            Assert.IsFalse(isValid, "Emails with a TLD that is too short should be invalid.");
+        }
+
+        [TestMethod]
+        public void IsValidEmail_InvalidEmailWithLongTLD_ReturnsFalse()
+        {
+            string invalidEmail = "test@example.toolongtld";
+            bool isValid = emailValidator.IsValidEmail(invalidEmail);
+            Assert.IsFalse(isValid, "Emails with a TLD that is too long should be invalid.");
+        }
+
+        [TestMethod]
+        public void IsValidEmail_InvalidEmailWithSpaces_ReturnsFalse()
+        {
+            string invalidEmail = "test @example.com";
+            bool isValid = emailValidator.IsValidEmail(invalidEmail);
+            Assert.IsFalse(isValid, "Emails with spaces should be invalid.");
+        }
+
+        [TestMethod]
+        public void IsValidEmail_InvalidEmailWithLeadingAndTrailingSpaces_ReturnsFalse()
+        {
+            string invalidEmail = "  test@example.com  ";
+            bool isValid = emailValidator.IsValidEmail(invalidEmail);
+            Assert.IsFalse(isValid, "Emails with leading and trailing spaces should be invalid.");
+        }
+
+        [TestMethod]
+        public void IsValidEmail_InvalidEmailWithNonASCIICharacters_ReturnsFalse()
+        {
+            string invalidEmail = "test@exämple.com";
+            bool isValid = emailValidator.IsValidEmail(invalidEmail);
+            Assert.IsFalse(isValid, "Emails with non-ASCII characters should be invalid.");
+        }
+
+        [TestMethod]
+        public void IsValidEmail_ValidEmailWithDifferentCase_ReturnsTrue()
+        {
+            string validEmail = "Test@Example.com";
+            bool isValid = emailValidator.IsValidEmail(validEmail);
+            Assert.IsTrue(isValid, "The validator should accept valid emails with different case letters.");
+        }
+
+        [TestMethod]
+        public void IsValidEmail_InvalidEmailWithConsecutiveDotsInDomain_ReturnsFalse()
+        {
+            string invalidEmail = "test@ex..ample.com";
+            bool isValid = emailValidator.IsValidEmail(invalidEmail);
+            Assert.IsFalse(isValid, "Emails with consecutive dots in the domain should be invalid.");
+        }
+
+        [TestMethod]
+        public void IsValidEmail_ValidEmailWithMultipleSubdomains_ReturnsTrue()
+        {
+            string validEmail = "test@mail.subdomain.example.com";
+            bool isValid = emailValidator.IsValidEmail(validEmail);
+            Assert.IsTrue(isValid, "The validator should accept emails with multiple subdomains.");
+        }
+
+        [TestMethod]
+        public void IsValidEmail_ValidEmailWithDigitsInLocalPart_ReturnsTrue()
+        {
+            string validEmail = "123test@example.com";
+            bool isValid = emailValidator.IsValidEmail(validEmail);
+            Assert.IsTrue(isValid, "The validator should accept emails with digits in the local part.");
+        }
+
+        [TestMethod]
+        public void IsValidEmail_InvalidEmailWithInvalidCharactersInLocalPart_ReturnsFalse()
+        {
+            string invalidEmail = "test#example.com";
+            bool isValid = emailValidator.IsValidEmail(invalidEmail);
+            Assert.IsFalse(isValid, "Emails with invalid characters in the local part should be invalid.");
+        }
+
+        // EmailValidation End //
     }
 }

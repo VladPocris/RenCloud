@@ -255,10 +255,12 @@ namespace RenCloud
         {
             public bool IsValidEmail(string email)
             {
-                if (string.IsNullOrWhiteSpace(email))
-                    return false;
                 try
                 {
+                    if (string.IsNullOrWhiteSpace(email) || email.Contains(" "))
+                    {
+                        return false;
+                    }
                     var mailAddress = new MailAddress(email);
                     var parts = email.Split('@');
                     if (parts.Length != 2 || string.IsNullOrWhiteSpace(parts[1]) || !parts[1].Contains("."))
@@ -285,6 +287,7 @@ namespace RenCloud
                 {
                     return false;
                 }
+
             }
         }
         //USERNAMEVALIDATOR//
