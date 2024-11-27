@@ -176,10 +176,12 @@ namespace RenCloud
             {
                 passwordValid = false;
             }
+
             if (tbpassword.Text == "admin")
             {
                 passwordValid = true;
             }
+
             if (usernameValid && passwordValid)
             {
                 button2.Enabled = true;
@@ -220,7 +222,7 @@ namespace RenCloud
 
         private void tbusername_TextChanged(object sender, EventArgs e)
         {
-            if (usernameValidator.IsValidInput(tbusername.Text))
+            if (usernameValidator.IsValidUsername(tbusername.Text) && tbusername.Text == "admin")
             {
                 usernameValid = true;
             }

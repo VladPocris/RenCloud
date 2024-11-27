@@ -290,10 +290,10 @@ namespace RenCloud
         //USERNAMEVALIDATOR//
         public class UsernameValidator
         {
-            public bool IsValidInput(string input)
+            public bool IsValidUsername(string input)
             {
                 string pattern = "^[a-zA-Z0-9]*$";
-                if(!Regex.IsMatch(input, pattern) || string.IsNullOrWhiteSpace(input) || input.Length < 4)
+                if(!Regex.IsMatch(input, pattern) || string.IsNullOrWhiteSpace(input) || input.Length < 4 || input.Length > 16)
                 {
                     return false;
                 }
@@ -314,6 +314,17 @@ namespace RenCloud
                     return false;
                 if (!Regex.IsMatch(password, "[0-9]"))
                     return false;
+                if (password.Length > 32)
+                    return false;
+                if (password.Contains(" "))
+                    return false;
+                if (!Regex.IsMatch(password, "[!@#$%^&*(),.?\":{}|<>]"))
+                    return false;
+                foreach (char c in password)
+                {
+                    if (c > 127)
+                        return false;
+                }
                 return true;
             }
         }
