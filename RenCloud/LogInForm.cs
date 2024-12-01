@@ -11,10 +11,20 @@ namespace RenCloud
 {
     public partial class LogInForm : Form
     {
-        //Properties
+        //PropertiesTESTCASES
         public TextBox UsernameTextBox
         {
             get { return tbusername; }
+        }
+
+        public TextBox PasswordTextBox
+        {
+            get { return tbpassword; }
+        }
+
+        public Button LoginButton
+        {
+            get { return button2; }
         }
 
         //Variables&Objects
@@ -222,7 +232,7 @@ namespace RenCloud
 
         private void tbusername_TextChanged(object sender, EventArgs e)
         {
-            if (usernameValidator.IsValidUsername(tbusername.Text) && tbusername.Text == "admin")
+            if (usernameValidator.IsValidUsername(tbusername.Text) || tbusername.Text == "admin")
             {
                 usernameValid = true;
             }

@@ -7,18 +7,15 @@ using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
 namespace TestRenCloud
 {
     [TestClass]
-    public class ProgramTest
+    public class InputsValidation
     {
         private UsernameValidator usernameValidator;
         private PasswordValidator passwordValidator;
         private EmailValidator emailValidator;
-        private LogInForm logInForm;
 
         [TestInitialize]
         public void Setup()
         {
-            logInForm = new LogInForm();
-            var usernameTextBox = logInForm.UsernameTextBox;
             usernameValidator = new UsernameValidator();
             passwordValidator = new PasswordValidator();
             emailValidator = new EmailValidator();
