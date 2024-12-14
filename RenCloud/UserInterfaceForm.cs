@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -22,9 +23,14 @@ namespace RenCloud
         private bool isActive = false;
         private Corners applyCorners;
         private DragFunctionality dragFunctionality;
-        string ffmpegPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "lib", "ffmpeg", "bin", "ffmpeg.exe");
-        string tempDir = Path.Combine(Path.GetTempPath(), "VideoThumbnails");
-        int newXPosition = 0;
+        private string ffmpegPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "lib", "ffmpeg", "bin", "ffmpeg.exe");
+        private string tempDir = Path.Combine(Path.GetTempPath(), "VideoThumbnails");
+        private int newXPosition = 0;
+        private int widthVideo = 0;
+        int intervalInPixels = 0;
+        private readonly List<(Image thumbnail, int position)> allThumbnailsWithPositions = new List<(Image, int)>();
+        private List<Rectangle> allVideoBounds = new List<Rectangle>();
+        private Rectangle selectedVideoBounds = Rectangle.Empty;
 
         // Event handler for scroll to force full invalidation
         private void OnScroll(object sender, ScrollEventArgs e)
@@ -68,6 +74,16 @@ namespace RenCloud
             }
         }
 
+        // Utility method to enable double buffering
+        private void SetDoubleBuffered(Control control)
+        {
+            if (SystemInformation.TerminalServerSession)
+                return;
+
+            typeof(Control).InvokeMember("DoubleBuffered",
+                BindingFlags.SetProperty | BindingFlags.Instance | BindingFlags.NonPublic,
+                null, control, new object[] { true });
+        }
 
         //ROUNDCORNERS LOGIC//
         protected override void OnActivated(EventArgs e)
@@ -89,6 +105,13 @@ namespace RenCloud
             applyCorners = new Corners();
             //APPLY DRAGGING FUNCTIONALITY//
             dragFunctionality = new DragFunctionality();
+            // Enable Double Buffering
+            SetDoubleBuffered(EditingRuller);
+            SetDoubleBuffered(VideoTrackPlaceholder);
+            SetDoubleBuffered(AudioTrackPlaceholder);
+            SetDoubleBuffered(VideoTrack);
+            SetDoubleBuffered(AudioTrack);
+            SetDoubleBuffered(panel8);
             this.DoubleBuffered = true;
         }
 
@@ -138,7 +161,7 @@ namespace RenCloud
             int secondsInterval = 1;
             int pixelsPerSecond = 50;
 
-            g.Clear(Color.Gray); // Clear the background once
+            g.Clear(Color.Gray);
 
             using (Pen majorTickPen = new Pen(Color.Black))
             using (Pen minorTickPen = new Pen(Color.Black))
@@ -146,14 +169,14 @@ namespace RenCloud
             {
                 for (int x = 0; x < panelWidth; x += pixelsPerSecond)
                 {
-                    g.DrawLine(majorTickPen, x, 0, x, tickHeightMajor); // Major ticks
+                    g.DrawLine(majorTickPen, x, 0, x, tickHeightMajor);
                     int seconds = x / pixelsPerSecond;
-                    g.DrawString(seconds.ToString(), this.Font, textBrush, x + 2, tickHeightMajor); // Labels
+                    g.DrawString(seconds.ToString(), this.Font, textBrush, x + 2, tickHeightMajor);
 
                     for (int i = 1; i < 5; i++)
                     {
                         int minorX = x + (i * pixelsPerSecond / 5);
-                        g.DrawLine(minorTickPen, minorX, 0, minorX, tickHeightMinor); // Minor ticks
+                        g.DrawLine(minorTickPen, minorX, 0, minorX, tickHeightMinor);
                     }
                 }
             }
@@ -203,7 +226,7 @@ namespace RenCloud
             int barWidth = 5;
             int barSpacing = 3;
             int maxBarHeight = 15;
-            Random rand = new Random(); // Create only once
+            Random rand = new Random();
 
             int panelWidth = AudioTrackPlaceholder.Width;
             int panelHeight = AudioTrackPlaceholder.Height;
@@ -261,6 +284,7 @@ namespace RenCloud
             int pixelsPerSecond = 50;
             int newWidth = videoDuration * pixelsPerSecond;
 
+            widthVideo += newWidth;
             EditingRuller.Width += newWidth;
             VideoTrack.Width += newWidth;
             AudioTrack.Width += newWidth;
@@ -276,32 +300,72 @@ namespace RenCloud
             List<Image> videoThumbnails = ExtractVideoThumbnails(filePath);
             int thumbnailCount = videoThumbnails.Count;
 
-            if (thumbnailCount == 0)
-            {
-                return;
-            }
-            int intervalInPixels = (int)(4.0 * pixelsPerSecond);
+            if (thumbnailCount == 0) return;
 
-            List<(Image thumbnail, int position)> videoThumbnailsWithPositions = new List<(Image, int)>(thumbnailCount);
+            intervalInPixels = (int)(4.0 * pixelsPerSecond);
+            int startPosition = widthVideo - newWidth;
+
+            int thumbnailWidth = 100;
+            int thumbnailHeight = VideoTrack.Height - 20;
+
             for (int i = 0; i < thumbnailCount; i++)
             {
-                int position = intervalInPixels * (i + 1);
-                videoThumbnailsWithPositions.Add((videoThumbnails[i], position));
-            }
-            VideoTrack.Paint += (sender, e) =>
-            {
-                Graphics g = e.Graphics;
-                g.Clear(Color.Gray);
+                int position = startPosition + intervalInPixels * (i + 1);
+                if (position + thumbnailWidth > startPosition + newWidth)
+                    break;
 
-                foreach (var (thumbnail, position) in videoThumbnailsWithPositions)
-                {
-                    g.DrawImage(thumbnail, position, 0, 100, VideoTrack.Height);
-                }
-            };
+                allThumbnailsWithPositions.Add((videoThumbnails[i], position));
+            }
+            allVideoBounds.Add(new Rectangle(startPosition, 0, newWidth, VideoTrack.Height - 2));
+            VideoTrack.Paint -= VideoTrack_PaintHandler;
+            VideoTrack.Paint += VideoTrack_PaintHandler;
+            VideoTrack.MouseDown -= VideoTrack_MouseDownHandler;
+            VideoTrack.MouseDown += VideoTrack_MouseDownHandler;
 
             VideoTrack.Invalidate();
         }
 
+        private void VideoTrack_PaintHandler(object sender, PaintEventArgs e)
+        {
+            Graphics g = e.Graphics;
+            using (Brush videoBrush = new SolidBrush(Color.Gray))
+            {
+                foreach (var bounds in allVideoBounds)
+                {
+                    g.FillRectangle(videoBrush, bounds);
+                }
+            }
+            using (var borderPen = new Pen(Color.Green, 2))
+            using (var selectedPen = new Pen(Color.Red, 3))
+            {
+                foreach (var bounds in allVideoBounds)
+                {
+                    g.DrawRectangle(bounds == selectedVideoBounds ? selectedPen : borderPen, bounds);
+                }
+            }
+            foreach (var (thumbnail, position) in allThumbnailsWithPositions)
+            {
+                int thumbnailHeight = VideoTrack.Height - 20;
+                int thumbnailY = 10;
+
+                g.DrawImage(thumbnail, position, thumbnailY, 100, thumbnailHeight);
+            }
+        }
+
+        private void VideoTrack_MouseDownHandler(object sender, MouseEventArgs e)
+        {
+            selectedVideoBounds = Rectangle.Empty;
+            foreach (var bounds in allVideoBounds)
+            {
+                if (bounds.Contains(e.Location))
+                {
+                    selectedVideoBounds = bounds;
+                    break;
+                }
+            }
+
+            VideoTrack.Invalidate();
+        }
         private double GetVideoDuration(string videoFilePath, string ffmpegPath)
         {
             string ffmpegCommand = $"-i \"{videoFilePath}\"";
