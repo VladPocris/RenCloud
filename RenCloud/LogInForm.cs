@@ -117,15 +117,14 @@ namespace RenCloud
 
             if (!loginSuccess)
             {
-                tbusername.Clear();
                 tbpassword.Clear();
-                tbusername.Focus();
+                tbpassword.Focus();
             }
             else
             {
                 this.Hide();
                 FormManager.LoadFormInstance.ShowDialog();
-                FormManager.LogInFormInstance.Show();
+                FormManager.UserInterfaceFormInstance.Show();
             }
         }
 

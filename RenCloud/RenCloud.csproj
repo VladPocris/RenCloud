@@ -184,14 +184,6 @@
     <Content Include="RenCloud.ico" />
   </ItemGroup>
   <ItemGroup>
-    <COMReference Include="AxTimelineAxLib">
-      <Guid>{241E5FA2-B02A-4DFB-A124-02E1EE45A517}</Guid>
-      <VersionMajor>1</VersionMajor>
-      <VersionMinor>0</VersionMinor>
-      <Lcid>0</Lcid>
-      <WrapperTool>aximp</WrapperTool>
-      <Isolated>False</Isolated>
-    </COMReference>
     <COMReference Include="MSVidCtlLib">
       <Guid>{B0EDF154-910A-11D2-B632-00C04F79498E}</Guid>
       <VersionMajor>1</VersionMajor>

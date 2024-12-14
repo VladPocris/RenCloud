@@ -264,11 +264,11 @@
             // 
             // button3
             // 
-            this.button3.Location = new System.Drawing.Point(590, 131);
+            this.button3.Location = new System.Drawing.Point(445, 354);
             this.button3.Name = "button3";
-            this.button3.Size = new System.Drawing.Size(75, 36);
+            this.button3.Size = new System.Drawing.Size(232, 36);
             this.button3.TabIndex = 6;
-            this.button3.Text = "button3";
+            this.button3.Text = "Skip Login Process";
             this.button3.UseVisualStyleBackColor = true;
             this.button3.Click += new System.EventHandler(this.button3_Click);
             // 
