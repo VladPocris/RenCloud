@@ -7,6 +7,7 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Reflection.Emit;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -23,6 +24,50 @@ namespace RenCloud
         private DragFunctionality dragFunctionality;
         string ffmpegPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "lib", "ffmpeg", "bin", "ffmpeg.exe");
         string tempDir = Path.Combine(Path.GetTempPath(), "VideoThumbnails");
+        int newXPosition = 0;
+
+        // Event handler for scroll to force full invalidation
+        private void OnScroll(object sender, ScrollEventArgs e)
+        {
+            EditingRuller.Invalidate();
+            VideoTrackPlaceholder.Invalidate();
+            AudioTrackPlaceholder.Invalidate();
+        }
+
+        // LockWindowUpdate to prevent flickering during scroll
+        private void OnScrollWithLock(object sender, ScrollEventArgs e)
+        {
+            if (e.Type == ScrollEventType.First)
+            {
+                LockWindowUpdate(this.Handle);
+            }
+            else
+            {
+                LockWindowUpdate(IntPtr.Zero);
+                EditingRuller.Update();
+                VideoTrackPlaceholder.Update();
+                AudioTrackPlaceholder.Update();
+                if (e.Type != ScrollEventType.Last)
+                    LockWindowUpdate(this.Handle);
+            }
+        }
+
+        // Pinvoke LockWindowUpdate method
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern bool LockWindowUpdate(IntPtr hWnd);
+
+        // Enable compositing for smooth rendering
+        protected override CreateParams CreateParams
+        {
+            get
+            {
+                const int WS_EX_COMPOSITED = 0x02000000;
+                var cp = base.CreateParams;
+                cp.ExStyle |= WS_EX_COMPOSITED;
+                return cp;
+            }
+        }
+
 
         //ROUNDCORNERS LOGIC//
         protected override void OnActivated(EventArgs e)
@@ -44,18 +89,7 @@ namespace RenCloud
             applyCorners = new Corners();
             //APPLY DRAGGING FUNCTIONALITY//
             dragFunctionality = new DragFunctionality();
-            AudioTrack.Scroll += (sender, e) =>
-            {
-                // Get the current scroll position of the AudioTrack
-                int newPosition = AudioTrack.HorizontalScroll.Value;
-
-                // Ensure the newPosition is within the valid range
-                newPosition = Math.Max(AudioTrack.HorizontalScroll.Minimum, Math.Min(newPosition, AudioTrack.HorizontalScroll.Maximum));
-
-                // Set the new position for VideoTrack and EditingRuller, ensuring the values are within valid range
-                VideoTrack.HorizontalScroll.Value = Math.Max(VideoTrack.HorizontalScroll.Minimum, Math.Min(newPosition, VideoTrack.HorizontalScroll.Maximum));
-                EditingRuller.HorizontalScroll.Value = Math.Max(EditingRuller.HorizontalScroll.Minimum, Math.Min(newPosition, EditingRuller.HorizontalScroll.Maximum));
-            };
+            this.DoubleBuffered = true;
         }
 
         private void UserInterfaceForm_Load(object sender, EventArgs e)
@@ -66,6 +100,8 @@ namespace RenCloud
             dragFunctionality.AttachDraggingEvent(panel3, this);
             dragFunctionality.AttachDraggingEvent(pictureBox1, this);
             EditingRuller.Paint += EditingRuller_Paint;
+            VideoTrackPlaceholder.Paint += VideoTrackPlaceholder_Paint_1;
+            AudioTrackPlaceholder.Paint += AudioTrackPlaceholder_Paint;
         }
 
         private void button2_Click(object sender, EventArgs e)
@@ -95,97 +131,99 @@ namespace RenCloud
 
         private void EditingRuller_Paint(object sender, PaintEventArgs e)
         {
-            // Graphics object to draw on the panel (Ruller)
             Graphics g = e.Graphics;
             int panelWidth = EditingRuller.Width;
             float tickHeightMajor = 6;
             float tickHeightMinor = 3;
             int secondsInterval = 1;
             int pixelsPerSecond = 50;
-            g.Clear(Color.Gray);
 
-            for (int x = 0; x < panelWidth; x += pixelsPerSecond)
+            g.Clear(Color.Gray); // Clear the background once
+
+            using (Pen majorTickPen = new Pen(Color.Black))
+            using (Pen minorTickPen = new Pen(Color.Black))
+            using (Brush textBrush = new SolidBrush(Color.White))
             {
-                g.DrawLine(Pens.Black, x, 0, x, tickHeightMajor);
-                int seconds = x / pixelsPerSecond;
-                g.DrawString(seconds.ToString(), this.Font, Brushes.White, x + 2, tickHeightMajor);
-                for (int i = 1; i < 5; i++)
+                for (int x = 0; x < panelWidth; x += pixelsPerSecond)
                 {
-                    int minorX = x + (i * pixelsPerSecond / 5);
-                    g.DrawLine(Pens.Black, minorX, 0, minorX, tickHeightMinor);
+                    g.DrawLine(majorTickPen, x, 0, x, tickHeightMajor); // Major ticks
+                    int seconds = x / pixelsPerSecond;
+                    g.DrawString(seconds.ToString(), this.Font, textBrush, x + 2, tickHeightMajor); // Labels
+
+                    for (int i = 1; i < 5; i++)
+                    {
+                        int minorX = x + (i * pixelsPerSecond / 5);
+                        g.DrawLine(minorTickPen, minorX, 0, minorX, tickHeightMinor); // Minor ticks
+                    }
                 }
             }
         }
 
-        private void panel14_Paint(object sender, PaintEventArgs e)
+        private void VideoTrackPlaceholder_Paint_1(object sender, PaintEventArgs e)
         {
             Graphics g = e.Graphics;
             g.Clear(Color.Gray);
+
             int stripHeight = 30;
             int spacing = 20;
             int frameWidth = 20;
             int frameHeight = 20;
             int frameSpacing = 5;
-            int panelWidth = VideoPlaceholder.Width;
-            int panelHeight = VideoPlaceholder.Height;
-            for (int y = 0; y < panelHeight; y += stripHeight + spacing)
+            int panelWidth = VideoTrackPlaceholder.Width;
+            int panelHeight = VideoTrackPlaceholder.Height;
+
+            using (Brush stripBrush = new SolidBrush(Color.FromArgb(50, 50, 50)))
+            using (Brush frameBrush = new SolidBrush(Color.LightGreen))
+            using (Pen framePen = new Pen(Color.Black, 1))
+            using (Pen outlinePen = new Pen(Color.DarkGray, 1))
             {
-                Rectangle stripRect = new Rectangle(0, y, panelWidth, stripHeight);
-                using (Brush stripBrush = new SolidBrush(Color.FromArgb(50, 50, 50)))
+                for (int y = 0; y < panelHeight; y += stripHeight + spacing)
                 {
+                    Rectangle stripRect = new Rectangle(0, y, panelWidth, stripHeight);
                     g.FillRectangle(stripBrush, stripRect);
-                }
-                for (int x = 0; x < panelWidth; x += frameWidth + frameSpacing)
-                {
-                    Color frameColor = Color.LightGreen;
-                    Rectangle frameRect = new Rectangle(x, y + (stripHeight - frameHeight) / 2, frameWidth, frameHeight);
-                    using (Brush frameBrush = new SolidBrush(frameColor))
+
+                    for (int x = 0; x < panelWidth; x += frameWidth + frameSpacing)
                     {
+                        Rectangle frameRect = new Rectangle(x, y + (stripHeight - frameHeight) / 2, frameWidth, frameHeight);
                         g.FillRectangle(frameBrush, frameRect);
-                    }
-                    using (Pen framePen = new Pen(Color.Black, 1))
-                    {
                         g.DrawRectangle(framePen, frameRect);
                     }
-                }
-                using (Pen outlinePen = new Pen(Color.DarkGray, 1))
-                {
                     g.DrawRectangle(outlinePen, stripRect);
                 }
             }
         }
 
-        private void panel15_Paint(object sender, PaintEventArgs e)
+        private void AudioTrackPlaceholder_Paint(object sender, PaintEventArgs e)
         {
             Graphics g = e.Graphics;
             g.Clear(Color.Gray);
+
             int tapeWidth = 30;
             int spacing = 20;
             int barWidth = 5;
             int barSpacing = 3;
             int maxBarHeight = 15;
-            Random rand = new Random();
-            int panelWidth = AudioPlaceholder.Width;
-            int panelHeight = AudioPlaceholder.Height;
-            for (int y = 0; y < panelHeight; y += tapeWidth + spacing)
+            Random rand = new Random(); // Create only once
+
+            int panelWidth = AudioTrackPlaceholder.Width;
+            int panelHeight = AudioTrackPlaceholder.Height;
+
+            using (Brush tapeBrush = new SolidBrush(Color.FromArgb(50, 50, 50)))
+            using (Brush barBrush = new SolidBrush(Color.LightGreen))
+            using (Pen outlinePen = new Pen(Color.DarkGray, 1))
             {
-                Rectangle tapeRect = new Rectangle(0, y, panelWidth, tapeWidth);
-                using (Brush tapeBrush = new SolidBrush(Color.FromArgb(50, 50, 50)))
+                for (int y = 0; y < panelHeight; y += tapeWidth + spacing)
                 {
+                    Rectangle tapeRect = new Rectangle(0, y, panelWidth, tapeWidth);
                     g.FillRectangle(tapeBrush, tapeRect);
-                }
-                for (int x = 0; x < panelWidth; x += barWidth + barSpacing)
-                {
-                    int barHeight = rand.Next(5, maxBarHeight);
-                    int barY = y + (tapeWidth / 2) - (barHeight / 2);
-                    Rectangle barRect = new Rectangle(x, barY, barWidth, barHeight);
-                    using (Brush barBrush = new SolidBrush(Color.LightGreen))
+
+                    for (int x = 0; x < panelWidth; x += barWidth + barSpacing)
                     {
+                        int barHeight = rand.Next(5, maxBarHeight);
+                        int barY = y + (tapeWidth / 2) - (barHeight / 2);
+                        Rectangle barRect = new Rectangle(x, barY, barWidth, barHeight);
                         g.FillRectangle(barBrush, barRect);
                     }
-                }
-                using (Pen outlinePen = new Pen(Color.DarkGray, 1))
-                {
                     g.DrawRectangle(outlinePen, tapeRect);
                 }
             }
@@ -219,57 +257,49 @@ namespace RenCloud
 
         private void AddVideoToTimeline(string filePath)
         {
+            int videoDuration = (int)GetVideoDuration(filePath, ffmpegPath);
+            int pixelsPerSecond = 50;
+            int newWidth = videoDuration * pixelsPerSecond;
 
-            EditingRuller.Paint += (sender, e) =>
-            {
-                EditingRuller.Width = (int)GetVideoDuration(filePath, ffmpegPath);
-            };
+            EditingRuller.Width += newWidth;
+            VideoTrack.Width += newWidth;
+            AudioTrack.Width += newWidth;
+
+            newXPosition += newWidth;
+            VideoTrackPlaceholder.Location = new Point(newXPosition, VideoTrackPlaceholder.Location.Y);
+            AudioTrackPlaceholder.Location = new Point(newXPosition, AudioTrackPlaceholder.Location.Y);
+
             EditingRuller.Invalidate();
+            VideoTrackPlaceholder.Invalidate();
+            AudioTrackPlaceholder.Invalidate();
 
+            List<Image> videoThumbnails = ExtractVideoThumbnails(filePath);
+            int thumbnailCount = videoThumbnails.Count;
+
+            if (thumbnailCount == 0)
+            {
+                return;
+            }
+            int intervalInPixels = (int)(4.0 * pixelsPerSecond);
+
+            List<(Image thumbnail, int position)> videoThumbnailsWithPositions = new List<(Image, int)>(thumbnailCount);
+            for (int i = 0; i < thumbnailCount; i++)
+            {
+                int position = intervalInPixels * (i + 1);
+                videoThumbnailsWithPositions.Add((videoThumbnails[i], position));
+            }
             VideoTrack.Paint += (sender, e) =>
             {
-                VideoTrack.Width = (int)GetVideoDuration(filePath, ffmpegPath);
+                Graphics g = e.Graphics;
+                g.Clear(Color.Gray);
+
+                foreach (var (thumbnail, position) in videoThumbnailsWithPositions)
+                {
+                    g.DrawImage(thumbnail, position, 0, 100, VideoTrack.Height);
+                }
             };
+
             VideoTrack.Invalidate();
-
-            AudioTrack.Paint += (sender, e) =>
-            {
-                AudioTrack.Width = (int)GetVideoDuration(filePath, ffmpegPath);
-            };
-            AudioTrack.Invalidate();
-            //panel8.Paint += (sender, e) =>
-            //{
-            //    Graphics g = e.Graphics;
-            //    g.Clear(Color.Gray);
-
-            //    int x = 0;
-            //    foreach (var thumbnail in videoThumbnails)
-            //    {
-            //        g.DrawImage(thumbnail, x, 0, 100, panel8.Height);
-            //        x += 110;
-            //    }
-            //};
-            //panel8.Invalidate();
-            //panel9.Paint += (sender, e) =>
-            //{
-            //    Graphics g = e.Graphics;
-            //    g.Clear(Color.Gray);
-
-            //    int x = 0;
-            //    foreach (var height in audioWaveform)
-            //    {
-            //        g.FillRectangle(Brushes.LightGreen, x, panel9.Height / 2 - height / 2, 2, height);
-            //        x += 4;
-            //    }
-            //};
-            //panel9.Invalidate();
-            //panel8.Width += videoThumbnails.Count * 110;
-            //panel9.Width += audioWaveform.Count * 4;
-        }
-
-        private void VideoTrack_Paint(object sender, PaintEventArgs e)
-        {
-            throw new NotImplementedException();
         }
 
         private double GetVideoDuration(string videoFilePath, string ffmpegPath)
@@ -308,54 +338,70 @@ namespace RenCloud
         public List<Image> ExtractVideoThumbnails(string videoFilePath)
         {
             Directory.CreateDirectory(tempDir);
-
             if (!File.Exists(ffmpegPath))
             {
-                throw new FileNotFoundException("FFmpeg executable not found at the specified location." + ffmpegPath);
+                throw new FileNotFoundException("FFmpeg executable not found at the specified location: " + ffmpegPath);
             }
-
             double videoDuration = GetVideoDuration(videoFilePath, ffmpegPath);
-
             if (videoDuration <= 0)
             {
                 throw new InvalidOperationException("Failed to retrieve video duration.");
             }
-            double interval = videoDuration / 10.0;
-            string filter = $"select='not(mod(t,{interval}))',scale=100:100";
-            string outputPattern = Path.Combine(tempDir, "thumbnail%03d.png");
-            string ffmpegCommand = $"-i \"{videoFilePath}\" -vf \"{filter}\" -vsync vfr \"{outputPattern}\"";
-
-            Process ffmpegProcess = new Process
-            {
-                StartInfo = new ProcessStartInfo
-                {
-                    FileName = ffmpegPath,
-                    Arguments = ffmpegCommand,
-                    CreateNoWindow = true,
-                    UseShellExecute = false
-                }
-            };
-
-            ffmpegProcess.Start();
-            ffmpegProcess.WaitForExit();
-
+            double interval = 4.0;
             List<Image> thumbnails = new List<Image>();
-            foreach (var file in Directory.GetFiles(tempDir, "thumbnail*.png"))
-            {
-                using (var tempImage = Image.FromFile(file))
-                {
-                    thumbnails.Add(new Bitmap(tempImage));
-                    Console.WriteLine("file added.");
-                }
-            }
+            int thumbnailCount = (int)(videoDuration / interval);
 
-            foreach (var file in Directory.GetFiles(tempDir))
+            Parallel.For(1, thumbnailCount + 1, i =>
             {
-                File.Delete(file);
+                double timestamp = interval * i;
+                string outputPath = Path.Combine(tempDir, $"thumbnail{i:D3}.png");
+                string ffmpegCommand = $"-i \"{videoFilePath}\" -ss {timestamp} -vframes 1 -q:v 2 \"{outputPath}\"";
+
+                try
+                {
+                    Process ffmpegProcess = new Process
+                    {
+                        StartInfo = new ProcessStartInfo
+                        {
+                            FileName = ffmpegPath,
+                            Arguments = ffmpegCommand,
+                            CreateNoWindow = true,
+                            UseShellExecute = false
+                        }
+                    };
+
+                    ffmpegProcess.Start();
+                    ffmpegProcess.WaitForExit();
+
+                    if (File.Exists(outputPath))
+                    {
+                        lock (thumbnails)
+                        {
+                            using (var tempImage = Image.FromFile(outputPath))
+                            {
+                                thumbnails.Add(new Bitmap(tempImage));
+                            }
+                        }
+                        File.Delete(outputPath);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error generating thumbnail for timestamp {timestamp}: {ex.Message}");
+                }
+            });
+
+            if (Directory.Exists(tempDir))
+            {
+                Directory.Delete(tempDir, true);
             }
-            Directory.Delete(tempDir);
 
             return thumbnails;
+        }
+
+        private void panel11_Paint(object sender, PaintEventArgs e)
+        {
+
         }
 
         //private List<int> ExtractAudioWaveform(string filePath)
