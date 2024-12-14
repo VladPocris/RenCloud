@@ -30,43 +30,41 @@
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(UserInterfaceForm));
             this.panel1 = new System.Windows.Forms.Panel();
-            this.button13 = new System.Windows.Forms.Button();
-            this.button14 = new System.Windows.Forms.Button();
-            this.button9 = new System.Windows.Forms.Button();
-            this.button5 = new System.Windows.Forms.Button();
-            this.button10 = new System.Windows.Forms.Button();
-            this.button6 = new System.Windows.Forms.Button();
-            this.button11 = new System.Windows.Forms.Button();
-            this.button7 = new System.Windows.Forms.Button();
-            this.button12 = new System.Windows.Forms.Button();
-            this.button8 = new System.Windows.Forms.Button();
-            this.button3 = new System.Windows.Forms.Button();
-            this.button4 = new System.Windows.Forms.Button();
+            this.panel4 = new System.Windows.Forms.Panel();
             this.button2 = new System.Windows.Forms.Button();
             this.button1 = new System.Windows.Forms.Button();
             this.panel3 = new System.Windows.Forms.Panel();
             this.pictureBox1 = new System.Windows.Forms.PictureBox();
             this.panel2 = new System.Windows.Forms.Panel();
+            this.button3 = new System.Windows.Forms.Button();
+            this.panel5 = new System.Windows.Forms.Panel();
+            this.panel13 = new System.Windows.Forms.Panel();
+            this.panel12 = new System.Windows.Forms.Panel();
+            this.button4 = new System.Windows.Forms.Button();
+            this.panel10 = new System.Windows.Forms.Panel();
+            this.panel6 = new System.Windows.Forms.Panel();
+            this.VideoTrack = new System.Windows.Forms.Panel();
+            this.VideoPlaceholder = new System.Windows.Forms.Panel();
+            this.AudioTrack = new System.Windows.Forms.Panel();
+            this.AudioPlaceholder = new System.Windows.Forms.Panel();
+            this.EditingRuller = new System.Windows.Forms.Panel();
+            this.panel7 = new System.Windows.Forms.Panel();
+            this.panel11 = new System.Windows.Forms.Panel();
             this.panel1.SuspendLayout();
             this.panel3.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
+            this.panel2.SuspendLayout();
+            this.panel5.SuspendLayout();
+            this.panel12.SuspendLayout();
+            this.panel6.SuspendLayout();
+            this.VideoTrack.SuspendLayout();
+            this.AudioTrack.SuspendLayout();
             this.SuspendLayout();
             // 
             // panel1
             // 
             this.panel1.BackColor = System.Drawing.Color.Navy;
-            this.panel1.Controls.Add(this.button13);
-            this.panel1.Controls.Add(this.button14);
-            this.panel1.Controls.Add(this.button9);
-            this.panel1.Controls.Add(this.button5);
-            this.panel1.Controls.Add(this.button10);
-            this.panel1.Controls.Add(this.button6);
-            this.panel1.Controls.Add(this.button11);
-            this.panel1.Controls.Add(this.button7);
-            this.panel1.Controls.Add(this.button12);
-            this.panel1.Controls.Add(this.button8);
-            this.panel1.Controls.Add(this.button3);
-            this.panel1.Controls.Add(this.button4);
+            this.panel1.Controls.Add(this.panel4);
             this.panel1.Controls.Add(this.button2);
             this.panel1.Controls.Add(this.button1);
             this.panel1.Controls.Add(this.panel3);
@@ -77,209 +75,12 @@
             this.panel1.Size = new System.Drawing.Size(207, 734);
             this.panel1.TabIndex = 0;
             // 
-            // button13
+            // panel4
             // 
-            this.button13.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
-            this.button13.FlatAppearance.BorderSize = 0;
-            this.button13.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.button13.Font = new System.Drawing.Font("Comic Sans MS", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.button13.ForeColor = System.Drawing.Color.White;
-            this.button13.Image = global::RenCloud.Properties.Resources.Box2;
-            this.button13.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.button13.Location = new System.Drawing.Point(1, 656);
-            this.button13.Margin = new System.Windows.Forms.Padding(0);
-            this.button13.Name = "button13";
-            this.button13.Size = new System.Drawing.Size(205, 69);
-            this.button13.TabIndex = 11;
-            this.button13.Text = "Render";
-            this.button13.UseVisualStyleBackColor = true;
-            // 
-            // button14
-            // 
-            this.button14.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
-            this.button14.FlatAppearance.BorderSize = 0;
-            this.button14.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.button14.Font = new System.Drawing.Font("Comic Sans MS", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.button14.ForeColor = System.Drawing.Color.White;
-            this.button14.Image = global::RenCloud.Properties.Resources.Box2;
-            this.button14.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.button14.Location = new System.Drawing.Point(1, 610);
-            this.button14.Margin = new System.Windows.Forms.Padding(0);
-            this.button14.Name = "button14";
-            this.button14.Size = new System.Drawing.Size(205, 46);
-            this.button14.TabIndex = 10;
-            this.button14.Text = "Render";
-            this.button14.UseVisualStyleBackColor = true;
-            // 
-            // button9
-            // 
-            this.button9.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
-            this.button9.FlatAppearance.BorderSize = 0;
-            this.button9.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.button9.Font = new System.Drawing.Font("Comic Sans MS", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.button9.ForeColor = System.Drawing.Color.White;
-            this.button9.Image = global::RenCloud.Properties.Resources.Box2;
-            this.button9.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.button9.Location = new System.Drawing.Point(1, 564);
-            this.button9.Margin = new System.Windows.Forms.Padding(0);
-            this.button9.Name = "button9";
-            this.button9.Size = new System.Drawing.Size(205, 46);
-            this.button9.TabIndex = 9;
-            this.button9.Text = "Render";
-            this.button9.UseVisualStyleBackColor = true;
-            // 
-            // button5
-            // 
-            this.button5.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
-            this.button5.FlatAppearance.BorderSize = 0;
-            this.button5.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.button5.Font = new System.Drawing.Font("Comic Sans MS", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.button5.ForeColor = System.Drawing.Color.White;
-            this.button5.Image = global::RenCloud.Properties.Resources.Box2;
-            this.button5.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.button5.Location = new System.Drawing.Point(1, 380);
-            this.button5.Margin = new System.Windows.Forms.Padding(0);
-            this.button5.Name = "button5";
-            this.button5.Size = new System.Drawing.Size(205, 46);
-            this.button5.TabIndex = 9;
-            this.button5.Text = "Render";
-            this.button5.UseVisualStyleBackColor = true;
-            // 
-            // button10
-            // 
-            this.button10.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
-            this.button10.FlatAppearance.BorderSize = 0;
-            this.button10.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.button10.Font = new System.Drawing.Font("Comic Sans MS", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.button10.ForeColor = System.Drawing.Color.White;
-            this.button10.Image = global::RenCloud.Properties.Resources.Box2;
-            this.button10.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.button10.Location = new System.Drawing.Point(1, 518);
-            this.button10.Margin = new System.Windows.Forms.Padding(0);
-            this.button10.Name = "button10";
-            this.button10.Size = new System.Drawing.Size(205, 46);
-            this.button10.TabIndex = 8;
-            this.button10.Text = "Render";
-            this.button10.UseVisualStyleBackColor = true;
-            // 
-            // button6
-            // 
-            this.button6.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
-            this.button6.FlatAppearance.BorderSize = 0;
-            this.button6.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.button6.Font = new System.Drawing.Font("Comic Sans MS", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.button6.ForeColor = System.Drawing.Color.White;
-            this.button6.Image = global::RenCloud.Properties.Resources.Box2;
-            this.button6.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.button6.Location = new System.Drawing.Point(1, 334);
-            this.button6.Margin = new System.Windows.Forms.Padding(0);
-            this.button6.Name = "button6";
-            this.button6.Size = new System.Drawing.Size(205, 46);
-            this.button6.TabIndex = 8;
-            this.button6.Text = "Render";
-            this.button6.UseVisualStyleBackColor = true;
-            // 
-            // button11
-            // 
-            this.button11.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
-            this.button11.FlatAppearance.BorderSize = 0;
-            this.button11.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.button11.Font = new System.Drawing.Font("Comic Sans MS", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.button11.ForeColor = System.Drawing.Color.White;
-            this.button11.Image = global::RenCloud.Properties.Resources.Box2;
-            this.button11.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.button11.Location = new System.Drawing.Point(1, 472);
-            this.button11.Margin = new System.Windows.Forms.Padding(0);
-            this.button11.Name = "button11";
-            this.button11.Size = new System.Drawing.Size(205, 46);
-            this.button11.TabIndex = 7;
-            this.button11.Text = "Render";
-            this.button11.UseVisualStyleBackColor = true;
-            // 
-            // button7
-            // 
-            this.button7.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
-            this.button7.FlatAppearance.BorderSize = 0;
-            this.button7.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.button7.Font = new System.Drawing.Font("Comic Sans MS", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.button7.ForeColor = System.Drawing.Color.White;
-            this.button7.Image = global::RenCloud.Properties.Resources.Box2;
-            this.button7.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.button7.Location = new System.Drawing.Point(1, 288);
-            this.button7.Margin = new System.Windows.Forms.Padding(0);
-            this.button7.Name = "button7";
-            this.button7.Size = new System.Drawing.Size(205, 46);
-            this.button7.TabIndex = 7;
-            this.button7.Text = "Render";
-            this.button7.UseVisualStyleBackColor = true;
-            // 
-            // button12
-            // 
-            this.button12.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
-            this.button12.FlatAppearance.BorderSize = 0;
-            this.button12.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.button12.Font = new System.Drawing.Font("Comic Sans MS", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.button12.ForeColor = System.Drawing.Color.White;
-            this.button12.Image = global::RenCloud.Properties.Resources.Box2;
-            this.button12.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.button12.Location = new System.Drawing.Point(1, 426);
-            this.button12.Margin = new System.Windows.Forms.Padding(0);
-            this.button12.Name = "button12";
-            this.button12.Size = new System.Drawing.Size(205, 46);
-            this.button12.TabIndex = 6;
-            this.button12.Text = "Render";
-            this.button12.UseVisualStyleBackColor = true;
-            // 
-            // button8
-            // 
-            this.button8.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
-            this.button8.FlatAppearance.BorderSize = 0;
-            this.button8.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.button8.Font = new System.Drawing.Font("Comic Sans MS", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.button8.ForeColor = System.Drawing.Color.White;
-            this.button8.Image = global::RenCloud.Properties.Resources.Box2;
-            this.button8.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.button8.Location = new System.Drawing.Point(1, 242);
-            this.button8.Margin = new System.Windows.Forms.Padding(0);
-            this.button8.Name = "button8";
-            this.button8.Size = new System.Drawing.Size(205, 46);
-            this.button8.TabIndex = 6;
-            this.button8.Text = "Render";
-            this.button8.UseVisualStyleBackColor = true;
-            // 
-            // button3
-            // 
-            this.button3.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
-            this.button3.FlatAppearance.BorderSize = 0;
-            this.button3.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.button3.Font = new System.Drawing.Font("Comic Sans MS", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.button3.ForeColor = System.Drawing.Color.White;
-            this.button3.Image = global::RenCloud.Properties.Resources.Box2;
-            this.button3.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.button3.Location = new System.Drawing.Point(1, 196);
-            this.button3.Margin = new System.Windows.Forms.Padding(0);
-            this.button3.Name = "button3";
-            this.button3.Size = new System.Drawing.Size(205, 46);
-            this.button3.TabIndex = 5;
-            this.button3.Text = "Render";
-            this.button3.UseVisualStyleBackColor = true;
-            // 
-            // button4
-            // 
-            this.button4.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
-            this.button4.FlatAppearance.BorderSize = 0;
-            this.button4.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.button4.Font = new System.Drawing.Font("Comic Sans MS", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.button4.ForeColor = System.Drawing.Color.White;
-            this.button4.Image = global::RenCloud.Properties.Resources.Box2;
-            this.button4.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.button4.Location = new System.Drawing.Point(1, 150);
-            this.button4.Margin = new System.Windows.Forms.Padding(0);
-            this.button4.Name = "button4";
-            this.button4.Size = new System.Drawing.Size(205, 46);
-            this.button4.TabIndex = 4;
-            this.button4.Text = "Render";
-            this.button4.UseVisualStyleBackColor = true;
+            this.panel4.Location = new System.Drawing.Point(207, 58);
+            this.panel4.Name = "panel4";
+            this.panel4.Size = new System.Drawing.Size(897, 676);
+            this.panel4.TabIndex = 2;
             // 
             // button2
             // 
@@ -293,9 +94,9 @@
             this.button2.Location = new System.Drawing.Point(1, 104);
             this.button2.Margin = new System.Windows.Forms.Padding(0);
             this.button2.Name = "button2";
-            this.button2.Size = new System.Drawing.Size(205, 46);
+            this.button2.Size = new System.Drawing.Size(205, 55);
             this.button2.TabIndex = 3;
-            this.button2.Text = "Usage";
+            this.button2.Text = "Editor";
             this.button2.UseVisualStyleBackColor = true;
             this.button2.Click += new System.EventHandler(this.button2_Click);
             // 
@@ -315,6 +116,7 @@
             this.button1.TabIndex = 2;
             this.button1.Text = "Render";
             this.button1.UseVisualStyleBackColor = true;
+            this.button1.Click += new System.EventHandler(this.button1_Click);
             // 
             // panel3
             // 
@@ -340,6 +142,7 @@
             // panel2
             // 
             this.panel2.BackColor = System.Drawing.Color.Purple;
+            this.panel2.Controls.Add(this.button3);
             this.panel2.Dock = System.Windows.Forms.DockStyle.Top;
             this.panel2.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(0)))), ((int)(((byte)(127)))));
             this.panel2.Location = new System.Drawing.Point(207, 0);
@@ -347,6 +150,155 @@
             this.panel2.Name = "panel2";
             this.panel2.Size = new System.Drawing.Size(897, 58);
             this.panel2.TabIndex = 1;
+            // 
+            // button3
+            // 
+            this.button3.BackgroundImage = global::RenCloud.Properties.Resources.Close;
+            this.button3.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Center;
+            this.button3.Dock = System.Windows.Forms.DockStyle.Right;
+            this.button3.FlatAppearance.BorderSize = 0;
+            this.button3.FlatAppearance.MouseDownBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(192)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))));
+            this.button3.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.button3.Location = new System.Drawing.Point(848, 0);
+            this.button3.Margin = new System.Windows.Forms.Padding(0);
+            this.button3.Name = "button3";
+            this.button3.Size = new System.Drawing.Size(49, 58);
+            this.button3.TabIndex = 13;
+            this.button3.UseVisualStyleBackColor = true;
+            this.button3.Click += new System.EventHandler(this.button3_Click);
+            // 
+            // panel5
+            // 
+            this.panel5.Controls.Add(this.panel13);
+            this.panel5.Controls.Add(this.panel12);
+            this.panel5.Controls.Add(this.panel10);
+            this.panel5.Location = new System.Drawing.Point(209, 58);
+            this.panel5.Margin = new System.Windows.Forms.Padding(0);
+            this.panel5.Name = "panel5";
+            this.panel5.Size = new System.Drawing.Size(895, 676);
+            this.panel5.TabIndex = 2;
+            this.panel5.Paint += new System.Windows.Forms.PaintEventHandler(this.panel5_Paint);
+            // 
+            // panel13
+            // 
+            this.panel13.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.panel13.Location = new System.Drawing.Point(0, 305);
+            this.panel13.Margin = new System.Windows.Forms.Padding(0);
+            this.panel13.Name = "panel13";
+            this.panel13.Size = new System.Drawing.Size(419, 172);
+            this.panel13.TabIndex = 2;
+            // 
+            // panel12
+            // 
+            this.panel12.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.panel12.Controls.Add(this.button4);
+            this.panel12.Location = new System.Drawing.Point(419, 30);
+            this.panel12.Margin = new System.Windows.Forms.Padding(0);
+            this.panel12.Name = "panel12";
+            this.panel12.Size = new System.Drawing.Size(476, 476);
+            this.panel12.TabIndex = 2;
+            // 
+            // button4
+            // 
+            this.button4.Location = new System.Drawing.Point(176, 407);
+            this.button4.Name = "button4";
+            this.button4.Size = new System.Drawing.Size(164, 39);
+            this.button4.TabIndex = 0;
+            this.button4.Text = "TestAdd";
+            this.button4.UseVisualStyleBackColor = true;
+            this.button4.Click += new System.EventHandler(this.button4_Click);
+            // 
+            // panel10
+            // 
+            this.panel10.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.panel10.Location = new System.Drawing.Point(0, 1);
+            this.panel10.Margin = new System.Windows.Forms.Padding(0);
+            this.panel10.Name = "panel10";
+            this.panel10.Size = new System.Drawing.Size(895, 29);
+            this.panel10.TabIndex = 0;
+            // 
+            // panel6
+            // 
+            this.panel6.Controls.Add(this.EditingRuller);
+            this.panel6.Controls.Add(this.VideoTrack);
+            this.panel6.Controls.Add(this.AudioTrack);
+            this.panel6.Location = new System.Drawing.Point(209, 564);
+            this.panel6.Margin = new System.Windows.Forms.Padding(0);
+            this.panel6.Name = "panel6";
+            this.panel6.Size = new System.Drawing.Size(895, 170);
+            this.panel6.TabIndex = 0;
+            // 
+            // VideoTrack
+            // 
+            this.VideoTrack.AutoScroll = true;
+            this.VideoTrack.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.VideoTrack.Controls.Add(this.VideoPlaceholder);
+            this.VideoTrack.Location = new System.Drawing.Point(162, 23);
+            this.VideoTrack.Margin = new System.Windows.Forms.Padding(0);
+            this.VideoTrack.Name = "VideoTrack";
+            this.VideoTrack.Size = new System.Drawing.Size(733, 63);
+            this.VideoTrack.TabIndex = 1;
+            this.VideoTrack.Paint += new System.Windows.Forms.PaintEventHandler(this.panel8_Paint);
+            // 
+            // VideoPlaceholder
+            // 
+            this.VideoPlaceholder.BackColor = System.Drawing.Color.Transparent;
+            this.VideoPlaceholder.Location = new System.Drawing.Point(0, 16);
+            this.VideoPlaceholder.Margin = new System.Windows.Forms.Padding(0);
+            this.VideoPlaceholder.Name = "VideoPlaceholder";
+            this.VideoPlaceholder.Size = new System.Drawing.Size(733, 31);
+            this.VideoPlaceholder.TabIndex = 2;
+            this.VideoPlaceholder.Paint += new System.Windows.Forms.PaintEventHandler(this.panel14_Paint);
+            // 
+            // AudioTrack
+            // 
+            this.AudioTrack.AutoScroll = true;
+            this.AudioTrack.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.AudioTrack.Controls.Add(this.AudioPlaceholder);
+            this.AudioTrack.Location = new System.Drawing.Point(162, 86);
+            this.AudioTrack.Margin = new System.Windows.Forms.Padding(0);
+            this.AudioTrack.Name = "AudioTrack";
+            this.AudioTrack.Size = new System.Drawing.Size(733, 83);
+            this.AudioTrack.TabIndex = 2;
+            this.AudioTrack.Paint += new System.Windows.Forms.PaintEventHandler(this.panel9_Paint);
+            // 
+            // AudioPlaceholder
+            // 
+            this.AudioPlaceholder.Location = new System.Drawing.Point(0, 24);
+            this.AudioPlaceholder.Margin = new System.Windows.Forms.Padding(0);
+            this.AudioPlaceholder.Name = "AudioPlaceholder";
+            this.AudioPlaceholder.Size = new System.Drawing.Size(733, 31);
+            this.AudioPlaceholder.TabIndex = 3;
+            this.AudioPlaceholder.Paint += new System.Windows.Forms.PaintEventHandler(this.panel15_Paint);
+            // 
+            // EditingRuller
+            // 
+            this.EditingRuller.AutoScroll = true;
+            this.EditingRuller.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.EditingRuller.Location = new System.Drawing.Point(162, 0);
+            this.EditingRuller.Margin = new System.Windows.Forms.Padding(0);
+            this.EditingRuller.Name = "EditingRuller";
+            this.EditingRuller.Size = new System.Drawing.Size(733, 23);
+            this.EditingRuller.TabIndex = 0;
+            this.EditingRuller.Paint += new System.Windows.Forms.PaintEventHandler(this.EditingRuller_Paint);
+            // 
+            // panel7
+            // 
+            this.panel7.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.panel7.Location = new System.Drawing.Point(209, 564);
+            this.panel7.Margin = new System.Windows.Forms.Padding(0);
+            this.panel7.Name = "panel7";
+            this.panel7.Size = new System.Drawing.Size(162, 170);
+            this.panel7.TabIndex = 0;
+            // 
+            // panel11
+            // 
+            this.panel11.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.panel11.Location = new System.Drawing.Point(209, 88);
+            this.panel11.Margin = new System.Windows.Forms.Padding(0);
+            this.panel11.Name = "panel11";
+            this.panel11.Size = new System.Drawing.Size(419, 275);
+            this.panel11.TabIndex = 1;
             // 
             // UserInterfaceForm
             // 
@@ -357,6 +309,10 @@
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(67)))), ((int)(((byte)(38)))), ((int)(((byte)(88)))));
             this.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
             this.ClientSize = new System.Drawing.Size(1104, 734);
+            this.Controls.Add(this.panel11);
+            this.Controls.Add(this.panel7);
+            this.Controls.Add(this.panel6);
+            this.Controls.Add(this.panel5);
             this.Controls.Add(this.panel2);
             this.Controls.Add(this.panel1);
             this.DoubleBuffered = true;
@@ -370,6 +326,12 @@
             this.panel1.ResumeLayout(false);
             this.panel3.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
+            this.panel2.ResumeLayout(false);
+            this.panel5.ResumeLayout(false);
+            this.panel12.ResumeLayout(false);
+            this.panel6.ResumeLayout(false);
+            this.VideoTrack.ResumeLayout(false);
+            this.AudioTrack.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -381,18 +343,21 @@
         private System.Windows.Forms.Button button1;
         private System.Windows.Forms.Panel panel3;
         private System.Windows.Forms.Button button2;
-        private System.Windows.Forms.Button button13;
-        private System.Windows.Forms.Button button14;
-        private System.Windows.Forms.Button button9;
-        private System.Windows.Forms.Button button5;
-        private System.Windows.Forms.Button button10;
-        private System.Windows.Forms.Button button6;
-        private System.Windows.Forms.Button button11;
-        private System.Windows.Forms.Button button7;
-        private System.Windows.Forms.Button button12;
-        private System.Windows.Forms.Button button8;
-        private System.Windows.Forms.Button button3;
-        private System.Windows.Forms.Button button4;
         private System.Windows.Forms.PictureBox pictureBox1;
+        private System.Windows.Forms.Panel panel4;
+        private System.Windows.Forms.Panel panel5;
+        private System.Windows.Forms.Panel panel6;
+        private System.Windows.Forms.Panel EditingRuller;
+        private System.Windows.Forms.Panel panel7;
+        private System.Windows.Forms.Panel AudioTrack;
+        private System.Windows.Forms.Panel VideoTrack;
+        private System.Windows.Forms.Panel panel10;
+        private System.Windows.Forms.Panel panel12;
+        private System.Windows.Forms.Panel panel11;
+        private System.Windows.Forms.Panel panel13;
+        private System.Windows.Forms.Button button3;
+        private System.Windows.Forms.Panel AudioPlaceholder;
+        private System.Windows.Forms.Panel VideoPlaceholder;
+        private System.Windows.Forms.Button button4;
     }
 }

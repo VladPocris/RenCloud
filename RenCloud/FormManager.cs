@@ -12,6 +12,7 @@ namespace RenCloud
         private static LogInForm _loginForm;
         private static LoadForm _loadForm;
         private static PassRes_Form _passResForm;
+        private static UserInterfaceForm _userInterfaceForm;
 
         public static PassRes_Form PassRessFormInstance
         {
@@ -59,6 +60,19 @@ namespace RenCloud
                     _loginForm = new LogInForm();
                 }
                 return _loginForm;
+            }
+        }
+
+        public static UserInterfaceForm UserInterfaceFormInstance
+        {
+            get
+            {
+                // Only create if it hasn't been created already
+                if (_userInterfaceForm == null || _userInterfaceForm.IsDisposed)
+                {
+                    _userInterfaceForm = new UserInterfaceForm();
+                }
+                return _userInterfaceForm;
             }
         }
     }
