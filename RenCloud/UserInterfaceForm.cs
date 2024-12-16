@@ -31,6 +31,11 @@ namespace RenCloud
         private readonly List<(Image thumbnail, int position)> allThumbnailsWithPositions = new List<(Image, int)>();
         private List<Rectangle> allVideoBounds = new List<Rectangle>();
         private Rectangle selectedVideoBounds = Rectangle.Empty;
+        private List<Rectangle> allAudioAmplitudeBars = new List<Rectangle>();
+        private Dictionary<Rectangle, Rectangle> videoToAudioMapping = new Dictionary<Rectangle, Rectangle>();
+        private List<Rectangle> allAudioSegments = new List<Rectangle>();
+        private Rectangle selectedAudioBounds = Rectangle.Empty;
+
 
         // Event handler for scroll to force full invalidation
         private void OnScroll(object sender, ScrollEventArgs e)
@@ -158,7 +163,6 @@ namespace RenCloud
             int panelWidth = EditingRuller.Width;
             float tickHeightMajor = 6;
             float tickHeightMinor = 3;
-            int secondsInterval = 1;
             int pixelsPerSecond = 50;
 
             g.Clear(Color.Gray);
@@ -282,16 +286,16 @@ namespace RenCloud
         {
             int videoDuration = (int)GetVideoDuration(filePath, ffmpegPath);
             int pixelsPerSecond = 50;
+            int barsPerSecond = 5;
+            int barWidth = 8;
+            int barSpacing = 2;
+            int barWidthIncludingSpacing = barWidth + barSpacing;
             int newWidth = videoDuration * pixelsPerSecond;
 
             widthVideo += newWidth;
-            EditingRuller.Width += newWidth;
-            VideoTrack.Width += newWidth;
-            AudioTrack.Width += newWidth;
-
-            newXPosition += newWidth;
-            VideoTrackPlaceholder.Location = new Point(newXPosition, VideoTrackPlaceholder.Location.Y);
-            AudioTrackPlaceholder.Location = new Point(newXPosition, AudioTrackPlaceholder.Location.Y);
+            EditingRuller.Width = widthVideo + VideoTrackPlaceholder.Width;
+            VideoTrack.Width = widthVideo + VideoTrackPlaceholder.Width;
+            AudioTrack.Width = widthVideo + AudioTrackPlaceholder.Width;
 
             EditingRuller.Invalidate();
             VideoTrackPlaceholder.Invalidate();
@@ -299,50 +303,101 @@ namespace RenCloud
 
             List<Image> videoThumbnails = ExtractVideoThumbnails(filePath);
             int thumbnailCount = videoThumbnails.Count;
-
-            if (thumbnailCount == 0) return;
-
-            intervalInPixels = (int)(4.0 * pixelsPerSecond);
-            int startPosition = widthVideo - newWidth;
+            int intervalInPixels = (int)(4.0 * pixelsPerSecond);
+            int videoStartPosition = widthVideo - newWidth;
 
             int thumbnailWidth = 100;
             int thumbnailHeight = VideoTrack.Height - 20;
 
             for (int i = 0; i < thumbnailCount; i++)
             {
-                int position = startPosition + intervalInPixels * (i + 1);
-                if (position + thumbnailWidth > startPosition + newWidth)
+                int position = videoStartPosition + intervalInPixels * (i + 1);
+                if (position + thumbnailWidth > videoStartPosition + newWidth)
                     break;
 
                 allThumbnailsWithPositions.Add((videoThumbnails[i], position));
             }
-            allVideoBounds.Add(new Rectangle(startPosition, 0, newWidth, VideoTrack.Height - 2));
+
+            var videoBounds = new Rectangle(videoStartPosition, 0, newWidth, VideoTrack.Height - 2);
+            var audioBounds = new Rectangle(videoStartPosition, 0, newWidth, AudioTrack.Height - 2);
+
+            allVideoBounds.Add(videoBounds);
+            videoToAudioMapping[videoBounds] = audioBounds;
+            allAudioSegments.Add(audioBounds);
+
+            List<float> audioAmplitudes = GetAudioAmplitudeData(filePath);
+            int amplitudeCount = audioAmplitudes.Count;
+
+            int totalBars = videoDuration * barsPerSecond;
+
+            int samplesPerSecond = 44100;
+            int samplesPerBar = samplesPerSecond / barsPerSecond;
+
+            int audioStartPosition = widthVideo - newWidth;
+
+            for (int i = 0; i < totalBars; i++)
+            {
+                int startIdx = (int)((i / (float)totalBars) * amplitudeCount);
+                int endIdx = (int)(((i + 1) / (float)totalBars) * amplitudeCount);
+
+                if (startIdx >= amplitudeCount) break;
+
+                float averageAmplitude = 0;
+                for (int j = startIdx; j < endIdx; j++)
+                {
+                    averageAmplitude += audioAmplitudes[j];
+                }
+
+                averageAmplitude /= (endIdx - startIdx);
+
+                int amplitudeHeight = (int)(averageAmplitude * AudioTrack.Height * 3);
+                int barXPosition = audioStartPosition + (i * barWidthIncludingSpacing);
+                int barYPosition = AudioTrack.Height - amplitudeHeight;
+
+                if (barXPosition + barWidth > audioStartPosition + newWidth)
+                    break;
+
+                allAudioAmplitudeBars.Add(new Rectangle(barXPosition, barYPosition, barWidth, amplitudeHeight));
+
+                Console.WriteLine($"Bar {i}: X = {barXPosition}, Height = {amplitudeHeight}");
+            }
+
+            VideoTrackPlaceholder.Location = new Point(widthVideo, VideoTrackPlaceholder.Location.Y);
+            AudioTrackPlaceholder.Location = new Point(widthVideo, AudioTrackPlaceholder.Location.Y);
+
             VideoTrack.Paint -= VideoTrack_PaintHandler;
             VideoTrack.Paint += VideoTrack_PaintHandler;
             VideoTrack.MouseDown -= VideoTrack_MouseDownHandler;
             VideoTrack.MouseDown += VideoTrack_MouseDownHandler;
+            AudioTrack.Paint -= AudioTrack_PaintHandler;
+            AudioTrack.Paint += AudioTrack_PaintHandler;
+            AudioTrack.MouseDown -= AudioTrack_MouseDownHandler;
+            AudioTrack.MouseDown += AudioTrack_MouseDownHandler;
 
             VideoTrack.Invalidate();
+            AudioTrack.Invalidate();
+        }
+
+        private int CalculateTrackWidth(double duration, int pixelsPerSecond)
+        {
+            return (int)Math.Ceiling(duration * pixelsPerSecond);
         }
 
         private void VideoTrack_PaintHandler(object sender, PaintEventArgs e)
         {
             Graphics g = e.Graphics;
+
             using (Brush videoBrush = new SolidBrush(Color.Gray))
+            using (Pen borderPen = new Pen(Color.Green, 2))
+            using (Pen selectedPen = new Pen(Color.Red, 3))
             {
                 foreach (var bounds in allVideoBounds)
                 {
                     g.FillRectangle(videoBrush, bounds);
-                }
-            }
-            using (var borderPen = new Pen(Color.Green, 2))
-            using (var selectedPen = new Pen(Color.Red, 3))
-            {
-                foreach (var bounds in allVideoBounds)
-                {
                     g.DrawRectangle(bounds == selectedVideoBounds ? selectedPen : borderPen, bounds);
                 }
             }
+
             foreach (var (thumbnail, position) in allThumbnailsWithPositions)
             {
                 int thumbnailHeight = VideoTrack.Height - 20;
@@ -355,6 +410,8 @@ namespace RenCloud
         private void VideoTrack_MouseDownHandler(object sender, MouseEventArgs e)
         {
             selectedVideoBounds = Rectangle.Empty;
+            selectedAudioBounds = Rectangle.Empty;
+
             foreach (var bounds in allVideoBounds)
             {
                 if (bounds.Contains(e.Location))
@@ -365,7 +422,9 @@ namespace RenCloud
             }
 
             VideoTrack.Invalidate();
+            AudioTrack.Invalidate();
         }
+
         private double GetVideoDuration(string videoFilePath, string ffmpegPath)
         {
             string ffmpegCommand = $"-i \"{videoFilePath}\"";
@@ -398,7 +457,6 @@ namespace RenCloud
 
             return 0;
         }
-
         public List<Image> ExtractVideoThumbnails(string videoFilePath)
         {
             Directory.CreateDirectory(tempDir);
@@ -463,22 +521,99 @@ namespace RenCloud
             return thumbnails;
         }
 
+        private List<float> GetAudioAmplitudeData(string videoFilePath)
+        {
+            List<float> amplitudes = new List<float>();
+
+            string ffmpegCommand = $"-i \"{videoFilePath}\" -vn -ac 1 -filter:a aresample=44100 -map 0:a -c:a pcm_s16le -f data -";
+
+            Process ffmpegProcess = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = ffmpegPath,
+                    Arguments = ffmpegCommand,
+                    RedirectStandardOutput = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                }
+            };
+
+            ffmpegProcess.Start();
+
+            byte[] buffer = new byte[4096];
+            int bytesRead;
+
+            while ((bytesRead = ffmpegProcess.StandardOutput.BaseStream.Read(buffer, 0, buffer.Length)) > 0)
+            {
+                for (int i = 0; i < bytesRead; i += 2)
+                {
+                    short sample = BitConverter.ToInt16(buffer, i);
+                    float amplitude = Math.Abs(sample) / 32768f;
+                    amplitudes.Add(amplitude);
+                }
+            }
+
+            ffmpegProcess.WaitForExit();
+
+            Console.WriteLine($"Amplitude count: {amplitudes.Count}");
+
+            return amplitudes;
+        }
+
+        private void AudioTrack_PaintHandler(object sender, PaintEventArgs e)
+        {
+            Graphics g = e.Graphics;
+
+            using (Brush backgroundBrush = new SolidBrush(Color.Gray))
+            {
+                g.FillRectangle(backgroundBrush, 0, 0, widthVideo, AudioTrack.Height);
+            }
+
+            using (Brush barBrush = new SolidBrush(Color.LightGreen))
+            {
+                foreach (Rectangle bar in allAudioAmplitudeBars)
+                {
+                    g.FillRectangle(barBrush, bar);
+                }
+            }
+
+            using (Pen borderPen = new Pen(Color.Green, 2))
+            using (Pen selectedPen = new Pen(Color.Red, 2))
+            {
+                foreach (var bounds in allAudioSegments)
+                {
+                    g.DrawRectangle(bounds == selectedAudioBounds ? selectedPen : borderPen, bounds);
+                }
+            }
+
+            using (Brush transparentBrush = new SolidBrush(Color.FromArgb(0, 0, 0, 0)))
+            {
+                g.FillRectangle(transparentBrush, widthVideo, 0, AudioTrack.Width - widthVideo, AudioTrack.Height);
+            }
+        }
+        private void AudioTrack_MouseDownHandler(object sender, MouseEventArgs e)
+        {
+            selectedAudioBounds = Rectangle.Empty;
+            selectedVideoBounds = Rectangle.Empty;
+
+            foreach (var bounds in allAudioSegments)
+            {
+                if (bounds.Contains(e.Location))
+                {
+                    selectedAudioBounds = bounds;
+                    break;
+                }
+            }
+
+            AudioTrack.Invalidate();
+            VideoTrack.Invalidate();
+        }
+
         private void panel11_Paint(object sender, PaintEventArgs e)
         {
 
         }
-
-        //private List<int> ExtractAudioWaveform(string filePath)
-        //{
-        //    List<int> waveform = new List<int>();
-        //    Random rand = new Random();
-        //    for (int i = 0; i < 100; i++)
-        //    {
-        //        waveform.Add(rand.Next(10, 50));
-        //    }
-
-        //    return waveform;
-        //}
 
     }
 }
