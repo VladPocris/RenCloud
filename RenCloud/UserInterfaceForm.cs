@@ -25,16 +25,16 @@ namespace RenCloud
         private DragFunctionality dragFunctionality;
         private string ffmpegPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "lib", "ffmpeg", "bin", "ffmpeg.exe");
         private string tempDir = Path.Combine(Path.GetTempPath(), "VideoThumbnails");
-        private int newXPosition = 0;
-        private int widthVideo = 0;
-        int intervalInPixels = 0;
-        private readonly List<(Image thumbnail, int position)> allThumbnailsWithPositions = new List<(Image, int)>();
-        private List<Rectangle> allVideoBounds = new List<Rectangle>();
-        private Rectangle selectedVideoBounds = Rectangle.Empty;
-        private List<Rectangle> allAudioAmplitudeBars = new List<Rectangle>();
-        private Dictionary<Rectangle, Rectangle> videoToAudioMapping = new Dictionary<Rectangle, Rectangle>();
-        private List<Rectangle> allAudioSegments = new List<Rectangle>();
-        private Rectangle selectedAudioBounds = Rectangle.Empty;
+        private float newXPosition = 0f;
+        private float widthVideo = 0f;
+        float intervalInPixels = 0f;
+        private readonly List<(Image thumbnail, float position)> allThumbnailsWithPositions = new List<(Image, float)>();
+        private List<RectangleF> allVideoBounds = new List<RectangleF>();
+        private RectangleF selectedVideoBounds = RectangleF.Empty;
+        private List<RectangleF> allAudioAmplitudeBars = new List<RectangleF>();
+        private Dictionary<RectangleF, RectangleF> videoToAudioMapping = new Dictionary<RectangleF, RectangleF>();
+        private List<RectangleF> allAudioSegments = new List<RectangleF>();
+        private RectangleF selectedAudioBounds = RectangleF.Empty;
 
 
         // Event handler for scroll to force full invalidation
@@ -284,18 +284,18 @@ namespace RenCloud
 
         private void AddVideoToTimeline(string filePath)
         {
-            int videoDuration = (int)GetVideoDuration(filePath, ffmpegPath);
-            int pixelsPerSecond = 50;
+            float videoDuration = (float)GetVideoDuration(filePath, ffmpegPath);
+            float pixelsPerSecond = 50f;
             int barsPerSecond = 5;
-            int barWidth = 8;
-            int barSpacing = 2;
-            int barWidthIncludingSpacing = barWidth + barSpacing;
-            int newWidth = videoDuration * pixelsPerSecond;
+            float barWidth = 8f;
+            float barSpacing = 2f;
+            float barWidthIncludingSpacing = barWidth + barSpacing;
+            float newWidth = videoDuration * pixelsPerSecond;
 
             widthVideo += newWidth;
-            EditingRuller.Width = widthVideo + VideoTrackPlaceholder.Width;
-            VideoTrack.Width = widthVideo + VideoTrackPlaceholder.Width;
-            AudioTrack.Width = widthVideo + AudioTrackPlaceholder.Width;
+            EditingRuller.Width = (int)Math.Ceiling(widthVideo + VideoTrackPlaceholder.Width);
+            VideoTrack.Width = (int)Math.Ceiling(widthVideo + VideoTrackPlaceholder.Width);
+            AudioTrack.Width = (int)Math.Ceiling(widthVideo + VideoTrackPlaceholder.Width);
 
             EditingRuller.Invalidate();
             VideoTrackPlaceholder.Invalidate();
@@ -303,23 +303,23 @@ namespace RenCloud
 
             List<Image> videoThumbnails = ExtractVideoThumbnails(filePath);
             int thumbnailCount = videoThumbnails.Count;
-            int intervalInPixels = (int)(4.0 * pixelsPerSecond);
-            int videoStartPosition = widthVideo - newWidth;
+            float intervalInPixels = 4.0f * pixelsPerSecond;
+            float videoStartPosition = widthVideo - newWidth;
 
-            int thumbnailWidth = 100;
-            int thumbnailHeight = VideoTrack.Height - 20;
+            float thumbnailWidth = 100f;
+            float thumbnailHeight = VideoTrack.Height - 20f;
 
             for (int i = 0; i < thumbnailCount; i++)
             {
-                int position = videoStartPosition + intervalInPixels * (i + 1);
+                float position = videoStartPosition + intervalInPixels * (i + 1);
                 if (position + thumbnailWidth > videoStartPosition + newWidth)
                     break;
 
                 allThumbnailsWithPositions.Add((videoThumbnails[i], position));
             }
 
-            var videoBounds = new Rectangle(videoStartPosition, 0, newWidth, VideoTrack.Height - 2);
-            var audioBounds = new Rectangle(videoStartPosition, 0, newWidth, AudioTrack.Height - 2);
+            var videoBounds = new RectangleF(videoStartPosition, 0f, newWidth, VideoTrack.Height - 2f);
+            var audioBounds = new RectangleF(videoStartPosition, 0f, newWidth, AudioTrack.Height - 2f);
 
             allVideoBounds.Add(videoBounds);
             videoToAudioMapping[videoBounds] = audioBounds;
@@ -328,12 +328,12 @@ namespace RenCloud
             List<float> audioAmplitudes = GetAudioAmplitudeData(filePath);
             int amplitudeCount = audioAmplitudes.Count;
 
-            int totalBars = videoDuration * barsPerSecond;
+            int totalBars = (int)(videoDuration * barsPerSecond);
 
             int samplesPerSecond = 44100;
             int samplesPerBar = samplesPerSecond / barsPerSecond;
 
-            int audioStartPosition = widthVideo - newWidth;
+            float audioStartPosition = widthVideo - newWidth;
 
             for (int i = 0; i < totalBars; i++)
             {
@@ -350,20 +350,22 @@ namespace RenCloud
 
                 averageAmplitude /= (endIdx - startIdx);
 
-                int amplitudeHeight = (int)(averageAmplitude * AudioTrack.Height * 3);
-                int barXPosition = audioStartPosition + (i * barWidthIncludingSpacing);
-                int barYPosition = AudioTrack.Height - amplitudeHeight;
+                float amplitudeHeight = averageAmplitude * AudioTrack.Height * 3;
+                float barXPosition = audioStartPosition + (i * barWidthIncludingSpacing);
+                float barYPosition = AudioTrack.Height - amplitudeHeight;
 
                 if (barXPosition + barWidth > audioStartPosition + newWidth)
                     break;
 
-                allAudioAmplitudeBars.Add(new Rectangle(barXPosition, barYPosition, barWidth, amplitudeHeight));
+                allAudioAmplitudeBars.Add(new RectangleF(barXPosition, barYPosition, barWidth, amplitudeHeight));
 
                 Console.WriteLine($"Bar {i}: X = {barXPosition}, Height = {amplitudeHeight}");
             }
 
-            VideoTrackPlaceholder.Location = new Point(widthVideo, VideoTrackPlaceholder.Location.Y);
-            AudioTrackPlaceholder.Location = new Point(widthVideo, AudioTrackPlaceholder.Location.Y);
+
+            // Assuming widthVideo is a float
+            VideoTrackPlaceholder.Location = new Point((int)Math.Round(widthVideo), VideoTrackPlaceholder.Location.Y);
+            AudioTrackPlaceholder.Location = new Point((int)Math.Round(widthVideo), AudioTrackPlaceholder.Location.Y);
 
             VideoTrack.Paint -= VideoTrack_PaintHandler;
             VideoTrack.Paint += VideoTrack_PaintHandler;
@@ -378,11 +380,6 @@ namespace RenCloud
             AudioTrack.Invalidate();
         }
 
-        private int CalculateTrackWidth(double duration, int pixelsPerSecond)
-        {
-            return (int)Math.Ceiling(duration * pixelsPerSecond);
-        }
-
         private void VideoTrack_PaintHandler(object sender, PaintEventArgs e)
         {
             Graphics g = e.Graphics;
@@ -394,14 +391,14 @@ namespace RenCloud
                 foreach (var bounds in allVideoBounds)
                 {
                     g.FillRectangle(videoBrush, bounds);
-                    g.DrawRectangle(bounds == selectedVideoBounds ? selectedPen : borderPen, bounds);
+                    g.DrawRectangle(bounds == selectedVideoBounds ? selectedPen : borderPen, Rectangle.Round(bounds));
                 }
             }
 
             foreach (var (thumbnail, position) in allThumbnailsWithPositions)
             {
-                int thumbnailHeight = VideoTrack.Height - 20;
-                int thumbnailY = 10;
+                float thumbnailHeight = VideoTrack.Height - 20f;
+                float thumbnailY = 10f;
 
                 g.DrawImage(thumbnail, position, thumbnailY, 100, thumbnailHeight);
             }
@@ -450,12 +447,12 @@ namespace RenCloud
             {
                 int hours = int.Parse(match.Groups["hours"].Value);
                 int minutes = int.Parse(match.Groups["minutes"].Value);
-                double seconds = double.Parse(match.Groups["seconds"].Value);
+                float seconds = float.Parse(match.Groups["seconds"].Value);
 
                 return hours * 3600 + minutes * 60 + seconds;
             }
 
-            return 0;
+            return 0f;
         }
         public List<Image> ExtractVideoThumbnails(string videoFilePath)
         {
@@ -550,7 +547,7 @@ namespace RenCloud
                 {
                     short sample = BitConverter.ToInt16(buffer, i);
                     float amplitude = Math.Abs(sample) / 32768f;
-                    amplitudes.Add(amplitude);
+                    amplitudes.Add((float)(amplitude));
                 }
             }
 
@@ -572,7 +569,7 @@ namespace RenCloud
 
             using (Brush barBrush = new SolidBrush(Color.LightGreen))
             {
-                foreach (Rectangle bar in allAudioAmplitudeBars)
+                foreach (RectangleF bar in allAudioAmplitudeBars)
                 {
                     g.FillRectangle(barBrush, bar);
                 }
@@ -583,7 +580,7 @@ namespace RenCloud
             {
                 foreach (var bounds in allAudioSegments)
                 {
-                    g.DrawRectangle(bounds == selectedAudioBounds ? selectedPen : borderPen, bounds);
+                    g.DrawRectangle(bounds == selectedAudioBounds ? selectedPen : borderPen, Rectangle.Round(bounds));
                 }
             }
 
