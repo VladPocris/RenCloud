@@ -38,29 +38,33 @@
             this.panel2 = new System.Windows.Forms.Panel();
             this.button3 = new System.Windows.Forms.Button();
             this.panel5 = new System.Windows.Forms.Panel();
+            this.PlayButton = new System.Windows.Forms.Button();
+            this.TimeStamp = new System.Windows.Forms.Label();
             this.panel13 = new System.Windows.Forms.Panel();
-            this.panel12 = new System.Windows.Forms.Panel();
             this.button4 = new System.Windows.Forms.Button();
+            this.PreviewPanel = new System.Windows.Forms.Panel();
+            this.PreviewBox = new AxWMPLib.AxWindowsMediaPlayer();
             this.panel10 = new System.Windows.Forms.Panel();
             this.panel6 = new System.Windows.Forms.Panel();
-            this.panel7 = new System.Windows.Forms.Panel();
-            this.panel11 = new System.Windows.Forms.Panel();
             this.panel8 = new System.Windows.Forms.Panel();
+            this.AudioTrack = new System.Windows.Forms.Panel();
+            this.AudioTrackPlaceholder = new System.Windows.Forms.Panel();
             this.EditingRuller = new System.Windows.Forms.Panel();
             this.VideoTrack = new System.Windows.Forms.Panel();
             this.VideoTrackPlaceholder = new System.Windows.Forms.Panel();
-            this.AudioTrack = new System.Windows.Forms.Panel();
-            this.AudioTrackPlaceholder = new System.Windows.Forms.Panel();
+            this.panel7 = new System.Windows.Forms.Panel();
+            this.panel11 = new System.Windows.Forms.Panel();
             this.panel1.SuspendLayout();
             this.panel3.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.panel2.SuspendLayout();
             this.panel5.SuspendLayout();
-            this.panel12.SuspendLayout();
+            this.PreviewPanel.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.PreviewBox)).BeginInit();
             this.panel6.SuspendLayout();
             this.panel8.SuspendLayout();
-            this.VideoTrack.SuspendLayout();
             this.AudioTrack.SuspendLayout();
+            this.VideoTrack.SuspendLayout();
             this.SuspendLayout();
             // 
             // panel1
@@ -100,7 +104,6 @@
             this.button2.TabIndex = 3;
             this.button2.Text = "Editor";
             this.button2.UseVisualStyleBackColor = true;
-            this.button2.Click += new System.EventHandler(this.button2_Click);
             // 
             // button1
             // 
@@ -118,7 +121,6 @@
             this.button1.TabIndex = 2;
             this.button1.Text = "Render";
             this.button1.UseVisualStyleBackColor = true;
-            this.button1.Click += new System.EventHandler(this.button1_Click);
             // 
             // panel3
             // 
@@ -171,15 +173,38 @@
             // 
             // panel5
             // 
+            this.panel5.Controls.Add(this.PlayButton);
+            this.panel5.Controls.Add(this.TimeStamp);
             this.panel5.Controls.Add(this.panel13);
-            this.panel5.Controls.Add(this.panel12);
+            this.panel5.Controls.Add(this.button4);
+            this.panel5.Controls.Add(this.PreviewPanel);
             this.panel5.Controls.Add(this.panel10);
             this.panel5.Location = new System.Drawing.Point(209, 58);
             this.panel5.Margin = new System.Windows.Forms.Padding(0);
             this.panel5.Name = "panel5";
             this.panel5.Size = new System.Drawing.Size(895, 676);
             this.panel5.TabIndex = 2;
-            this.panel5.Paint += new System.Windows.Forms.PaintEventHandler(this.panel5_Paint);
+            // 
+            // PlayButton
+            // 
+            this.PlayButton.Location = new System.Drawing.Point(606, 438);
+            this.PlayButton.Margin = new System.Windows.Forms.Padding(0);
+            this.PlayButton.Name = "PlayButton";
+            this.PlayButton.Size = new System.Drawing.Size(109, 38);
+            this.PlayButton.TabIndex = 3;
+            this.PlayButton.Text = "Play";
+            this.PlayButton.UseVisualStyleBackColor = true;
+            this.PlayButton.Click += new System.EventHandler(this.PlayButton_Click);
+            // 
+            // TimeStamp
+            // 
+            this.TimeStamp.ForeColor = System.Drawing.Color.White;
+            this.TimeStamp.Location = new System.Drawing.Point(528, 446);
+            this.TimeStamp.Margin = new System.Windows.Forms.Padding(0);
+            this.TimeStamp.Name = "TimeStamp";
+            this.TimeStamp.Size = new System.Drawing.Size(78, 22);
+            this.TimeStamp.TabIndex = 1;
+            this.TimeStamp.Text = "00:00:00";
             // 
             // panel13
             // 
@@ -190,25 +215,38 @@
             this.panel13.Size = new System.Drawing.Size(419, 172);
             this.panel13.TabIndex = 2;
             // 
-            // panel12
-            // 
-            this.panel12.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.panel12.Controls.Add(this.button4);
-            this.panel12.Location = new System.Drawing.Point(419, 30);
-            this.panel12.Margin = new System.Windows.Forms.Padding(0);
-            this.panel12.Name = "panel12";
-            this.panel12.Size = new System.Drawing.Size(476, 447);
-            this.panel12.TabIndex = 2;
-            // 
             // button4
             // 
-            this.button4.Location = new System.Drawing.Point(176, 407);
+            this.button4.Location = new System.Drawing.Point(722, 438);
+            this.button4.Margin = new System.Windows.Forms.Padding(0);
             this.button4.Name = "button4";
             this.button4.Size = new System.Drawing.Size(164, 39);
             this.button4.TabIndex = 0;
             this.button4.Text = "TestAdd";
             this.button4.UseVisualStyleBackColor = true;
             this.button4.Click += new System.EventHandler(this.button4_Click);
+            // 
+            // PreviewPanel
+            // 
+            this.PreviewPanel.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
+            this.PreviewPanel.Controls.Add(this.PreviewBox);
+            this.PreviewPanel.Location = new System.Drawing.Point(419, 30);
+            this.PreviewPanel.Margin = new System.Windows.Forms.Padding(0);
+            this.PreviewPanel.Name = "PreviewPanel";
+            this.PreviewPanel.Size = new System.Drawing.Size(476, 408);
+            this.PreviewPanel.TabIndex = 2;
+            // 
+            // PreviewBox
+            // 
+            this.PreviewBox.AccessibleName = "PreviewBox";
+            this.PreviewBox.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.PreviewBox.Enabled = true;
+            this.PreviewBox.Location = new System.Drawing.Point(0, 0);
+            this.PreviewBox.Margin = new System.Windows.Forms.Padding(0);
+            this.PreviewBox.Name = "PreviewBox";
+            this.PreviewBox.OcxState = ((System.Windows.Forms.AxHost.State)(resources.GetObject("PreviewBox.OcxState")));
+            this.PreviewBox.Size = new System.Drawing.Size(472, 404);
+            this.PreviewBox.TabIndex = 0;
             // 
             // panel10
             // 
@@ -229,25 +267,6 @@
             this.panel6.Size = new System.Drawing.Size(895, 199);
             this.panel6.TabIndex = 0;
             // 
-            // panel7
-            // 
-            this.panel7.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.panel7.Location = new System.Drawing.Point(1, 0);
-            this.panel7.Margin = new System.Windows.Forms.Padding(0);
-            this.panel7.Name = "panel7";
-            this.panel7.Size = new System.Drawing.Size(158, 199);
-            this.panel7.TabIndex = 0;
-            // 
-            // panel11
-            // 
-            this.panel11.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.panel11.Location = new System.Drawing.Point(209, 88);
-            this.panel11.Margin = new System.Windows.Forms.Padding(0);
-            this.panel11.Name = "panel11";
-            this.panel11.Size = new System.Drawing.Size(419, 275);
-            this.panel11.TabIndex = 1;
-            this.panel11.Paint += new System.Windows.Forms.PaintEventHandler(this.panel11_Paint);
-            // 
             // panel8
             // 
             this.panel8.AutoScroll = true;
@@ -261,11 +280,30 @@
             this.panel8.Size = new System.Drawing.Size(736, 199);
             this.panel8.TabIndex = 0;
             // 
+            // AudioTrack
+            // 
+            this.AudioTrack.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.AudioTrack.Controls.Add(this.AudioTrackPlaceholder);
+            this.AudioTrack.Location = new System.Drawing.Point(0, 98);
+            this.AudioTrack.Margin = new System.Windows.Forms.Padding(0);
+            this.AudioTrack.Name = "AudioTrack";
+            this.AudioTrack.Size = new System.Drawing.Size(734, 75);
+            this.AudioTrack.TabIndex = 5;
+            // 
+            // AudioTrackPlaceholder
+            // 
+            this.AudioTrackPlaceholder.Location = new System.Drawing.Point(1, 21);
+            this.AudioTrackPlaceholder.Margin = new System.Windows.Forms.Padding(0);
+            this.AudioTrackPlaceholder.Name = "AudioTrackPlaceholder";
+            this.AudioTrackPlaceholder.Size = new System.Drawing.Size(733, 31);
+            this.AudioTrackPlaceholder.TabIndex = 3;
+            this.AudioTrackPlaceholder.Paint += new System.Windows.Forms.PaintEventHandler(this.AudioTrackPlaceholder_Paint);
+            // 
             // EditingRuller
             // 
             this.EditingRuller.AutoScroll = true;
             this.EditingRuller.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.EditingRuller.Location = new System.Drawing.Point(1, 0);
+            this.EditingRuller.Location = new System.Drawing.Point(0, 0);
             this.EditingRuller.Margin = new System.Windows.Forms.Padding(0);
             this.EditingRuller.Name = "EditingRuller";
             this.EditingRuller.Size = new System.Drawing.Size(733, 23);
@@ -291,24 +329,23 @@
             this.VideoTrackPlaceholder.TabIndex = 2;
             this.VideoTrackPlaceholder.Paint += new System.Windows.Forms.PaintEventHandler(this.VideoTrackPlaceholder_Paint_1);
             // 
-            // AudioTrack
+            // panel7
             // 
-            this.AudioTrack.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.AudioTrack.Controls.Add(this.AudioTrackPlaceholder);
-            this.AudioTrack.Location = new System.Drawing.Point(0, 98);
-            this.AudioTrack.Margin = new System.Windows.Forms.Padding(0);
-            this.AudioTrack.Name = "AudioTrack";
-            this.AudioTrack.Size = new System.Drawing.Size(734, 75);
-            this.AudioTrack.TabIndex = 5;
+            this.panel7.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.panel7.Location = new System.Drawing.Point(1, 0);
+            this.panel7.Margin = new System.Windows.Forms.Padding(0);
+            this.panel7.Name = "panel7";
+            this.panel7.Size = new System.Drawing.Size(158, 199);
+            this.panel7.TabIndex = 0;
             // 
-            // AudioTrackPlaceholder
+            // panel11
             // 
-            this.AudioTrackPlaceholder.Location = new System.Drawing.Point(1, 21);
-            this.AudioTrackPlaceholder.Margin = new System.Windows.Forms.Padding(0);
-            this.AudioTrackPlaceholder.Name = "AudioTrackPlaceholder";
-            this.AudioTrackPlaceholder.Size = new System.Drawing.Size(733, 31);
-            this.AudioTrackPlaceholder.TabIndex = 3;
-            this.AudioTrackPlaceholder.Paint += new System.Windows.Forms.PaintEventHandler(this.AudioTrackPlaceholder_Paint);
+            this.panel11.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.panel11.Location = new System.Drawing.Point(209, 88);
+            this.panel11.Margin = new System.Windows.Forms.Padding(0);
+            this.panel11.Name = "panel11";
+            this.panel11.Size = new System.Drawing.Size(419, 275);
+            this.panel11.TabIndex = 1;
             // 
             // UserInterfaceForm
             // 
@@ -337,11 +374,12 @@
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             this.panel2.ResumeLayout(false);
             this.panel5.ResumeLayout(false);
-            this.panel12.ResumeLayout(false);
+            this.PreviewPanel.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.PreviewBox)).EndInit();
             this.panel6.ResumeLayout(false);
             this.panel8.ResumeLayout(false);
-            this.VideoTrack.ResumeLayout(false);
             this.AudioTrack.ResumeLayout(false);
+            this.VideoTrack.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -359,7 +397,7 @@
         private System.Windows.Forms.Panel panel6;
         private System.Windows.Forms.Panel panel7;
         private System.Windows.Forms.Panel panel10;
-        private System.Windows.Forms.Panel panel12;
+        private System.Windows.Forms.Panel PreviewPanel;
         private System.Windows.Forms.Panel panel11;
         private System.Windows.Forms.Panel panel13;
         private System.Windows.Forms.Button button3;
@@ -370,5 +408,8 @@
         private System.Windows.Forms.Panel VideoTrackPlaceholder;
         private System.Windows.Forms.Panel AudioTrack;
         private System.Windows.Forms.Panel AudioTrackPlaceholder;
+        private System.Windows.Forms.Label TimeStamp;
+        private System.Windows.Forms.Button PlayButton;
+        private AxWMPLib.AxWindowsMediaPlayer PreviewBox;
     }
 }
