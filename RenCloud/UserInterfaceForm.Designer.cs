@@ -54,6 +54,7 @@
             this.VideoTrackPlaceholder = new System.Windows.Forms.Panel();
             this.panel7 = new System.Windows.Forms.Panel();
             this.panel11 = new System.Windows.Forms.Panel();
+            this.PauseButton = new System.Windows.Forms.Button();
             this.panel1.SuspendLayout();
             this.panel3.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
@@ -173,6 +174,7 @@
             // 
             // panel5
             // 
+            this.panel5.Controls.Add(this.PauseButton);
             this.panel5.Controls.Add(this.PlayButton);
             this.panel5.Controls.Add(this.TimeStamp);
             this.panel5.Controls.Add(this.panel13);
@@ -187,7 +189,7 @@
             // 
             // PlayButton
             // 
-            this.PlayButton.Location = new System.Drawing.Point(606, 438);
+            this.PlayButton.Location = new System.Drawing.Point(613, 438);
             this.PlayButton.Margin = new System.Windows.Forms.Padding(0);
             this.PlayButton.Name = "PlayButton";
             this.PlayButton.Size = new System.Drawing.Size(109, 38);
@@ -199,7 +201,7 @@
             // TimeStamp
             // 
             this.TimeStamp.ForeColor = System.Drawing.Color.White;
-            this.TimeStamp.Location = new System.Drawing.Point(528, 446);
+            this.TimeStamp.Location = new System.Drawing.Point(419, 447);
             this.TimeStamp.Margin = new System.Windows.Forms.Padding(0);
             this.TimeStamp.Name = "TimeStamp";
             this.TimeStamp.Size = new System.Drawing.Size(78, 22);
@@ -217,7 +219,7 @@
             // 
             // button4
             // 
-            this.button4.Location = new System.Drawing.Point(722, 438);
+            this.button4.Location = new System.Drawing.Point(728, 438);
             this.button4.Margin = new System.Windows.Forms.Padding(0);
             this.button4.Name = "button4";
             this.button4.Size = new System.Drawing.Size(164, 39);
@@ -347,6 +349,17 @@
             this.panel11.Size = new System.Drawing.Size(419, 275);
             this.panel11.TabIndex = 1;
             // 
+            // PauseButton
+            // 
+            this.PauseButton.Location = new System.Drawing.Point(497, 438);
+            this.PauseButton.Margin = new System.Windows.Forms.Padding(0);
+            this.PauseButton.Name = "PauseButton";
+            this.PauseButton.Size = new System.Drawing.Size(109, 38);
+            this.PauseButton.TabIndex = 4;
+            this.PauseButton.Text = "Pause";
+            this.PauseButton.UseVisualStyleBackColor = true;
+            this.PauseButton.Click += new System.EventHandler(this.PauseButton_Click);
+            // 
             // UserInterfaceForm
             // 
             this.AllowDrop = true;
@@ -411,5 +424,6 @@
         private System.Windows.Forms.Label TimeStamp;
         private System.Windows.Forms.Button PlayButton;
         private AxWMPLib.AxWindowsMediaPlayer PreviewBox;
+        private System.Windows.Forms.Button PauseButton;
     }
 }

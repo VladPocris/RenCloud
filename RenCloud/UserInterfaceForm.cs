@@ -37,12 +37,18 @@ namespace RenCloud
         private float pixelsPerSecond = 50f;
         private float pixelsPerMillisecond;
         private Timer autoScrollTimer;
+        private Timer playbackTimer;
         private int autoScrollDirection = 0;
         private bool isUpdatingUI = false;
         private List<VideoSegment> fullVideo = new List<VideoSegment>();
         private List<VideoSegment> fullAudio = new List<VideoSegment>();
         private int segmentsVideoCount = 0;
         private int segmentsAudioCount = 0;
+        private string previewFile = "";
+        private bool wasPlayingBeforeDrag = false;
+        private float lastUpdatedPosition = -1;
+        private const float updateThreshold = 5.0f;
+
 
         class VideoSegment
         {
@@ -62,7 +68,7 @@ namespace RenCloud
             public float TimeLinePosition { get; set; }
         }
 
-        private void GeneratePreview()
+        private async void GeneratePreview()
         {
             string outputPath = Path.Combine(Path.GetTempPath(), "preview.mp4");
             StringBuilder ffmpegCmd = new StringBuilder();
@@ -121,28 +127,73 @@ namespace RenCloud
             string errorOutput = ffmpegProcess.StandardError.ReadToEnd();
             ffmpegProcess.WaitForExit();
 
-            if (ffmpegProcess.ExitCode == 0)
-            {
-                PlayPreview(outputPath);
-            }
-            else
+            previewFile = outputPath;
+            PreviewBox.settings.autoStart = false;
+
+            if (ffmpegProcess.ExitCode != 0)
             {
                 MessageBox.Show("Failed to create preview.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 Console.WriteLine("FFmpeg error output: " + errorOutput);
             }
+            PreviewBox.URL = outputPath;
+            PlayPreview();
+            await Task.Delay(890);
+            PausePreview();
         }
 
 
-
-        private void PlayPreview(string videoPath)
+        private void PlayPreview()
         {
-            PreviewBox.URL = videoPath;
+            Debug.WriteLine("PlayPreview called from: " + new StackTrace().GetFrame(1).GetMethod().Name);
             PreviewBox.Ctlcontrols.play();
+            playbackTimer.Start();
         }
+
+        private void PausePreview()
+        {
+            Debug.WriteLine("PausePreview called from: " + new StackTrace().GetFrame(1).GetMethod().Name);
+            PreviewBox.Ctlcontrols.pause();
+            playbackTimer.Stop();
+        }
+
+        private void PauseButton_Click(object sender, EventArgs e)
+        {
+            PausePreview();
+        }
+
         private void PlayButton_Click(object sender, EventArgs e)
         {
-            GeneratePreview();
+            PlayPreview();
         }
+
+
+
+
+
+
+
+
+
+
+        private void PlaybackTimer_Tick(object sender, EventArgs e)
+        {
+            if (!isDraggingTracker)
+            {
+                currentPlaybackTime = (float)(PreviewBox.Ctlcontrols.currentPosition * 1000);
+                trackerXPosition = currentPlaybackTime * pixelsPerMillisecond;
+                UpdatePlaybackLabel(currentPlaybackTime);
+                EditingRuller.Invalidate();
+                VideoTrack.Invalidate();
+                AudioTrack.Invalidate();
+            }
+        }
+
+
+
+
+
+
+
 
 
 
@@ -212,6 +263,8 @@ namespace RenCloud
             pixelsPerMillisecond = pixelsPerSecond / 1000f;
             autoScrollTimer = new Timer { Interval = 1 };
             autoScrollTimer.Tick += AutoScrollTimer_Tick;
+            playbackTimer = new Timer { Interval = 100 };
+            playbackTimer.Tick += PlaybackTimer_Tick;
             PreviewBox.uiMode = "none";
             //APPLY ROUND CORNERS//
             applyCorners = new Corners();
@@ -242,24 +295,29 @@ namespace RenCloud
         }
         private void EditingRuller_MouseDown(object sender, MouseEventArgs e)
         {
-            float trackerWidth = 5f;
+            wasPlayingBeforeDrag = PreviewBox.playState == WMPLib.WMPPlayState.wmppsPlaying;
 
-            if (Math.Abs(e.X - trackerXPosition) <= trackerWidth)
+
+            isDraggingTracker = true;
+            PausePreview();
+
+            if (Math.Abs(e.X - trackerXPosition) <= 5)
             {
                 isDraggingTracker = true;
             }
             else
             {
+                // If not clicking directly on the tracker, move the tracker to the mouse position
                 trackerXPosition = Math.Max(0, Math.Min(e.X, widthVideo));
                 currentPlaybackTime = trackerXPosition / pixelsPerMillisecond;
-                currentPlaybackTime = (float)(Math.Round(currentPlaybackTime));
+                PreviewBox.Ctlcontrols.currentPosition = currentPlaybackTime / 1000.0;
                 UpdatePlaybackLabel(currentPlaybackTime);
-
                 EditingRuller.Invalidate();
                 VideoTrack.Invalidate();
                 AudioTrack.Invalidate();
             }
         }
+
         private void EditingRuller_MouseMove(object sender, MouseEventArgs e)
         {
             if (isDraggingTracker)
@@ -268,7 +326,12 @@ namespace RenCloud
                 int visibleEnd = visibleStart + panel8.ClientRectangle.Width;
                 trackerXPosition = Math.Max(visibleStart, Math.Min(e.X, Math.Min(widthVideo, visibleEnd)));
                 currentPlaybackTime = trackerXPosition / pixelsPerMillisecond;
-                currentPlaybackTime = (float)(Math.Round(currentPlaybackTime));
+                PreviewBox.Ctlcontrols.currentPosition = currentPlaybackTime / 1000.0;
+
+                // Ensure the player updates the frame display
+                PreviewBox.Ctlcontrols.pause();
+                ((WMPLib.IWMPControls2)PreviewBox.Ctlcontrols).step(1);
+
                 UpdatePlaybackLabel(currentPlaybackTime);
                 if (!isUpdatingUI)
                 {
@@ -278,32 +341,52 @@ namespace RenCloud
                     AudioTrack.Invalidate();
                     isUpdatingUI = false;
                 }
-                if (trackerXPosition == visibleEnd && visibleEnd < widthVideo)
-                {
-                    autoScrollDirection = 1;
-                    autoScrollTimer.Start();
-                }
-                else if (trackerXPosition == visibleStart && visibleStart > 0)
-                {
-                    autoScrollDirection = -1;
-                    autoScrollTimer.Start();
-                }
-                else
-                {
-                    autoScrollDirection = 0;
-                    autoScrollTimer.Stop();
-                }
+
+                ManageAutoScroll(visibleStart, visibleEnd);
             }
         }
+
+
         private void EditingRuller_MouseUp(object sender, MouseEventArgs e)
         {
             if (isDraggingTracker)
             {
                 isDraggingTracker = false;
+                autoScrollTimer.Stop();
+                autoScrollDirection = 0;
+                if (wasPlayingBeforeDrag)
+                {
+                    PlayPreview();
+                }
+                else
+                {
+                    PausePreview();
+                }
+            }
+        }
+
+        private void ManageAutoScroll(int visibleStart, int visibleEnd)
+        {
+
+            if (trackerXPosition == visibleEnd && visibleEnd < widthVideo)
+            {
+                autoScrollDirection = 1;
+                autoScrollTimer.Start();
+            }
+
+            else if (trackerXPosition == visibleStart && visibleStart > 0)
+            {
+                autoScrollDirection = -1;
+                autoScrollTimer.Start();
+            }
+            else
+            {
                 autoScrollDirection = 0;
                 autoScrollTimer.Stop();
             }
         }
+
+
         private void AutoScrollTimer_Tick(object sender, EventArgs e)
         {
             int scrollSpeed = 40;
@@ -579,6 +662,8 @@ namespace RenCloud
             AudioTrack.MouseDown += AudioTrack_MouseDownHandler;
             VideoTrack.Invalidate();
             AudioTrack.Invalidate();
+
+            GeneratePreview();
         }
         private void VideoTrack_PaintHandler(object sender, PaintEventArgs e)
         {
