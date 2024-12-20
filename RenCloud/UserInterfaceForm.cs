@@ -70,69 +70,122 @@ namespace RenCloud
 
         private async void GeneratePreview()
         {
-            string outputPath = Path.Combine(Path.GetTempPath(), "preview.mp4");
-            StringBuilder ffmpegCmd = new StringBuilder();
-            List<string> filterComplex = new List<string>();
-            int fileIndex = 0;
+            string previewDirectory = Path.Combine(Path.GetTempPath(), "VideoPreviews");
+            if (!Directory.Exists(previewDirectory))
+            {
+                Directory.CreateDirectory(previewDirectory);
+            }
 
-            int targetWidth = 640;
-            int targetHeight = 360;
-            int targetFps = 30;
+            string outputPath = Path.Combine(previewDirectory, $"preview_{DateTime.Now:yyyyMMddHHmmssfff}.mp4");
+            StringBuilder ffmpegCmd = new StringBuilder("-y "); // Overwrite without asking
+
+            int fileIndex = 0;
+            List<string> filterComplexVideo = new List<string>();
+            List<string> filterComplexAudio = new List<string>();
+
+            // Define common settings for all segments to be normalized
+            int targetWidth = 320;
+            int targetHeight = 180;
+            int targetFps = 15;
             string audioFormat = "fltp";
             int audioSampleRate = 44100;
+            string videoFormat = "yuv420p"; // Optional: Normalize pixel format if necessary
 
             foreach (var segment in fullVideo)
             {
                 ffmpegCmd.AppendFormat("-i \"{0}\" ", segment.FilePath);
-                filterComplex.Add($"[{fileIndex}:v]trim=start={segment.StartTime}:end={segment.EndTime},setpts=PTS-STARTPTS,scale={targetWidth}:{targetHeight},setsar=1,fps={targetFps}[v{fileIndex}]; ");
-                filterComplex.Add($"[{fileIndex}:a]atrim=start={segment.StartTime}:end={segment.EndTime},asetpts=PTS-STARTPTS,aformat=sample_fmts={audioFormat}:sample_rates={audioSampleRate}:channel_layouts=stereo[a{fileIndex}]; ");
+                filterComplexVideo.Add($"[{fileIndex}:v]trim=start={segment.StartTime}:end={segment.EndTime},setpts=PTS-STARTPTS,scale={targetWidth}:{targetHeight},fps={targetFps},setsar=1,format={videoFormat}[v{fileIndex}];");
+                filterComplexAudio.Add($"[{fileIndex}:a]atrim=start={segment.StartTime}:end={segment.EndTime},asetpts=PTS-STARTPTS,aformat=sample_fmts={audioFormat}:sample_rates={audioSampleRate}:channel_layouts=stereo[a{fileIndex}];");
                 fileIndex++;
             }
-            if (fileIndex > 0)
+
+            if (fileIndex > 0)  // Ensure there are segments before attempting to concatenate
             {
-                ffmpegCmd.Append("-filter_complex \"");
-                foreach (var filter in filterComplex)
-                {
-                    ffmpegCmd.Append(filter);
-                }
-                string videoInputs = string.Join("", Enumerable.Range(0, fileIndex).Select(i => $"[v{i}]"));
-                string audioInputs = string.Join("", Enumerable.Range(0, fileIndex).Select(i => $"[a{i}]"));
-                ffmpegCmd.Append($"{videoInputs}concat=n={fileIndex}:v=1:a=0[outv]; ");
-                ffmpegCmd.Append($"{audioInputs}concat=n={fileIndex}:v=0:a=1[outa]\"");
-                ffmpegCmd.Append(" -map \"[outv]\" -map \"[outa]\" ");
+                string videoFilter = string.Join("", Enumerable.Range(0, fileIndex).Select(i => $"[v{i}]"));
+                string audioFilter = string.Join("", Enumerable.Range(0, fileIndex).Select(i => $"[a{i}]"));
+                string filterComplex = $"{string.Join("", filterComplexVideo)}{videoFilter}concat=n={fileIndex}:v=1:a=0[outv];{string.Join("", filterComplexAudio)}{audioFilter}concat=n={fileIndex}:v=0:a=1[outa]";
+                ffmpegCmd.Append($"-filter_complex \"{filterComplex}\" ");
+                ffmpegCmd.Append($"-map \"[outv]\" -map \"[outa]\" \"{outputPath}\"");
+            }
+            else
+            {
+                MessageBox.Show("No video segments to process.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
             }
 
-            ffmpegCmd.AppendFormat("-y \"{0}\"", outputPath);
-
-            Process ffmpegProcess = new Process
+            await Task.Run(() =>
             {
-                StartInfo = new ProcessStartInfo
+                using (Process ffmpegProcess = new Process())
                 {
-                    FileName = ffmpegPath,
-                    Arguments = ffmpegCmd.ToString(),
-                    UseShellExecute = false,
-                    RedirectStandardError = true,
-                    CreateNoWindow = true
+                    ffmpegProcess.StartInfo = new ProcessStartInfo
+                    {
+                        FileName = ffmpegPath,
+                        Arguments = ffmpegCmd.ToString(),
+                        UseShellExecute = false,
+                        RedirectStandardError = true,
+                        CreateNoWindow = true
+                    };
+
+                    ffmpegProcess.Start();
+                    string errorOutput = ffmpegProcess.StandardError.ReadToEnd();
+                    ffmpegProcess.WaitForExit();
+
+                    if (ffmpegProcess.ExitCode == 0)
+                    {
+                        this.Invoke(new Action(() =>
+                        {
+                            PreviewBox.settings.autoStart = false;
+                            PreviewBox.settings.setMode("loop", true);
+                            PreviewBox.URL = outputPath;
+                            PreviewBox.stretchToFit = true;
+                            PreviewBox.Ctlcontrols.play();
+                            Task.Delay(872).ContinueWith(t =>
+                            {
+                                PreviewBox.Ctlcontrols.pause();
+                            }, TaskScheduler.FromCurrentSynchronizationContext());
+                        }));
+                    }
+                    else
+                    {
+                        this.Invoke(new Action(() =>
+                        {
+                            MessageBox.Show("Failed to create preview. See console output for details.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            Console.WriteLine($"ffmpeg error: {errorOutput}");
+                        }));
+                    }
                 }
-            };
-
-            ffmpegProcess.Start();
-            string errorOutput = ffmpegProcess.StandardError.ReadToEnd();
-            ffmpegProcess.WaitForExit();
-
-            previewFile = outputPath;
-            PreviewBox.settings.autoStart = false;
-            PreviewBox.settings.setMode("loop", true);
-            if (ffmpegProcess.ExitCode != 0)
-            {
-                MessageBox.Show("Failed to create preview.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                Console.WriteLine("FFmpeg error output: " + errorOutput);
-            }
-            PreviewBox.URL = outputPath;
-            PlayPreview();
-            await Task.Delay(890);
-            PausePreview();
+            });
         }
+
+
+
+
+
+
+        private void CleanupOldPreviews(string directoryPath)
+        {
+            foreach (string file in Directory.GetFiles(directoryPath, "preview_lowres_*.mp4"))
+            {
+                try
+                {
+                    File.Delete(file);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Failed to delete old preview file: {file}. Error: {ex.Message}", "File Deletion Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+        }
+
+
+
+
+
+
+
+
+
+
         private void PlayPreview()
         {
             Debug.WriteLine("PlayPreview called from: " + new StackTrace().GetFrame(1).GetMethod().Name);
@@ -342,31 +395,33 @@ namespace RenCloud
         {
             if (isDraggingTracker)
             {
-                int visibleStart = panel8.HorizontalScroll.Value;
-                int visibleEnd = visibleStart + panel8.ClientRectangle.Width;
-                trackerXPosition = Math.Max(visibleStart, Math.Min(e.X, Math.Min(widthVideo, visibleEnd)));
-                currentPlaybackTime = trackerXPosition / pixelsPerMillisecond;
+                if (PreviewBox.currentMedia != null) { 
+                    int visibleStart = panel8.HorizontalScroll.Value;
+                    int visibleEnd = visibleStart + panel8.ClientRectangle.Width;
+                    trackerXPosition = Math.Max(visibleStart, Math.Min(e.X, Math.Min(widthVideo, visibleEnd)));
+                    currentPlaybackTime = trackerXPosition / pixelsPerMillisecond;
 
-                float newPositionInSeconds = currentPlaybackTime / 1000.0f;
-                if (newPositionInSeconds < PreviewBox.currentMedia.duration)
-                {
-                    PreviewBox.Ctlcontrols.currentPosition = newPositionInSeconds;
+                    float newPositionInSeconds = currentPlaybackTime / 1000.0f;
+                    if (newPositionInSeconds < PreviewBox.currentMedia.duration)
+                    {
+                        PreviewBox.Ctlcontrols.currentPosition = newPositionInSeconds;
+                    }
+                    PreviewBox.Ctlcontrols.pause();
+                    ((WMPLib.IWMPControls2)PreviewBox.Ctlcontrols).step(1);
+
+                    UpdatePlaybackLabel(currentPlaybackTime);
+
+                    if (!isUpdatingUI)
+                    {
+                        isUpdatingUI = true;
+                        EditingRuller.Invalidate();
+                        VideoTrack.Invalidate();
+                        AudioTrack.Invalidate();
+                        isUpdatingUI = false;
+                    }
+
+                    ManageAutoScroll(visibleStart, visibleEnd);
                 }
-                PreviewBox.Ctlcontrols.pause();
-                ((WMPLib.IWMPControls2)PreviewBox.Ctlcontrols).step(1);
-
-                UpdatePlaybackLabel(currentPlaybackTime);
-
-                if (!isUpdatingUI)
-                {
-                    isUpdatingUI = true;
-                    EditingRuller.Invalidate();
-                    VideoTrack.Invalidate();
-                    AudioTrack.Invalidate();
-                    isUpdatingUI = false;
-                }
-
-                ManageAutoScroll(visibleStart, visibleEnd);
             }
         }
 
@@ -606,7 +661,7 @@ namespace RenCloud
                 AddVideoToTimeline(filePath);
             }
         }
-        private void AddVideoToTimeline(string filePath)
+        private async void AddVideoToTimeline(string filePath)
         {
             float videoDuration = (float)GetVideoDuration(filePath, ffmpegPath);
             float pixelsPerSecond = 50f;
@@ -615,81 +670,98 @@ namespace RenCloud
             float barSpacing = 2f;
             float barWidthIncludingSpacing = barWidth + barSpacing;
             float newWidth = videoDuration * pixelsPerSecond;
-            widthVideo += newWidth;
-            EditingRuller.Width = (int)Math.Ceiling(widthVideo + VideoTrackPlaceholder.Width);
-            VideoTrack.Width = (int)Math.Ceiling(widthVideo + VideoTrackPlaceholder.Width);
-            AudioTrack.Width = (int)Math.Ceiling(widthVideo + VideoTrackPlaceholder.Width);
-            EditingRuller.Invalidate();
-            VideoTrackPlaceholder.Invalidate();
-            AudioTrackPlaceholder.Invalidate();
-            List<Image> videoThumbnails = ExtractVideoThumbnails(filePath);
+
+            // UI update
+            this.Invoke(new Action(() =>
+            {
+                widthVideo += newWidth;
+                EditingRuller.Width = (int)Math.Ceiling(widthVideo + VideoTrackPlaceholder.Width);
+                VideoTrack.Width = (int)Math.Ceiling(widthVideo + VideoTrackPlaceholder.Width);
+                AudioTrack.Width = (int)Math.Ceiling(widthVideo + VideoTrackPlaceholder.Width);
+                EditingRuller.Invalidate();
+                VideoTrackPlaceholder.Invalidate();
+                AudioTrackPlaceholder.Invalidate();
+            }));
+
+            List<Image> videoThumbnails = await Task.Run(() => ExtractVideoThumbnails(filePath));
+            List<float> audioAmplitudes = await Task.Run(() => GetAudioAmplitudeData(filePath));
+
             int thumbnailCount = videoThumbnails.Count;
             float intervalInPixels = 4.0f * pixelsPerSecond;
             float videoStartPosition = widthVideo - newWidth;
             float thumbnailWidth = 100f;
-            for (int i = 0; i < thumbnailCount; i++)
-            {
-                float position = videoStartPosition + intervalInPixels * (i + 1);
-                if (position + thumbnailWidth > videoStartPosition + newWidth)
-                    break;
 
-                allThumbnailsWithPositions.Add((videoThumbnails[i], position));
-            }
-            var videoBounds = new RectangleF(videoStartPosition, 0f, newWidth, VideoTrack.Height - 2f);
-            var audioBounds = new RectangleF(videoStartPosition, 0f, newWidth, AudioTrack.Height - 2f);
-            allVideoBounds.Add(videoBounds);
-            videoToAudioMapping[videoBounds] = audioBounds;
-            allAudioSegments.Add(audioBounds);
-            List<float> audioAmplitudes = GetAudioAmplitudeData(filePath);
-            int amplitudeCount = audioAmplitudes.Count;
-            int totalBars = (int)(videoDuration * barsPerSecond);
-            float audioStartPosition = widthVideo - newWidth;
-            for (int i = 0; i < totalBars; i++)
+            // UI update for thumbnails and audio bars
+            this.Invoke(new Action(() =>
             {
-                int startIdx = (int)((i / (float)totalBars) * amplitudeCount);
-                int endIdx = (int)(((i + 1) / (float)totalBars) * amplitudeCount);
-                if (startIdx >= amplitudeCount) break;
-                float averageAmplitude = 0;
-                for (int j = startIdx; j < endIdx; j++)
+                for (int i = 0; i < thumbnailCount; i++)
                 {
-                    averageAmplitude += audioAmplitudes[j];
+                    float position = videoStartPosition + intervalInPixels * (i + 1);
+                    if (position + thumbnailWidth > videoStartPosition + newWidth)
+                        break;
+
+                    allThumbnailsWithPositions.Add((videoThumbnails[i], position));
                 }
-                averageAmplitude /= (endIdx - startIdx);
-                float amplitudeHeight = averageAmplitude * AudioTrack.Height * 3;
-                float barXPosition = audioStartPosition + (i * barWidthIncludingSpacing);
-                float barYPosition = AudioTrack.Height - amplitudeHeight;
-                if (barXPosition + barWidth > audioStartPosition + newWidth)
-                    break;
-                allAudioAmplitudeBars.Add(new RectangleF(barXPosition, barYPosition, barWidth, amplitudeHeight));
-                Console.WriteLine($"Bar {i}: X = {barXPosition}, Height = {amplitudeHeight}");
-            }
 
-            segmentsVideoCount++;
-            fullVideo.Add(new VideoSegment { StartTime = 0, EndTime = videoDuration, FilePath = filePath, Id = segmentsVideoCount, TimeLinePosition = videoStartPosition/pixelsPerSecond});
+                var videoBounds = new RectangleF(videoStartPosition, 0f, newWidth, VideoTrack.Height - 2f);
+                var audioBounds = new RectangleF(videoStartPosition, 0f, newWidth, AudioTrack.Height - 2f);
+                allVideoBounds.Add(videoBounds);
+                videoToAudioMapping[videoBounds] = audioBounds;
+                allAudioSegments.Add(audioBounds);
 
-            segmentsAudioCount++;
-            fullAudio.Add(new VideoSegment { StartTime = 0, EndTime = videoDuration, FilePath = filePath, Id = segmentsAudioCount, TimeLinePosition = videoStartPosition / pixelsPerSecond });
+                int amplitudeCount = audioAmplitudes.Count;
+                int totalBars = (int)(videoDuration * barsPerSecond);
+                float audioStartPosition = widthVideo - newWidth;
 
-            foreach (VideoSegment segment in fullVideo)
-            {
-                Console.WriteLine($"Position: " + segment.Id + " | FilePath: " + segment.FilePath + " | Start time: " + segment.StartTime + " | End Time: " + segment.EndTime + " | TimeLine Position: " + segment.TimeLinePosition);
-            }
+                for (int i = 0; i < totalBars; i++)
+                {
+                    int startIdx = (int)((i / (float)totalBars) * amplitudeCount);
+                    int endIdx = (int)(((i + 1) / (float)totalBars) * amplitudeCount);
+                    if (startIdx >= amplitudeCount) break;
+                    float averageAmplitude = 0;
+                    for (int j = startIdx; j < endIdx; j++)
+                    {
+                        averageAmplitude += audioAmplitudes[j];
+                    }
+                    averageAmplitude /= (endIdx - startIdx);
+                    float amplitudeHeight = averageAmplitude * AudioTrack.Height * 3;
+                    float barXPosition = audioStartPosition + (i * barWidthIncludingSpacing);
+                    float barYPosition = AudioTrack.Height - amplitudeHeight;
+                    if (barXPosition + barWidth > audioStartPosition + newWidth)
+                        break;
+                    allAudioAmplitudeBars.Add(new RectangleF(barXPosition, barYPosition, barWidth, amplitudeHeight));
+                }
 
-            VideoTrackPlaceholder.Location = new Point((int)Math.Round(widthVideo), VideoTrackPlaceholder.Location.Y);
-            AudioTrackPlaceholder.Location = new Point((int)Math.Round(widthVideo), AudioTrackPlaceholder.Location.Y);
-            VideoTrack.Paint -= VideoTrack_PaintHandler;
-            VideoTrack.Paint += VideoTrack_PaintHandler;
-            VideoTrack.MouseDown -= VideoTrack_MouseDownHandler;
-            VideoTrack.MouseDown += VideoTrack_MouseDownHandler;
-            AudioTrack.Paint -= AudioTrack_PaintHandler;
-            AudioTrack.Paint += AudioTrack_PaintHandler;
-            AudioTrack.MouseDown -= AudioTrack_MouseDownHandler;
-            AudioTrack.MouseDown += AudioTrack_MouseDownHandler;
-            VideoTrack.Invalidate();
-            AudioTrack.Invalidate();
+                videoThumbnails = null;
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+
+
+                segmentsVideoCount++;
+                fullVideo.Add(new VideoSegment { StartTime = 0, EndTime = videoDuration, FilePath = filePath, Id = segmentsVideoCount, TimeLinePosition = videoStartPosition / pixelsPerSecond });
+
+                segmentsAudioCount++;
+                fullAudio.Add(new VideoSegment { StartTime = 0, EndTime = videoDuration, FilePath = filePath, Id = segmentsAudioCount, TimeLinePosition = videoStartPosition / pixelsPerSecond });
+
+                VideoTrackPlaceholder.Location = new Point((int)Math.Round(widthVideo), VideoTrackPlaceholder.Location.Y);
+                AudioTrackPlaceholder.Location = new Point((int)Math.Round(widthVideo), AudioTrackPlaceholder.Location.Y);
+                VideoTrack.Paint -= VideoTrack_PaintHandler;
+                VideoTrack.Paint += VideoTrack_PaintHandler;
+                VideoTrack.MouseDown -= VideoTrack_MouseDownHandler;
+                VideoTrack.MouseDown += VideoTrack_MouseDownHandler;
+                AudioTrack.Paint -= AudioTrack_PaintHandler;
+                AudioTrack.Paint += AudioTrack_PaintHandler;
+                AudioTrack.MouseDown -= AudioTrack_MouseDownHandler;
+                AudioTrack.MouseDown += AudioTrack_MouseDownHandler;
+                VideoTrack.Invalidate();
+                AudioTrack.Invalidate();
+            }));
 
             GeneratePreview();
         }
+
+
+
         private void VideoTrack_PaintHandler(object sender, PaintEventArgs e)
         {
             Graphics g = e.Graphics;
@@ -758,7 +830,7 @@ namespace RenCloud
             }
             return 0f;
         }
-        public List<Image> ExtractVideoThumbnails(string videoFilePath, double intervalSeconds = 4.0, int maxDegreeOfParallelism = 8)
+        public async Task<List<Image>> ExtractVideoThumbnails(string videoFilePath, double intervalSeconds = 4.0, int maxDegreeOfParallelism = 8)
         {
             if (!File.Exists(videoFilePath))
             {
@@ -784,7 +856,8 @@ namespace RenCloud
             {
                 double timestamp = i * intervalSeconds;
                 string outputFile = Path.Combine(tempDir, $"thumbnail_{i:D3}.jpg");
-                string ffmpegCommand = $"-ss {timestamp} -i \"{videoFilePath}\" -vframes 1 -q:v 2 " +
+                // Include scale parameter to resize the output image to 150x100
+                string ffmpegCommand = $"-ss {timestamp} -i \"{videoFilePath}\" -vframes 1 -vf \"scale=150:100\" -q:v 2 " +
                                        $"-threads {Environment.ProcessorCount} " +
                                        $"\"{outputFile}\"";
                 try
@@ -831,6 +904,7 @@ namespace RenCloud
             }
             return thumbnails;
         }
+
         private List<float> GetAudioAmplitudeData(string videoFilePath)
         {
             List<float> amplitudes = new List<float>();
