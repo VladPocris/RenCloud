@@ -75,24 +75,19 @@ namespace RenCloud
             List<string> filterComplex = new List<string>();
             int fileIndex = 0;
 
-            // Common settings for resolution, framerate, audio format, and SAR
-            int targetWidth = 640;  // Example width
-            int targetHeight = 360; // Example height
-            int targetFps = 30;     // Target frames per second
-            string audioFormat = "fltp"; // Floating-point audio samples
-            int audioSampleRate = 44100; // Example sample rate
-            int audioChannels = 2;       // Stereo audio
+            int targetWidth = 640;
+            int targetHeight = 360;
+            int targetFps = 30;
+            string audioFormat = "fltp";
+            int audioSampleRate = 44100;
 
             foreach (var segment in fullVideo)
             {
                 ffmpegCmd.AppendFormat("-i \"{0}\" ", segment.FilePath);
-                // Apply filters to standardize video and audio streams, including setting SAR to 1:1
                 filterComplex.Add($"[{fileIndex}:v]trim=start={segment.StartTime}:end={segment.EndTime},setpts=PTS-STARTPTS,scale={targetWidth}:{targetHeight},setsar=1,fps={targetFps}[v{fileIndex}]; ");
                 filterComplex.Add($"[{fileIndex}:a]atrim=start={segment.StartTime}:end={segment.EndTime},asetpts=PTS-STARTPTS,aformat=sample_fmts={audioFormat}:sample_rates={audioSampleRate}:channel_layouts=stereo[a{fileIndex}]; ");
                 fileIndex++;
             }
-
-            // Concatenate video and audio streams with ensured compatibility
             if (fileIndex > 0)
             {
                 ffmpegCmd.Append("-filter_complex \"");
@@ -100,8 +95,6 @@ namespace RenCloud
                 {
                     ffmpegCmd.Append(filter);
                 }
-
-                // Link video and audio streams to the concat filter
                 string videoInputs = string.Join("", Enumerable.Range(0, fileIndex).Select(i => $"[v{i}]"));
                 string audioInputs = string.Join("", Enumerable.Range(0, fileIndex).Select(i => $"[a{i}]"));
                 ffmpegCmd.Append($"{videoInputs}concat=n={fileIndex}:v=1:a=0[outv]; ");
@@ -129,7 +122,7 @@ namespace RenCloud
 
             previewFile = outputPath;
             PreviewBox.settings.autoStart = false;
-
+            PreviewBox.settings.setMode("loop", true);
             if (ffmpegProcess.ExitCode != 0)
             {
                 MessageBox.Show("Failed to create preview.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -140,27 +133,22 @@ namespace RenCloud
             await Task.Delay(890);
             PausePreview();
         }
-
-
         private void PlayPreview()
         {
             Debug.WriteLine("PlayPreview called from: " + new StackTrace().GetFrame(1).GetMethod().Name);
             PreviewBox.Ctlcontrols.play();
             playbackTimer.Start();
         }
-
         private void PausePreview()
         {
             Debug.WriteLine("PausePreview called from: " + new StackTrace().GetFrame(1).GetMethod().Name);
             PreviewBox.Ctlcontrols.pause();
             playbackTimer.Stop();
         }
-
         private void PauseButton_Click(object sender, EventArgs e)
         {
             PausePreview();
         }
-
         private void PlayButton_Click(object sender, EventArgs e)
         {
             PlayPreview();
@@ -179,9 +167,40 @@ namespace RenCloud
         {
             if (!isDraggingTracker)
             {
+                // Update current playback time
                 currentPlaybackTime = (float)(PreviewBox.Ctlcontrols.currentPosition * 1000);
                 trackerXPosition = currentPlaybackTime * pixelsPerMillisecond;
+
+                // Dynamic update of visible range
+                int visibleStart = panel8.HorizontalScroll.Value;
+                int visibleEnd = visibleStart + panel8.ClientSize.Width;
+
+                // Update UI components
                 UpdatePlaybackLabel(currentPlaybackTime);
+                EditingRuller.Invalidate();
+                VideoTrack.Invalidate();
+                AudioTrack.Invalidate();
+
+                // Scroll to the tracker position if it's near the end of the visible area
+                if (trackerXPosition >= visibleEnd)
+                {
+                    ScrollToPosition(trackerXPosition);
+                }
+                if (currentPlaybackTime < 500 && trackerXPosition < visibleStart)
+                {
+                    ScrollToPosition(0);
+                }
+            }
+        }
+
+        private void ScrollToPosition(float position)
+        {
+            // Calculate the new value within allowable range
+            int newValue = (int)Math.Max(0, Math.Min(position, panel8.HorizontalScroll.Maximum));
+
+            if (panel8.HorizontalScroll.Value != newValue)
+            {
+                panel8.HorizontalScroll.Value = newValue;
                 EditingRuller.Invalidate();
                 VideoTrack.Invalidate();
                 AudioTrack.Invalidate();
@@ -311,6 +330,7 @@ namespace RenCloud
                 trackerXPosition = Math.Max(0, Math.Min(e.X, widthVideo));
                 currentPlaybackTime = trackerXPosition / pixelsPerMillisecond;
                 PreviewBox.Ctlcontrols.currentPosition = currentPlaybackTime / 1000.0;
+                ((WMPLib.IWMPControls2)PreviewBox.Ctlcontrols).step(1);
                 UpdatePlaybackLabel(currentPlaybackTime);
                 EditingRuller.Invalidate();
                 VideoTrack.Invalidate();
@@ -326,13 +346,17 @@ namespace RenCloud
                 int visibleEnd = visibleStart + panel8.ClientRectangle.Width;
                 trackerXPosition = Math.Max(visibleStart, Math.Min(e.X, Math.Min(widthVideo, visibleEnd)));
                 currentPlaybackTime = trackerXPosition / pixelsPerMillisecond;
-                PreviewBox.Ctlcontrols.currentPosition = currentPlaybackTime / 1000.0;
 
-                // Ensure the player updates the frame display
+                float newPositionInSeconds = currentPlaybackTime / 1000.0f;
+                if (newPositionInSeconds < PreviewBox.currentMedia.duration)
+                {
+                    PreviewBox.Ctlcontrols.currentPosition = newPositionInSeconds;
+                }
                 PreviewBox.Ctlcontrols.pause();
                 ((WMPLib.IWMPControls2)PreviewBox.Ctlcontrols).step(1);
 
                 UpdatePlaybackLabel(currentPlaybackTime);
+
                 if (!isUpdatingUI)
                 {
                     isUpdatingUI = true;
@@ -345,6 +369,7 @@ namespace RenCloud
                 ManageAutoScroll(visibleStart, visibleEnd);
             }
         }
+
 
 
         private void EditingRuller_MouseUp(object sender, MouseEventArgs e)
