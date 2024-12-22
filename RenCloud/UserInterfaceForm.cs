@@ -12,6 +12,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Vlc.DotNet.Forms;
 using static RenCloud.Program;
 
 namespace RenCloud
@@ -44,10 +45,8 @@ namespace RenCloud
         private List<VideoSegment> fullAudio = new List<VideoSegment>();
         private int segmentsVideoCount = 0;
         private int segmentsAudioCount = 0;
-        private string previewFile = "";
         private bool wasPlayingBeforeDrag = false;
-        private float lastUpdatedPosition = -1;
-        private const float updateThreshold = 5.0f;
+        private string outputPath;
 
 
         class VideoSegment
@@ -68,7 +67,7 @@ namespace RenCloud
             public float TimeLinePosition { get; set; }
         }
 
-        private async void GeneratePreview()
+        private async Task GeneratePreview(int targetSizeMB = 30)
         {
             string previewDirectory = Path.Combine(Path.GetTempPath(), "VideoPreviews");
             if (!Directory.Exists(previewDirectory))
@@ -76,35 +75,48 @@ namespace RenCloud
                 Directory.CreateDirectory(previewDirectory);
             }
 
-            string outputPath = Path.Combine(previewDirectory, $"preview_{DateTime.Now:yyyyMMddHHmmssfff}.mp4");
+            outputPath = Path.Combine(previewDirectory, $"preview_{DateTime.Now:yyyyMMddHHmmssfff}.mp4");
             StringBuilder ffmpegCmd = new StringBuilder("-y "); // Overwrite without asking
 
             int fileIndex = 0;
             List<string> filterComplexVideo = new List<string>();
             List<string> filterComplexAudio = new List<string>();
 
-            // Define common settings for all segments to be normalized
+            // Common settings
             int targetWidth = 320;
             int targetHeight = 180;
             int targetFps = 15;
-            string audioFormat = "fltp";
-            int audioSampleRate = 44100;
-            string videoFormat = "yuv420p"; // Optional: Normalize pixel format if necessary
+            int audioBitrateKbps = 128; // Audio bitrate in kbps
+            string videoFormat = "yuv420p";
+
+            // Calculate total video duration in seconds
+            double totalDurationSeconds = fullVideo.Sum(segment => segment.EndTime - segment.StartTime);
+
+            // Calculate target video bitrate
+            int totalBitrate = (int)((targetSizeMB * 8192) / totalDurationSeconds) - audioBitrateKbps;
+            string videoBitrate = totalBitrate.ToString() + "k";
 
             foreach (var segment in fullVideo)
             {
-                ffmpegCmd.AppendFormat("-i \"{0}\" ", segment.FilePath);
+                // Add input-specific options for each file
+                ffmpegCmd.AppendFormat("-hwaccel cuda -c:v h264_cuvid -i \"{0}\" ", segment.FilePath);
+
+                // Add video and audio filters
                 filterComplexVideo.Add($"[{fileIndex}:v]trim=start={segment.StartTime}:end={segment.EndTime},setpts=PTS-STARTPTS,scale={targetWidth}:{targetHeight},fps={targetFps},setsar=1,format={videoFormat}[v{fileIndex}];");
-                filterComplexAudio.Add($"[{fileIndex}:a]atrim=start={segment.StartTime}:end={segment.EndTime},asetpts=PTS-STARTPTS,aformat=sample_fmts={audioFormat}:sample_rates={audioSampleRate}:channel_layouts=stereo[a{fileIndex}];");
+                filterComplexAudio.Add($"[{fileIndex}:a]atrim=start={segment.StartTime}:end={segment.EndTime},asetpts=PTS-STARTPTS,aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo[a{fileIndex}];");
                 fileIndex++;
             }
 
-            if (fileIndex > 0)  // Ensure there are segments before attempting to concatenate
+            // Add filter_complex and output-specific options
+            if (fileIndex > 0)
             {
                 string videoFilter = string.Join("", Enumerable.Range(0, fileIndex).Select(i => $"[v{i}]"));
                 string audioFilter = string.Join("", Enumerable.Range(0, fileIndex).Select(i => $"[a{i}]"));
                 string filterComplex = $"{string.Join("", filterComplexVideo)}{videoFilter}concat=n={fileIndex}:v=1:a=0[outv];{string.Join("", filterComplexAudio)}{audioFilter}concat=n={fileIndex}:v=0:a=1[outa]";
                 ffmpegCmd.Append($"-filter_complex \"{filterComplex}\" ");
+
+                // Output options
+                ffmpegCmd.Append($"-b:v {videoBitrate} -preset ultrafast -b:a {audioBitrateKbps}k -c:a aac -crf 30 -threads 0 ");
                 ffmpegCmd.Append($"-map \"[outv]\" -map \"[outa]\" \"{outputPath}\"");
             }
             else
@@ -134,14 +146,16 @@ namespace RenCloud
                     {
                         this.Invoke(new Action(() =>
                         {
-                            PreviewBox.settings.autoStart = false;
-                            PreviewBox.settings.setMode("loop", true);
-                            PreviewBox.URL = outputPath;
-                            PreviewBox.stretchToFit = true;
-                            PreviewBox.Ctlcontrols.play();
+                            var mediaOptions = new string[] { "input-repeat=65535" };
+                            PreviewBox.SetMedia(new FileInfo(outputPath), mediaOptions);
+                            PreviewBox.Play();
+                            // Delay to ensure media loads properly
                             Task.Delay(872).ContinueWith(t =>
                             {
-                                PreviewBox.Ctlcontrols.pause();
+                                if (!wasPlayingBeforeDrag)
+                                {
+                                    PreviewBox.Pause();
+                                }
                             }, TaskScheduler.FromCurrentSynchronizationContext());
                         }));
                     }
@@ -162,26 +176,6 @@ namespace RenCloud
 
 
 
-        private void CleanupOldPreviews(string directoryPath)
-        {
-            foreach (string file in Directory.GetFiles(directoryPath, "preview_lowres_*.mp4"))
-            {
-                try
-                {
-                    File.Delete(file);
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Failed to delete old preview file: {file}. Error: {ex.Message}", "File Deletion Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
-            }
-        }
-
-
-
-
-
-
 
 
 
@@ -189,14 +183,20 @@ namespace RenCloud
         private void PlayPreview()
         {
             Debug.WriteLine("PlayPreview called from: " + new StackTrace().GetFrame(1).GetMethod().Name);
-            PreviewBox.Ctlcontrols.play();
+            UpdatePlaybackLabel(PreviewBox.Time);
+            PreviewBox.Play();
             playbackTimer.Start();
+            playbackStopwatch.Restart();
+            wasPlayingBeforeDrag = true;
         }
         private void PausePreview()
         {
             Debug.WriteLine("PausePreview called from: " + new StackTrace().GetFrame(1).GetMethod().Name);
-            PreviewBox.Ctlcontrols.pause();
+            UpdatePlaybackLabel(PreviewBox.Time);
+            PreviewBox.Pause();
             playbackTimer.Stop();
+            playbackStopwatch.Stop();
+            wasPlayingBeforeDrag = false;
         }
         private void PauseButton_Click(object sender, EventArgs e)
         {
@@ -213,42 +213,72 @@ namespace RenCloud
 
 
 
-
-
+        private Stopwatch playbackStopwatch; // High-resolution stopwatch to track elapsed time
+        private long lastKnownVlcTime = 0;
 
         private void PlaybackTimer_Tick(object sender, EventArgs e)
         {
             if (!isDraggingTracker)
             {
-                // Update current playback time
-                currentPlaybackTime = (float)(PreviewBox.Ctlcontrols.currentPosition * 1000);
-                trackerXPosition = currentPlaybackTime * pixelsPerMillisecond;
+                long elapsedSinceLastKnown = playbackStopwatch.ElapsedMilliseconds;
+                long interpolatedTime = lastKnownVlcTime + elapsedSinceLastKnown; // Predict current time
 
-                // Dynamic update of visible range
-                int visibleStart = panel8.HorizontalScroll.Value;
-                int visibleEnd = visibleStart + panel8.ClientSize.Width;
+                // Calculate the new tracker position based on the interpolated time
+                float newPosition = interpolatedTime * pixelsPerMillisecond;
 
-                // Update UI components
-                UpdatePlaybackLabel(currentPlaybackTime);
+                // Clamp the new position to not exceed the width of the video track
+                float maxPosition = widthVideo; // Width of your video track in pixels
+                trackerXPosition = Math.Min(newPosition, maxPosition);
+
+                // Ensure the tracker stays visible by scrolling the panel
+                EnsureTrackerVisible(trackerXPosition);
+
+                UpdatePlaybackLabel(interpolatedTime); // Update UI with interpolated time
+
+                // Invalidate UI components to reflect the tracker's new position
                 EditingRuller.Invalidate();
                 VideoTrack.Invalidate();
                 AudioTrack.Invalidate();
+            }
 
-                // Scroll to the tracker position if it's near the end of the visible area
-                if (trackerXPosition >= visibleEnd)
-                {
-                    ScrollToPosition(trackerXPosition);
-                }
-                if (currentPlaybackTime < 500 && trackerXPosition < visibleStart)
-                {
-                    ScrollToPosition(0);
-                }
+            // Update last known time periodically from VLC, not every tick to avoid jumpy updates
+            long currentVlcTime = PreviewBox.Time;
+            if (currentVlcTime != lastKnownVlcTime)
+            {
+                lastKnownVlcTime = currentVlcTime;
+                playbackStopwatch.Restart(); // Restart stopwatch when a new VLC time is obtained
             }
         }
 
+        // Ensure the tracker is visible by scrolling the panel if necessary
+        private void EnsureTrackerVisible(float trackerXPosition)
+        {
+            int visibleStart = panel8.HorizontalScroll.Value;
+            int visibleEnd = visibleStart + panel8.ClientRectangle.Width;
+
+            const int padding = 50; // Padding in pixels before scrolling
+
+            if (trackerXPosition < visibleStart + padding)
+            {
+                // Scroll left
+                panel8.HorizontalScroll.Value = Math.Max(0, (int)(trackerXPosition - padding));
+            }
+            else if (trackerXPosition > visibleEnd - padding)
+            {
+                // Scroll right
+                panel8.HorizontalScroll.Value = Math.Min(panel8.HorizontalScroll.Maximum,
+                                                         (int)(trackerXPosition - panel8.ClientRectangle.Width + padding));
+            }
+        }
+
+
+
+
+
+
+
         private void ScrollToPosition(float position)
         {
-            // Calculate the new value within allowable range
             int newValue = (int)Math.Max(0, Math.Min(position, panel8.HorizontalScroll.Maximum));
 
             if (panel8.HorizontalScroll.Value != newValue)
@@ -333,11 +363,13 @@ namespace RenCloud
         {
             InitializeComponent();
             pixelsPerMillisecond = pixelsPerSecond / 1000f;
-            autoScrollTimer = new Timer { Interval = 1 };
-            autoScrollTimer.Tick += AutoScrollTimer_Tick;
-            playbackTimer = new Timer { Interval = 100 };
+            playbackStopwatch = new Stopwatch();
+            autoScrollTimer = new Timer();
+            autoScrollTimer.Interval = 1;
+            autoScrollTimer.Tick += new EventHandler(AutoScrollTimer_Tick);
+            autoScrollTimer.Enabled = false;
+            playbackTimer = new Timer { Interval = 1 };
             playbackTimer.Tick += PlaybackTimer_Tick;
-            PreviewBox.uiMode = "none";
             //APPLY ROUND CORNERS//
             applyCorners = new Corners();
             //APPLY DRAGGING FUNCTIONALITY//
@@ -352,8 +384,10 @@ namespace RenCloud
             EditingRuller.MouseDown += EditingRuller_MouseDown;
             EditingRuller.MouseMove += EditingRuller_MouseMove;
             EditingRuller.MouseUp += EditingRuller_MouseUp;
+            autoScrollTimer.Tick += new EventHandler(AutoScrollTimer_Tick);
             this.DoubleBuffered = true;
         }
+
         private void UserInterfaceForm_Load(object sender, EventArgs e)
         {
             //ATTACHMENTS AND ON-LOAD FEATURES//
@@ -367,63 +401,69 @@ namespace RenCloud
         }
         private void EditingRuller_MouseDown(object sender, MouseEventArgs e)
         {
-            wasPlayingBeforeDrag = PreviewBox.playState == WMPLib.WMPPlayState.wmppsPlaying;
-
-
             isDraggingTracker = true;
-            PausePreview();
-
-            if (Math.Abs(e.X - trackerXPosition) <= 5)
+            wasPlayingBeforeDrag = PreviewBox.IsPlaying;
+            if (!wasPlayingBeforeDrag)
             {
-                isDraggingTracker = true;
+                PausePreview();
             }
-            else
+        }
+
+
+
+        private void EditingRuller_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (isDraggingTracker)
             {
-                // If not clicking directly on the tracker, move the tracker to the mouse position
-                trackerXPosition = Math.Max(0, Math.Min(e.X, widthVideo));
+                int visibleStart = panel8.HorizontalScroll.Value;
+                int visibleEnd = visibleStart + panel8.ClientRectangle.Width;
+
+                // Buffer in pixels to ensure the tracker does not go beyond the video's logical bounds.
+                float bufferPixels = 0.1f * pixelsPerMillisecond; // Assuming 0.1 ms is a meaningful buffer for your video's scale.
+
+                // Apply buffer to tracker position to limit its range
+                float maxXPosition = widthVideo - bufferPixels;
+                // Clamp the tracker position with buffer limits
+                float proposedX = Math.Max(0.1f, Math.Min(e.X, maxXPosition));
+
+                trackerXPosition = proposedX; // This should now be properly constrained within the buffered range.
                 currentPlaybackTime = trackerXPosition / pixelsPerMillisecond;
-                PreviewBox.Ctlcontrols.currentPosition = currentPlaybackTime / 1000.0;
-                ((WMPLib.IWMPControls2)PreviewBox.Ctlcontrols).step(1);
+                PreviewBox.Time = (long)(currentPlaybackTime);
+
                 UpdatePlaybackLabel(currentPlaybackTime);
+
+                // Determine auto-scroll based on the tracker position
+                if (trackerXPosition <= visibleStart + 50 && !autoScrollTimer.Enabled)
+                {
+                    autoScrollDirection = -1;
+                    autoScrollTimer.Start();
+                }
+                else if (trackerXPosition >= visibleEnd - 50 && !autoScrollTimer.Enabled)
+                {
+                    autoScrollDirection = 1;
+                    autoScrollTimer.Start();
+                }
+                else if (trackerXPosition > visibleStart + 50 && trackerXPosition < visibleEnd - 50)
+                {
+                    autoScrollDirection = 0;
+                    autoScrollTimer.Stop();
+                }
+
+                // Directly invalidate necessary UI components
                 EditingRuller.Invalidate();
                 VideoTrack.Invalidate();
                 AudioTrack.Invalidate();
             }
         }
 
-        private void EditingRuller_MouseMove(object sender, MouseEventArgs e)
-        {
-            if (isDraggingTracker)
-            {
-                if (PreviewBox.currentMedia != null) { 
-                    int visibleStart = panel8.HorizontalScroll.Value;
-                    int visibleEnd = visibleStart + panel8.ClientRectangle.Width;
-                    trackerXPosition = Math.Max(visibleStart, Math.Min(e.X, Math.Min(widthVideo, visibleEnd)));
-                    currentPlaybackTime = trackerXPosition / pixelsPerMillisecond;
 
-                    float newPositionInSeconds = currentPlaybackTime / 1000.0f;
-                    if (newPositionInSeconds < PreviewBox.currentMedia.duration)
-                    {
-                        PreviewBox.Ctlcontrols.currentPosition = newPositionInSeconds;
-                    }
-                    PreviewBox.Ctlcontrols.pause();
-                    ((WMPLib.IWMPControls2)PreviewBox.Ctlcontrols).step(1);
 
-                    UpdatePlaybackLabel(currentPlaybackTime);
 
-                    if (!isUpdatingUI)
-                    {
-                        isUpdatingUI = true;
-                        EditingRuller.Invalidate();
-                        VideoTrack.Invalidate();
-                        AudioTrack.Invalidate();
-                        isUpdatingUI = false;
-                    }
 
-                    ManageAutoScroll(visibleStart, visibleEnd);
-                }
-            }
-        }
+
+
+
+
 
 
 
@@ -431,9 +471,19 @@ namespace RenCloud
         {
             if (isDraggingTracker)
             {
+                trackerXPosition = Math.Max(0, Math.Min(e.X, widthVideo));
+                currentPlaybackTime = trackerXPosition / pixelsPerMillisecond;
+                PreviewBox.Time = (long)currentPlaybackTime;
+                UpdatePlaybackLabel(currentPlaybackTime);
                 isDraggingTracker = false;
-                autoScrollTimer.Stop();
-                autoScrollDirection = 0;
+                if (!isUpdatingUI)
+                {
+                    isUpdatingUI = true;
+                    EditingRuller.Invalidate();
+                    VideoTrack.Invalidate();
+                    AudioTrack.Invalidate();
+                    isUpdatingUI = false;
+                }
                 if (wasPlayingBeforeDrag)
                 {
                     PlayPreview();
@@ -445,91 +495,47 @@ namespace RenCloud
             }
         }
 
-        private void ManageAutoScroll(int visibleStart, int visibleEnd)
-        {
-
-            if (trackerXPosition == visibleEnd && visibleEnd < widthVideo)
-            {
-                autoScrollDirection = 1;
-                autoScrollTimer.Start();
-            }
-
-            else if (trackerXPosition == visibleStart && visibleStart > 0)
-            {
-                autoScrollDirection = -1;
-                autoScrollTimer.Start();
-            }
-            else
-            {
-                autoScrollDirection = 0;
-                autoScrollTimer.Stop();
-            }
-        }
-
 
         private void AutoScrollTimer_Tick(object sender, EventArgs e)
         {
-            int scrollSpeed = 40;
+            int scrollIncrement = autoScrollDirection * 40;
+            int newScrollValue = panel8.HorizontalScroll.Value + scrollIncrement;
+            newScrollValue = Math.Max(0, Math.Min(newScrollValue, panel8.HorizontalScroll.Maximum));
 
-            if (autoScrollDirection == 1)
+            if (newScrollValue != panel8.HorizontalScroll.Value)
             {
-                if (panel8.HorizontalScroll.Value < panel8.HorizontalScroll.Maximum)
+                panel8.HorizontalScroll.Value = newScrollValue;
+                trackerXPosition += scrollIncrement;
+
+                int visibleStart = panel8.HorizontalScroll.Value;
+                int visibleEnd = visibleStart + panel8.ClientRectangle.Width;
+
+                if (!(trackerXPosition <= visibleStart + 50 || trackerXPosition >= visibleEnd - 50))
                 {
-                    int newValue = Math.Min(panel8.HorizontalScroll.Value + scrollSpeed, panel8.HorizontalScroll.Maximum);
-                    if (panel8.HorizontalScroll.Value != newValue)
-                    {
-                        panel8.HorizontalScroll.Value = newValue;
-                        if (!isUpdatingUI)
-                        {
-                            isUpdatingUI = true;
-                            EditingRuller.Invalidate();
-                            VideoTrack.Invalidate();
-                            AudioTrack.Invalidate();
-                            isUpdatingUI = false;
-                        }
-                    }
-                }
-                else
-                {
-                    autoScrollDirection = 0;
                     autoScrollTimer.Stop();
                 }
-            }
-            else if (autoScrollDirection == -1)
-            {
-                if (panel8.HorizontalScroll.Value > panel8.HorizontalScroll.Minimum)
-                {
-                    int newValue = Math.Max(panel8.HorizontalScroll.Value - scrollSpeed, panel8.HorizontalScroll.Minimum);
-                    if (panel8.HorizontalScroll.Value != newValue)
-                    {
-                        panel8.HorizontalScroll.Value = newValue;
-                        if (!isUpdatingUI)
-                        {
-                            isUpdatingUI = true;
-                            EditingRuller.Invalidate();
-                            VideoTrack.Invalidate();
-                            AudioTrack.Invalidate();
-                            isUpdatingUI = false;
-                        }
-                    }
-                }
-                else
-                {
-                    autoScrollDirection = 0;
-                    autoScrollTimer.Stop();
-                }
+
+                EditingRuller.Invalidate();
+                VideoTrack.Invalidate();
+                AudioTrack.Invalidate();
             }
             else
             {
                 autoScrollTimer.Stop();
             }
         }
+
+
         private void UpdatePlaybackLabel(float playbackTime)
         {
+            long videoDurationMs = (long)(fullVideo.Sum(segment => segment.EndTime - segment.StartTime) * 1000);
+            playbackTime = Math.Min(playbackTime, videoDurationMs); // Ensure time does not exceed video length
+
             int minutes = (int)(playbackTime / 60000);
             int seconds = (int)((playbackTime % 60000) / 1000);
             int milliseconds = (int)(playbackTime % 1000);
             string timeFormatted = $"{minutes:D2}:{seconds:D2}:{milliseconds:D3}";
+
             TimeStamp.Text = timeFormatted;
         }
         private void button3_Click(object sender, EventArgs e)
@@ -661,8 +667,9 @@ namespace RenCloud
                 AddVideoToTimeline(filePath);
             }
         }
-        private async void AddVideoToTimeline(string filePath)
+        private async Task AddVideoToTimeline(string filePath)
         {
+            button4.Enabled = false;
             float videoDuration = (float)GetVideoDuration(filePath, ffmpegPath);
             float pixelsPerSecond = 50f;
             int barsPerSecond = 5;
@@ -733,8 +740,6 @@ namespace RenCloud
                 }
 
                 videoThumbnails = null;
-                GC.Collect();
-                GC.WaitForPendingFinalizers();
 
 
                 segmentsVideoCount++;
@@ -755,8 +760,9 @@ namespace RenCloud
                 AudioTrack.MouseDown += AudioTrack_MouseDownHandler;
                 VideoTrack.Invalidate();
                 AudioTrack.Invalidate();
+                EditingRuller.Invalidate();
             }));
-
+            button4.Enabled = true;
             GeneratePreview();
         }
 
@@ -791,14 +797,13 @@ namespace RenCloud
         {
             selectedVideoBounds = Rectangle.Empty;
             selectedAudioBounds = Rectangle.Empty;
-            foreach (var bounds in allVideoBounds)
+            foreach (var bounds in from bounds in allVideoBounds
+                                   where bounds.Contains(e.Location)
+                                   select bounds)
             {
-                if (bounds.Contains(e.Location))
-                {
-                    selectedVideoBounds = bounds;
-                    break;
-                }
+                selectedVideoBounds = bounds;
             }
+
             VideoTrack.Invalidate();
             AudioTrack.Invalidate();
         }
@@ -971,14 +976,13 @@ namespace RenCloud
         {
             selectedAudioBounds = Rectangle.Empty;
             selectedVideoBounds = Rectangle.Empty;
-            foreach (var bounds in allAudioSegments)
+            foreach (var bounds in from bounds in allAudioSegments
+                                   where bounds.Contains(e.Location)
+                                   select bounds)
             {
-                if (bounds.Contains(e.Location))
-                {
-                    selectedAudioBounds = bounds;
-                    break;
-                }
+                selectedAudioBounds = bounds;
             }
+
             AudioTrack.Invalidate();
             VideoTrack.Invalidate();
         }

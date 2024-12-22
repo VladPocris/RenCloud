@@ -1,4 +1,7 @@
-﻿namespace RenCloud
+﻿using System;
+using System.IO;
+
+namespace RenCloud
 {
     partial class UserInterfaceForm
     {
@@ -38,12 +41,13 @@
             this.panel2 = new System.Windows.Forms.Panel();
             this.button3 = new System.Windows.Forms.Button();
             this.panel5 = new System.Windows.Forms.Panel();
+            this.PauseButton = new System.Windows.Forms.Button();
             this.PlayButton = new System.Windows.Forms.Button();
             this.TimeStamp = new System.Windows.Forms.Label();
             this.panel13 = new System.Windows.Forms.Panel();
             this.button4 = new System.Windows.Forms.Button();
             this.PreviewPanel = new System.Windows.Forms.Panel();
-            this.PreviewBox = new AxWMPLib.AxWindowsMediaPlayer();
+            this.PreviewBox = new Vlc.DotNet.Forms.VlcControl();
             this.panel10 = new System.Windows.Forms.Panel();
             this.panel6 = new System.Windows.Forms.Panel();
             this.panel8 = new System.Windows.Forms.Panel();
@@ -54,7 +58,6 @@
             this.VideoTrackPlaceholder = new System.Windows.Forms.Panel();
             this.panel7 = new System.Windows.Forms.Panel();
             this.panel11 = new System.Windows.Forms.Panel();
-            this.PauseButton = new System.Windows.Forms.Button();
             this.panel1.SuspendLayout();
             this.panel3.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
@@ -187,6 +190,17 @@
             this.panel5.Size = new System.Drawing.Size(895, 676);
             this.panel5.TabIndex = 2;
             // 
+            // PauseButton
+            // 
+            this.PauseButton.Location = new System.Drawing.Point(497, 438);
+            this.PauseButton.Margin = new System.Windows.Forms.Padding(0);
+            this.PauseButton.Name = "PauseButton";
+            this.PauseButton.Size = new System.Drawing.Size(109, 38);
+            this.PauseButton.TabIndex = 4;
+            this.PauseButton.Text = "Pause";
+            this.PauseButton.UseVisualStyleBackColor = true;
+            this.PauseButton.Click += new System.EventHandler(this.PauseButton_Click);
+            // 
             // PlayButton
             // 
             this.PlayButton.Location = new System.Drawing.Point(613, 438);
@@ -240,15 +254,17 @@
             // 
             // PreviewBox
             // 
-            this.PreviewBox.AccessibleName = "PreviewBox";
+            this.PreviewBox.BackColor = System.Drawing.Color.Black;
             this.PreviewBox.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.PreviewBox.Enabled = true;
             this.PreviewBox.Location = new System.Drawing.Point(0, 0);
             this.PreviewBox.Margin = new System.Windows.Forms.Padding(0);
             this.PreviewBox.Name = "PreviewBox";
-            this.PreviewBox.OcxState = ((System.Windows.Forms.AxHost.State)(resources.GetObject("PreviewBox.OcxState")));
             this.PreviewBox.Size = new System.Drawing.Size(472, 404);
+            this.PreviewBox.Spu = -1;
             this.PreviewBox.TabIndex = 0;
+            this.PreviewBox.Text = "vlcControl1";
+            this.PreviewBox.VlcLibDirectory = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory);
+            this.PreviewBox.VlcMediaplayerOptions = null;
             // 
             // panel10
             // 
@@ -349,17 +365,6 @@
             this.panel11.Size = new System.Drawing.Size(419, 275);
             this.panel11.TabIndex = 1;
             // 
-            // PauseButton
-            // 
-            this.PauseButton.Location = new System.Drawing.Point(497, 438);
-            this.PauseButton.Margin = new System.Windows.Forms.Padding(0);
-            this.PauseButton.Name = "PauseButton";
-            this.PauseButton.Size = new System.Drawing.Size(109, 38);
-            this.PauseButton.TabIndex = 4;
-            this.PauseButton.Text = "Pause";
-            this.PauseButton.UseVisualStyleBackColor = true;
-            this.PauseButton.Click += new System.EventHandler(this.PauseButton_Click);
-            // 
             // UserInterfaceForm
             // 
             this.AllowDrop = true;
@@ -423,7 +428,7 @@
         private System.Windows.Forms.Panel AudioTrackPlaceholder;
         private System.Windows.Forms.Label TimeStamp;
         private System.Windows.Forms.Button PlayButton;
-        private AxWMPLib.AxWindowsMediaPlayer PreviewBox;
         private System.Windows.Forms.Button PauseButton;
+        private Vlc.DotNet.Forms.VlcControl PreviewBox;
     }
 }

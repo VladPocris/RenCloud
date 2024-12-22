@@ -5,7 +5,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{50A03281-BD33-4AF7-8A1B-46B1CDFD4B39}</ProjectGuid>
+    <ProjectGuid>{F31F16C2-1B0A-439A-AF30-95C9A94C65C5}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>TestRenCloud</RootNamespace>
@@ -51,8 +51,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="InputsValidation.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SendingValidInfo.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
