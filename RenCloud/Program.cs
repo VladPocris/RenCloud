@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Net.Mail;
+using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -344,6 +345,19 @@ namespace RenCloud
                     }
                 }
                 return true;
+            }
+        }
+
+        public class BufferHelper
+        {
+            public void SetDoubleBuffered(Control control)
+            {
+                if (SystemInformation.TerminalServerSession)
+                    return;
+
+                typeof(Control).InvokeMember("DoubleBuffered",
+                    BindingFlags.SetProperty | BindingFlags.Instance | BindingFlags.NonPublic,
+                    null, control, new object[] { true });
             }
         }
     }

@@ -38,6 +38,7 @@ namespace RenCloud
         private UsernameValidator usernameValidator;
         private PasswordValidator passwordValidator;
         private Placeholder placeholder;
+        private BufferHelper enableBuffered;
 
         //ROUNDCORNERS LOGIC//
         protected override void OnActivated(EventArgs e)
@@ -89,9 +90,13 @@ namespace RenCloud
             usernameValidator = new UsernameValidator();
             passwordValidator = new PasswordValidator();
             placeholder = new Placeholder();
+            enableBuffered = new BufferHelper();
             //NECESSARY STARTUP SETTINGS//
             this.Shown += LogInForm_Shown;
             this.Load += LogInForm_Load;
+            enableBuffered.SetDoubleBuffered(pictureBox3);
+            enableBuffered.SetDoubleBuffered(this);
+            enableBuffered.SetDoubleBuffered(panel1);
             tbusername.Enter += tbusername_Enter;
             tbusername.Leave += tbusername_Leave;
             tbpassword.Enter += tbpassword_Enter;

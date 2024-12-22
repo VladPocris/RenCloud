@@ -41,15 +41,16 @@ namespace RenCloud
         private Timer playbackTimer;
         private int autoScrollDirection = 0;
         private bool isUpdatingUI = false;
-        private List<VideoSegment> fullVideo = new List<VideoSegment>();
-        private List<VideoSegment> fullAudio = new List<VideoSegment>();
+        private List<VideoRenderSegment> fullVideoRender = new List<VideoRenderSegment>();
+        private List<AudioRenderSegment> fullAudioRender = new List<AudioRenderSegment>();
         private int segmentsVideoCount = 0;
         private int segmentsAudioCount = 0;
         private bool wasPlayingBeforeDrag = false;
         private string outputPath;
+        private Stopwatch playbackStopwatch;
+        private long lastKnownVlcTime = 0;
 
-
-        class VideoSegment
+        class VideoRenderSegment
         {
             public string FilePath { get; set; }
             public int Id { get; set; }
@@ -58,7 +59,7 @@ namespace RenCloud
             public float TimeLinePosition { get; set; }
         }
 
-        class AudioSegment
+        class AudioRenderSegment
         {
             public string FilePath { get; set; }
             public int Id { get; set; }
@@ -76,46 +77,33 @@ namespace RenCloud
             }
 
             outputPath = Path.Combine(previewDirectory, $"preview_{DateTime.Now:yyyyMMddHHmmssfff}.mp4");
-            StringBuilder ffmpegCmd = new StringBuilder("-y "); // Overwrite without asking
+            StringBuilder ffmpegCmd = new StringBuilder("-y ");
 
             int fileIndex = 0;
             List<string> filterComplexVideo = new List<string>();
             List<string> filterComplexAudio = new List<string>();
-
-            // Common settings
             int targetWidth = 320;
             int targetHeight = 180;
             int targetFps = 15;
-            int audioBitrateKbps = 128; // Audio bitrate in kbps
+            int audioBitrateKbps = 128;
             string videoFormat = "yuv420p";
-
-            // Calculate total video duration in seconds
-            double totalDurationSeconds = fullVideo.Sum(segment => segment.EndTime - segment.StartTime);
-
-            // Calculate target video bitrate
+            double totalDurationSeconds = fullVideoRender.Sum(segment => segment.EndTime - segment.StartTime);
             int totalBitrate = (int)((targetSizeMB * 8192) / totalDurationSeconds) - audioBitrateKbps;
             string videoBitrate = totalBitrate.ToString() + "k";
 
-            foreach (var segment in fullVideo)
+            foreach (var segment in fullVideoRender)
             {
-                // Add input-specific options for each file
                 ffmpegCmd.AppendFormat("-hwaccel cuda -c:v h264_cuvid -i \"{0}\" ", segment.FilePath);
-
-                // Add video and audio filters
                 filterComplexVideo.Add($"[{fileIndex}:v]trim=start={segment.StartTime}:end={segment.EndTime},setpts=PTS-STARTPTS,scale={targetWidth}:{targetHeight},fps={targetFps},setsar=1,format={videoFormat}[v{fileIndex}];");
                 filterComplexAudio.Add($"[{fileIndex}:a]atrim=start={segment.StartTime}:end={segment.EndTime},asetpts=PTS-STARTPTS,aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo[a{fileIndex}];");
                 fileIndex++;
             }
-
-            // Add filter_complex and output-specific options
             if (fileIndex > 0)
             {
                 string videoFilter = string.Join("", Enumerable.Range(0, fileIndex).Select(i => $"[v{i}]"));
                 string audioFilter = string.Join("", Enumerable.Range(0, fileIndex).Select(i => $"[a{i}]"));
                 string filterComplex = $"{string.Join("", filterComplexVideo)}{videoFilter}concat=n={fileIndex}:v=1:a=0[outv];{string.Join("", filterComplexAudio)}{audioFilter}concat=n={fileIndex}:v=0:a=1[outa]";
                 ffmpegCmd.Append($"-filter_complex \"{filterComplex}\" ");
-
-                // Output options
                 ffmpegCmd.Append($"-b:v {videoBitrate} -preset ultrafast -b:a {audioBitrateKbps}k -c:a aac -crf 30 -threads 0 ");
                 ffmpegCmd.Append($"-map \"[outv]\" -map \"[outa]\" \"{outputPath}\"");
             }
@@ -207,14 +195,147 @@ namespace RenCloud
             PlayPreview();
         }
 
+        private void Split_Click(object sender, EventArgs e)
+        {
+            float trackerPosition = trackerXPosition;
+
+            if (selectedVideoBounds != RectangleF.Empty)
+            {
+                if (trackerPosition < selectedVideoBounds.Left || trackerPosition > selectedVideoBounds.Right)
+                {
+                    MessageBox.Show("Tracker is outside the selected video segment range.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                float splitTimeMilliseconds = (trackerPosition - selectedVideoBounds.Left) / pixelsPerMillisecond;
+
+                RectangleF firstSegment = new RectangleF(
+                    selectedVideoBounds.Left,
+                    selectedVideoBounds.Top,
+                    trackerPosition - selectedVideoBounds.Left,
+                    selectedVideoBounds.Height
+                );
+
+                RectangleF secondSegment = new RectangleF(
+                    trackerPosition,
+                    selectedVideoBounds.Top,
+                    selectedVideoBounds.Right - trackerPosition,
+                    selectedVideoBounds.Height
+                );
+
+                allVideoBounds.Remove(selectedVideoBounds);
+                allVideoBounds.Add(firstSegment);
+                allVideoBounds.Add(secondSegment);
+
+                var originalVideo = fullVideoRender.FirstOrDefault(v => v.TimeLinePosition == selectedVideoBounds.Left / pixelsPerSecond);
+                if (originalVideo != null)
+                {
+                    fullVideoRender.Remove(originalVideo);
+
+                    float firstSegmentStartTime = originalVideo.StartTime;
+                    float firstSegmentEndTime = originalVideo.StartTime + (splitTimeMilliseconds / 1000.0f);
+                    float secondSegmentStartTime = firstSegmentEndTime;
+                    float secondSegmentEndTime = originalVideo.EndTime;
+
+                    fullVideoRender.Add(new VideoRenderSegment
+                    {
+                        FilePath = originalVideo.FilePath,
+                        StartTime = firstSegmentStartTime,
+                        EndTime = firstSegmentEndTime,
+                        TimeLinePosition = firstSegment.Left / pixelsPerSecond,
+                        Id = originalVideo.Id
+                    });
+
+                    fullVideoRender.Add(new VideoRenderSegment
+                    {
+                        FilePath = originalVideo.FilePath,
+                        StartTime = secondSegmentStartTime,
+                        EndTime = secondSegmentEndTime,
+                        TimeLinePosition = secondSegment.Left / pixelsPerSecond,
+                        Id = ++segmentsVideoCount
+                    });
+                }
+
+                foreach (VideoRenderSegment segment in fullVideoRender)
+                {
+                    Console.WriteLine($"ID: {segment.Id} | Start: {segment.StartTime:F2} | End: {segment.EndTime:F2}");
+                }
+                VideoTrack.Invalidate();
+            }
+            else if (selectedAudioBounds != RectangleF.Empty)
+            {
+                if (trackerPosition < selectedAudioBounds.Left || trackerPosition > selectedAudioBounds.Right)
+                {
+                    MessageBox.Show("Tracker is outside the selected audio segment range.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                float splitTimeMilliseconds = (trackerPosition - selectedAudioBounds.Left) / pixelsPerMillisecond;
+
+                RectangleF firstSegment = new RectangleF(
+                    selectedAudioBounds.Left,
+                    selectedAudioBounds.Top,
+                    trackerPosition - selectedAudioBounds.Left,
+                    selectedAudioBounds.Height
+                );
+
+                RectangleF secondSegment = new RectangleF(
+                    trackerPosition,
+                    selectedAudioBounds.Top,
+                    selectedAudioBounds.Right - trackerPosition,
+                    selectedAudioBounds.Height
+                );
+
+                allAudioSegments.Remove(selectedAudioBounds);
+                allAudioSegments.Add(firstSegment);
+                allAudioSegments.Add(secondSegment);
+
+                var originalAudio = fullAudioRender.FirstOrDefault(a => a.TimeLinePosition == selectedAudioBounds.Left / pixelsPerSecond);
+                if (originalAudio != null)
+                {
+                    fullAudioRender.Remove(originalAudio);
+                    float firstSegmentStartTime = originalAudio.StartTime;
+                    float firstSegmentEndTime = originalAudio.StartTime + (splitTimeMilliseconds / 1000.0f);
+                    float secondSegmentStartTime = firstSegmentEndTime;
+                    float secondSegmentEndTime = originalAudio.EndTime;
+
+                    fullAudioRender.Add(new AudioRenderSegment
+                    {
+                        FilePath = originalAudio.FilePath,
+                        StartTime = firstSegmentStartTime,
+                        EndTime = firstSegmentEndTime,
+                        TimeLinePosition = firstSegment.Left / pixelsPerSecond,
+                        Id = originalAudio.Id
+                    });
+
+                    fullAudioRender.Add(new AudioRenderSegment
+                    {
+                        FilePath = originalAudio.FilePath,
+                        StartTime = secondSegmentStartTime,
+                        EndTime = secondSegmentEndTime,
+                        TimeLinePosition = secondSegment.Left / pixelsPerSecond,
+                        Id = ++segmentsAudioCount
+                    });
+                }
+                foreach (AudioRenderSegment segment in fullAudioRender)
+                {
+                    Console.WriteLine($"ID: {segment.Id} | Start: {segment.StartTime:F2} | End: {segment.EndTime:F2}");
+                }
+                AudioTrack.Invalidate();
+            }
+            else
+            {
+                MessageBox.Show("No segment selected. Please select a video or audio segment to split.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
 
 
 
 
-
-
-        private Stopwatch playbackStopwatch; // High-resolution stopwatch to track elapsed time
-        private long lastKnownVlcTime = 0;
+        private void button3_Click(object sender, EventArgs e)
+        {
+            Application.Exit();
+        }
 
         private void PlaybackTimer_Tick(object sender, EventArgs e)
         {
@@ -268,25 +389,6 @@ namespace RenCloud
                 // Scroll right
                 panel8.HorizontalScroll.Value = Math.Min(panel8.HorizontalScroll.Maximum,
                                                          (int)(trackerXPosition - panel8.ClientRectangle.Width + padding));
-            }
-        }
-
-
-
-
-
-
-
-        private void ScrollToPosition(float position)
-        {
-            int newValue = (int)Math.Max(0, Math.Min(position, panel8.HorizontalScroll.Maximum));
-
-            if (panel8.HorizontalScroll.Value != newValue)
-            {
-                panel8.HorizontalScroll.Value = newValue;
-                EditingRuller.Invalidate();
-                VideoTrack.Invalidate();
-                AudioTrack.Invalidate();
             }
         }
 
@@ -362,6 +464,7 @@ namespace RenCloud
         public UserInterfaceForm()
         {
             InitializeComponent();
+            //this.PreviewBox.VlcLibDirectory = new DirectoryInfo(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "lib", "VlcLibs"));
             pixelsPerMillisecond = pixelsPerSecond / 1000f;
             playbackStopwatch = new Stopwatch();
             autoScrollTimer = new Timer();
@@ -456,17 +559,6 @@ namespace RenCloud
             }
         }
 
-
-
-
-
-
-
-
-
-
-
-
         private void EditingRuller_MouseUp(object sender, MouseEventArgs e)
         {
             if (isDraggingTracker)
@@ -476,6 +568,10 @@ namespace RenCloud
                 PreviewBox.Time = (long)currentPlaybackTime;
                 UpdatePlaybackLabel(currentPlaybackTime);
                 isDraggingTracker = false;
+                autoScrollTimer.Stop();
+                autoScrollDirection = 0;
+                lastKnownVlcTime = (long)currentPlaybackTime;
+                playbackStopwatch.Reset();
                 if (!isUpdatingUI)
                 {
                     isUpdatingUI = true;
@@ -494,6 +590,7 @@ namespace RenCloud
                 }
             }
         }
+
 
 
         private void AutoScrollTimer_Tick(object sender, EventArgs e)
@@ -528,7 +625,7 @@ namespace RenCloud
 
         private void UpdatePlaybackLabel(float playbackTime)
         {
-            long videoDurationMs = (long)(fullVideo.Sum(segment => segment.EndTime - segment.StartTime) * 1000);
+            long videoDurationMs = (long)(fullVideoRender.Sum(segment => segment.EndTime - segment.StartTime) * 1000);
             playbackTime = Math.Min(playbackTime, videoDurationMs); // Ensure time does not exceed video length
 
             int minutes = (int)(playbackTime / 60000);
@@ -537,10 +634,6 @@ namespace RenCloud
             string timeFormatted = $"{minutes:D2}:{seconds:D2}:{milliseconds:D3}";
 
             TimeStamp.Text = timeFormatted;
-        }
-        private void button3_Click(object sender, EventArgs e)
-        {
-            Application.Exit();
         }
         private void EditingRuller_Paint(object sender, PaintEventArgs e)
         {
@@ -678,6 +771,14 @@ namespace RenCloud
             float barWidthIncludingSpacing = barWidth + barSpacing;
             float newWidth = videoDuration * pixelsPerSecond;
 
+            if ((widthVideo + newWidth) / pixelsPerSecond > 600) // 600 seconds = 10 minutes
+            {
+                MessageBox.Show("Adding this video will exceed the 10-minute limit. Please adjust your timeline.",
+                    "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                button4.Enabled = true;
+                return; // Exit without modifying the timeline
+            }
+
             // UI update
             this.Invoke(new Action(() =>
             {
@@ -743,13 +844,14 @@ namespace RenCloud
 
 
                 segmentsVideoCount++;
-                fullVideo.Add(new VideoSegment { StartTime = 0, EndTime = videoDuration, FilePath = filePath, Id = segmentsVideoCount, TimeLinePosition = videoStartPosition / pixelsPerSecond });
+                fullVideoRender.Add(new VideoRenderSegment { StartTime = 0, EndTime = videoDuration, FilePath = filePath, Id = segmentsVideoCount, TimeLinePosition = videoStartPosition / pixelsPerSecond });
 
                 segmentsAudioCount++;
-                fullAudio.Add(new VideoSegment { StartTime = 0, EndTime = videoDuration, FilePath = filePath, Id = segmentsAudioCount, TimeLinePosition = videoStartPosition / pixelsPerSecond });
+                fullAudioRender.Add(new AudioRenderSegment { StartTime = 0, EndTime = videoDuration, FilePath = filePath, Id = segmentsAudioCount, TimeLinePosition = videoStartPosition / pixelsPerSecond });
 
-                VideoTrackPlaceholder.Location = new Point((int)Math.Round(widthVideo), VideoTrackPlaceholder.Location.Y);
-                AudioTrackPlaceholder.Location = new Point((int)Math.Round(widthVideo), AudioTrackPlaceholder.Location.Y);
+                VideoTrackPlaceholder.Location = new Point(Math.Max((int)Math.Round(widthVideo), VideoTrackPlaceholder.Location.X), VideoTrackPlaceholder.Location.Y);
+                AudioTrackPlaceholder.Location = new Point(Math.Max((int)Math.Round(widthVideo), AudioTrackPlaceholder.Location.X), AudioTrackPlaceholder.Location.Y);
+
                 VideoTrack.Paint -= VideoTrack_PaintHandler;
                 VideoTrack.Paint += VideoTrack_PaintHandler;
                 VideoTrack.MouseDown -= VideoTrack_MouseDownHandler;
@@ -771,28 +873,47 @@ namespace RenCloud
         private void VideoTrack_PaintHandler(object sender, PaintEventArgs e)
         {
             Graphics g = e.Graphics;
-            using (Brush videoBrush = new SolidBrush(Color.Gray))
+
+            // Clear the video track area (up to the width of the video)
+            using (Brush backgroundBrush = new SolidBrush(Color.Gray))
+            {
+                g.FillRectangle(backgroundBrush, 0, 0, widthVideo, VideoTrack.Height);
+            }
+
+            // Make the rest of the area transparent (if applicable)
+            using (Brush transparentBrush = new SolidBrush(Color.Transparent))
+            {
+                g.FillRectangle(transparentBrush, widthVideo, 0, VideoTrack.Width - widthVideo, VideoTrack.Height);
+            }
+
+            // Draw thumbnails
+            foreach (var (thumbnail, position) in allThumbnailsWithPositions)
+            {
+                float thumbnailHeight = VideoTrack.Height - 20f; // Adjust thumbnail size
+                float thumbnailY = 10f;
+                g.DrawImage(thumbnail, position, thumbnailY, 100, thumbnailHeight);
+            }
+
+            // Draw borders for video segments on top of thumbnails
+            using (Brush videoBrush = new SolidBrush(Color.Transparent)) // Transparent fill
             using (Pen borderPen = new Pen(Color.Green, 2))
             using (Pen selectedPen = new Pen(Color.Red, 3))
             {
                 foreach (var bounds in allVideoBounds)
                 {
-                    g.FillRectangle(videoBrush, bounds);
+                    g.FillRectangle(videoBrush, bounds); // Transparent rectangle
                     g.DrawRectangle(bounds == selectedVideoBounds ? selectedPen : borderPen, Rectangle.Round(bounds));
                 }
             }
-            foreach (var (thumbnail, position) in allThumbnailsWithPositions)
-            {
-                float thumbnailHeight = VideoTrack.Height - 20f;
-                float thumbnailY = 10f;
 
-                g.DrawImage(thumbnail, position, thumbnailY, 100, thumbnailHeight);
-            }
+            // Draw the tracker line
             using (Pen trackerPen = new Pen(Color.Blue, 2))
             {
                 g.DrawLine(trackerPen, trackerXPosition, 0, trackerXPosition, VideoTrack.Height);
             }
         }
+
+
         private void VideoTrack_MouseDownHandler(object sender, MouseEventArgs e)
         {
             selectedVideoBounds = Rectangle.Empty;
@@ -835,7 +956,7 @@ namespace RenCloud
             }
             return 0f;
         }
-        public async Task<List<Image>> ExtractVideoThumbnails(string videoFilePath, double intervalSeconds = 4.0, int maxDegreeOfParallelism = 8)
+        public List<Image> ExtractVideoThumbnails(string videoFilePath, double intervalSeconds = 4.0, int maxDegreeOfParallelism = 8)
         {
             if (!File.Exists(videoFilePath))
             {

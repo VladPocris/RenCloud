@@ -45,6 +45,7 @@ namespace RenCloud
             this.PlayButton = new System.Windows.Forms.Button();
             this.TimeStamp = new System.Windows.Forms.Label();
             this.panel13 = new System.Windows.Forms.Panel();
+            this.Split = new System.Windows.Forms.Button();
             this.button4 = new System.Windows.Forms.Button();
             this.PreviewPanel = new System.Windows.Forms.Panel();
             this.PreviewBox = new Vlc.DotNet.Forms.VlcControl();
@@ -63,6 +64,7 @@ namespace RenCloud
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.panel2.SuspendLayout();
             this.panel5.SuspendLayout();
+            this.panel13.SuspendLayout();
             this.PreviewPanel.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.PreviewBox)).BeginInit();
             this.panel6.SuspendLayout();
@@ -225,11 +227,23 @@ namespace RenCloud
             // panel13
             // 
             this.panel13.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.panel13.Controls.Add(this.Split);
             this.panel13.Location = new System.Drawing.Point(0, 305);
             this.panel13.Margin = new System.Windows.Forms.Padding(0);
             this.panel13.Name = "panel13";
             this.panel13.Size = new System.Drawing.Size(419, 172);
             this.panel13.TabIndex = 2;
+            // 
+            // Split
+            // 
+            this.Split.Location = new System.Drawing.Point(304, 135);
+            this.Split.Margin = new System.Windows.Forms.Padding(0);
+            this.Split.Name = "Split";
+            this.Split.Size = new System.Drawing.Size(75, 32);
+            this.Split.TabIndex = 0;
+            this.Split.Text = "Split";
+            this.Split.UseVisualStyleBackColor = true;
+            this.Split.Click += new System.EventHandler(this.Split_Click);
             // 
             // button4
             // 
@@ -263,7 +277,7 @@ namespace RenCloud
             this.PreviewBox.Spu = -1;
             this.PreviewBox.TabIndex = 0;
             this.PreviewBox.Text = "vlcControl1";
-            this.PreviewBox.VlcLibDirectory = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory);
+            this.PreviewBox.VlcLibDirectory = new DirectoryInfo(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "lib", "VlcLibs"));
             this.PreviewBox.VlcMediaplayerOptions = null;
             // 
             // panel10
@@ -392,6 +406,7 @@ namespace RenCloud
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             this.panel2.ResumeLayout(false);
             this.panel5.ResumeLayout(false);
+            this.panel13.ResumeLayout(false);
             this.PreviewPanel.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.PreviewBox)).EndInit();
             this.panel6.ResumeLayout(false);
@@ -430,5 +445,6 @@ namespace RenCloud
         private System.Windows.Forms.Button PlayButton;
         private System.Windows.Forms.Button PauseButton;
         private Vlc.DotNet.Forms.VlcControl PreviewBox;
+        private System.Windows.Forms.Button Split;
     }
 }
