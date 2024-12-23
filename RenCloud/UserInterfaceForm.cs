@@ -150,11 +150,12 @@ namespace RenCloud
         {
             Debug.WriteLine("PlayPreview called from: " + new StackTrace().GetFrame(1).GetMethod().Name);
             UpdatePlaybackLabel(PreviewBox.Time);
-            if (!PreviewBox.IsPlaying)
+            if (!PreviewBox.IsPlaying && PreviewBox.GetCurrentMedia() != null)
             {
                 PreviewBox.Play();
                 playbackTimer.Start();
                 playbackStopwatch.Restart();
+                playbackStopwatch.Stop();
             }
         }
 
@@ -194,17 +195,51 @@ namespace RenCloud
         ///
         private void Split_Click(object sender, EventArgs e)
         {
+            if (selectedVideoBounds == RectangleF.Empty && selectedAudioBounds == RectangleF.Empty)
+            {
+                MessageBox.Show("No segment selected. Please select a video or audio segment to split.",
+                                "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
             float trackerPosition = trackerXPosition;
 
+            float epsilonSeconds = 0.01f;
             if (selectedVideoBounds != RectangleF.Empty)
             {
                 if (trackerPosition < selectedVideoBounds.Left || trackerPosition > selectedVideoBounds.Right)
                 {
-                    MessageBox.Show("Tracker is outside the selected video segment range.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("Tracker is outside the selected video segment range.",
+                                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                float oldTimeLinePos = selectedVideoBounds.Left / pixelsPerSecond;
+                var originalVideo = fullVideoRender.FirstOrDefault(v => v.TimeLinePosition == oldTimeLinePos);
+                if (originalVideo == null)
+                {
+                    MessageBox.Show("Could not find the original video segment.",
+                                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                float segmentDuration = originalVideo.EndTime - originalVideo.StartTime;
+                if (segmentDuration <= 0f)
+                {
+                    MessageBox.Show("Segment has zero or negative duration?!",
+                                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
 
                 float splitTimeMilliseconds = (trackerPosition - selectedVideoBounds.Left) / pixelsPerMillisecond;
+                float splitTimeSeconds = splitTimeMilliseconds / 1000f;
+
+                if (splitTimeSeconds < epsilonSeconds ||
+                    (segmentDuration - splitTimeSeconds) < epsilonSeconds)
+                {
+                    Console.WriteLine("Cannot split at the exact boundary (zero-length segment). No split performed.");
+                    return;
+                }
 
                 RectangleF firstSegment = new RectangleF(
                     selectedVideoBounds.Left,
@@ -212,7 +247,6 @@ namespace RenCloud
                     trackerPosition - selectedVideoBounds.Left,
                     selectedVideoBounds.Height
                 );
-
                 RectangleF secondSegment = new RectangleF(
                     trackerPosition,
                     selectedVideoBounds.Top,
@@ -224,50 +258,89 @@ namespace RenCloud
                 allVideoBounds.Add(firstSegment);
                 allVideoBounds.Add(secondSegment);
 
-                var originalVideo = fullVideoRender.FirstOrDefault(v => v.TimeLinePosition == selectedVideoBounds.Left / pixelsPerSecond);
-                if (originalVideo != null)
+                int oldIndex = fullVideoRender.IndexOf(originalVideo);
+                if (oldIndex == -1)
                 {
-                    fullVideoRender.Remove(originalVideo);
-
-                    float firstSegmentStartTime = originalVideo.StartTime;
-                    float firstSegmentEndTime = originalVideo.StartTime + (splitTimeMilliseconds / 1000.0f);
-                    float secondSegmentStartTime = firstSegmentEndTime;
-                    float secondSegmentEndTime = originalVideo.EndTime;
-
-                    fullVideoRender.Add(new VideoRenderSegment
-                    {
-                        FilePath = originalVideo.FilePath,
-                        StartTime = firstSegmentStartTime,
-                        EndTime = firstSegmentEndTime,
-                        TimeLinePosition = firstSegment.Left / pixelsPerSecond,
-                        Id = originalVideo.Id
-                    });
-
-                    fullVideoRender.Add(new VideoRenderSegment
-                    {
-                        FilePath = originalVideo.FilePath,
-                        StartTime = secondSegmentStartTime,
-                        EndTime = secondSegmentEndTime,
-                        TimeLinePosition = secondSegment.Left / pixelsPerSecond,
-                        Id = ++segmentsVideoCount
-                    });
+                    MessageBox.Show("Could not find the original segment in the list.",
+                                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
                 }
+                fullVideoRender.RemoveAt(oldIndex);
 
-                foreach (VideoRenderSegment segment in fullVideoRender)
+                float firstSegmentStartTime = originalVideo.StartTime;
+                float firstSegmentEndTime = originalVideo.StartTime + splitTimeSeconds;
+                float secondSegmentStartTime = firstSegmentEndTime;
+                float secondSegmentEndTime = originalVideo.EndTime;
+
+                var newSegment1 = new VideoRenderSegment
                 {
-                    Console.WriteLine($"ID: {segment.Id} | Start: {segment.StartTime:F2} | End: {segment.EndTime:F2}");
+                    FilePath = originalVideo.FilePath,
+                    StartTime = firstSegmentStartTime,
+                    EndTime = firstSegmentEndTime,
+                    TimeLinePosition = firstSegment.Left / pixelsPerSecond,
+                    Id = originalVideo.Id
+                };
+                var newSegment2 = new VideoRenderSegment
+                {
+                    FilePath = originalVideo.FilePath,
+                    StartTime = secondSegmentStartTime,
+                    EndTime = secondSegmentEndTime,
+                    TimeLinePosition = secondSegment.Left / pixelsPerSecond,
+                    Id = ++segmentsVideoCount
+                };
+
+                fullVideoRender.Insert(oldIndex, newSegment1);
+                fullVideoRender.Insert(oldIndex + 1, newSegment2);
+                for (int i = 0; i < fullVideoRender.Count; i++)
+                {
+                    fullVideoRender[i].Id = i + 1;
+                }
+                segmentsVideoCount = fullVideoRender.Count;
+                selectedVideoBounds = RectangleF.Empty;
+                selectedAudioBounds = RectangleF.Empty;
+                Console.WriteLine("Video segments after split:");
+                foreach (VideoRenderSegment seg in fullVideoRender)
+                {
+                    Console.WriteLine($"ID: {seg.Id} | Start: {seg.StartTime:F2} | End: {seg.EndTime:F2}");
                 }
                 VideoTrack.Invalidate();
             }
+
             else if (selectedAudioBounds != RectangleF.Empty)
             {
                 if (trackerPosition < selectedAudioBounds.Left || trackerPosition > selectedAudioBounds.Right)
                 {
-                    MessageBox.Show("Tracker is outside the selected audio segment range.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("Tracker is outside the selected audio segment range.",
+                                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                float oldTimeLinePos = selectedAudioBounds.Left / pixelsPerSecond;
+                var originalAudio = fullAudioRender.FirstOrDefault(a => a.TimeLinePosition == oldTimeLinePos);
+                if (originalAudio == null)
+                {
+                    MessageBox.Show("Could not find the original audio segment.",
+                                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                float segmentDuration = originalAudio.EndTime - originalAudio.StartTime;
+                if (segmentDuration <= 0f)
+                {
+                    MessageBox.Show("Segment has zero or negative duration?!",
+                                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
 
                 float splitTimeMilliseconds = (trackerPosition - selectedAudioBounds.Left) / pixelsPerMillisecond;
+                float splitTimeSeconds = splitTimeMilliseconds / 1000f;
+
+                if (splitTimeSeconds < epsilonSeconds ||
+                    (segmentDuration - splitTimeSeconds) < epsilonSeconds)
+                {
+                    Console.WriteLine("Cannot split at the exact boundary (zero-length segment). No split performed.");
+                    return;
+                }
 
                 RectangleF firstSegment = new RectangleF(
                     selectedAudioBounds.Left,
@@ -275,7 +348,6 @@ namespace RenCloud
                     trackerPosition - selectedAudioBounds.Left,
                     selectedAudioBounds.Height
                 );
-
                 RectangleF secondSegment = new RectangleF(
                     trackerPosition,
                     selectedAudioBounds.Top,
@@ -287,42 +359,59 @@ namespace RenCloud
                 allAudioSegments.Add(firstSegment);
                 allAudioSegments.Add(secondSegment);
 
-                var originalAudio = fullAudioRender.FirstOrDefault(a => a.TimeLinePosition == selectedAudioBounds.Left / pixelsPerSecond);
-                if (originalAudio != null)
+                int oldIndex = fullAudioRender.IndexOf(originalAudio);
+                if (oldIndex == -1)
                 {
-                    fullAudioRender.Remove(originalAudio);
-                    float firstSegmentStartTime = originalAudio.StartTime;
-                    float firstSegmentEndTime = originalAudio.StartTime + (splitTimeMilliseconds / 1000.0f);
-                    float secondSegmentStartTime = firstSegmentEndTime;
-                    float secondSegmentEndTime = originalAudio.EndTime;
-
-                    fullAudioRender.Add(new AudioRenderSegment
-                    {
-                        FilePath = originalAudio.FilePath,
-                        StartTime = firstSegmentStartTime,
-                        EndTime = firstSegmentEndTime,
-                        TimeLinePosition = firstSegment.Left / pixelsPerSecond,
-                        Id = originalAudio.Id
-                    });
-
-                    fullAudioRender.Add(new AudioRenderSegment
-                    {
-                        FilePath = originalAudio.FilePath,
-                        StartTime = secondSegmentStartTime,
-                        EndTime = secondSegmentEndTime,
-                        TimeLinePosition = secondSegment.Left / pixelsPerSecond,
-                        Id = ++segmentsAudioCount
-                    });
+                    MessageBox.Show("Could not find the original audio segment in the list.",
+                                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
                 }
-                foreach (AudioRenderSegment segment in fullAudioRender)
+                fullAudioRender.RemoveAt(oldIndex);
+
+                float firstSegmentStartTime = originalAudio.StartTime;
+                float firstSegmentEndTime = originalAudio.StartTime + splitTimeSeconds;
+                float secondSegmentStartTime = firstSegmentEndTime;
+                float secondSegmentEndTime = originalAudio.EndTime;
+
+                var newSegment1 = new AudioRenderSegment
                 {
-                    Console.WriteLine($"ID: {segment.Id} | Start: {segment.StartTime:F2} | End: {segment.EndTime:F2}");
+                    FilePath = originalAudio.FilePath,
+                    StartTime = firstSegmentStartTime,
+                    EndTime = firstSegmentEndTime,
+                    TimeLinePosition = firstSegment.Left / pixelsPerSecond,
+                    Id = originalAudio.Id
+                };
+                var newSegment2 = new AudioRenderSegment
+                {
+                    FilePath = originalAudio.FilePath,
+                    StartTime = secondSegmentStartTime,
+                    EndTime = secondSegmentEndTime,
+                    TimeLinePosition = secondSegment.Left / pixelsPerSecond,
+                    Id = ++segmentsAudioCount
+                };
+
+                fullAudioRender.Insert(oldIndex, newSegment1);
+                fullAudioRender.Insert(oldIndex + 1, newSegment2);
+
+                for (int i = 0; i < fullAudioRender.Count; i++)
+                {
+                    fullAudioRender[i].Id = i + 1;
+                }
+                segmentsAudioCount = fullAudioRender.Count;
+                selectedVideoBounds = RectangleF.Empty;
+                selectedAudioBounds = RectangleF.Empty;
+
+                Console.WriteLine("Audio segments after split:");
+                foreach (AudioRenderSegment seg in fullAudioRender)
+                {
+                    Console.WriteLine($"ID: {seg.Id} | Start: {seg.StartTime:F2} | End: {seg.EndTime:F2}");
                 }
                 AudioTrack.Invalidate();
             }
             else
             {
-                MessageBox.Show("No segment selected. Please select a video or audio segment to split.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("No segment selected. Please select a video or audio segment to split.",
+                                "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -845,9 +934,9 @@ namespace RenCloud
             List<string> filterComplexAudio = new List<string>();
             double totalDurationSeconds = fullVideoRender.Sum(segment => segment.EndTime - segment.StartTime);
             int fileIndex = 0;
-            int targetWidth = 320;
-            int targetHeight = 180;
-            int targetFps = 15;
+            int targetWidth = 472;
+            int targetHeight = 404;
+            int targetFps = 30;
             int audioBitrateKbps = 128;
             int totalBitrate = (int)((targetSizeMB * 8192) / totalDurationSeconds) - audioBitrateKbps;
             string videoFormat = "yuv420p";
@@ -875,7 +964,7 @@ namespace RenCloud
                 string audioFilter = string.Join("", Enumerable.Range(0, fileIndex).Select(i => $"[a{i}]"));
                 string filterComplex = $"{string.Join("", filterComplexVideo)}{videoFilter}concat=n={fileIndex}:v=1:a=0[outv];{string.Join("", filterComplexAudio)}{audioFilter}concat=n={fileIndex}:v=0:a=1[outa]";
                 ffmpegCmd.Append($"-filter_complex \"{filterComplex}\" ");
-                ffmpegCmd.Append($"-b:v {videoBitrate} -preset ultrafast -b:a {audioBitrateKbps}k -c:a aac -crf 30 -threads 0 ");
+                ffmpegCmd.Append($"-b:v {videoBitrate} -preset ultrafast -b:a {audioBitrateKbps}k -c:a aac -threads 2 ");
                 ffmpegCmd.Append($"-map \"[outv]\" -map \"[outa]\" \"{outputPath}\"");
             }
             else
@@ -1037,6 +1126,10 @@ namespace RenCloud
                 EditingRuller.Invalidate();
             }));
             button4.Enabled = true;
+            foreach( VideoRenderSegment segment in fullVideoRender)
+            {
+                Console.WriteLine($"ID: {segment.Id} | Start: {segment.StartTime:F2} | End: {segment.EndTime:F2}");
+            }
             GeneratePreview();
         }
 
