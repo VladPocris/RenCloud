@@ -12,6 +12,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Vlc.DotNet.Core.Interops;
 using Vlc.DotNet.Forms;
 using static RenCloud.Program;
 
@@ -22,7 +23,7 @@ namespace RenCloud
         //VARIABLES & OBJECTS//
         //this.PreviewBox.VlcLibDirectory = new DirectoryInfo(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "lib", "VlcLibs"));//
         private string ffmpegPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "lib", "ffmpeg", "bin", "ffmpeg.exe");
-        private string outputPath;
+        private string outputPath = Path.Combine(Path.GetTempPath(), "VideoPreviews");
 
         public UserInterfaceForm()
         {
@@ -34,6 +35,7 @@ namespace RenCloud
             InitializePlayBackTimer();
             InitializePlayBackStopWatch();
             InitializingDoubleBuffersForComponents();
+            ClearingTempPaths();
             //VARIABLES&ADJUSTMENTS//
             pixelsPerMillisecond = pixelsPerSecond / 1000f;
         }
@@ -107,7 +109,7 @@ namespace RenCloud
         public void InitializeAutoScrollTimer()
         {
             autoScrollTimer = new Timer();
-            autoScrollTimer.Interval = 1;
+            autoScrollTimer.Interval = 2;
             autoScrollTimer.Tick += new EventHandler(AutoScrollTimer_Tick);
             autoScrollTimer.Tick += new EventHandler(AutoScrollTimer_Tick);
             autoScrollTimer.Enabled = false;
@@ -148,7 +150,7 @@ namespace RenCloud
         ///
         private void PlayPreview()
         {
-            Debug.WriteLine("PlayPreview called from: " + new StackTrace().GetFrame(1).GetMethod().Name);
+            Console.WriteLine("PlayPreview called from: " + new StackTrace().GetFrame(1).GetMethod().Name);
             UpdatePlaybackLabel(PreviewBox.Time);
             if (!PreviewBox.IsPlaying && PreviewBox.GetCurrentMedia() != null)
             {
@@ -164,7 +166,7 @@ namespace RenCloud
         /// 
         private void PausePreview()
         {
-            Debug.WriteLine("PausePreview called from: " + new StackTrace().GetFrame(1).GetMethod().Name);
+            Console.WriteLine("PausePreview called from: " + new StackTrace().GetFrame(1).GetMethod().Name);
             UpdatePlaybackLabel(PreviewBox.Time);
             if (PreviewBox.IsPlaying)
             {
@@ -416,6 +418,100 @@ namespace RenCloud
         }
 
         ///
+        /// Removes selected segment from timeline.
+        ///
+        private async void RemoveSegment_Click(object sender, EventArgs e)
+        {
+            if (selectedVideoBounds == RectangleF.Empty && selectedAudioBounds == RectangleF.Empty)
+            {
+                MessageBox.Show("No segment selected. Please select a video or audio segment to remove.",
+                                "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            if (selectedVideoBounds != RectangleF.Empty)
+            {
+                float oldTimeLinePos = selectedVideoBounds.Left / pixelsPerSecond;
+                var videoSegmentToRemove = fullVideoRender.FirstOrDefault(v => Math.Abs(v.TimeLinePosition - oldTimeLinePos) < 0.1);
+                if (videoSegmentToRemove != null)
+                {
+                    fullVideoRender.Remove(videoSegmentToRemove);
+                    allVideoBounds.Remove(selectedVideoBounds);
+                    selectedVideoBounds = RectangleF.Empty;
+                }
+                foreach (VideoRenderSegment segV in fullVideoRender)
+                {
+                    Console.WriteLine($"ID: {segV.Id} | Start: {segV.StartTime:F2} | End: {segV.EndTime:F2}");
+                }
+            }
+
+            if (selectedAudioBounds != RectangleF.Empty)
+            {
+                float oldTimeLinePos = selectedAudioBounds.Left / pixelsPerSecond;
+                var audioSegmentToRemove = fullAudioRender.FirstOrDefault(a => Math.Abs(a.TimeLinePosition - oldTimeLinePos) < 0.1);
+                if (audioSegmentToRemove != null)
+                {
+                    fullAudioRender.Remove(audioSegmentToRemove);
+                    allAudioSegments.Remove(selectedAudioBounds);
+                    selectedAudioBounds = RectangleF.Empty;
+                }
+                foreach (AudioRenderSegment segA in fullAudioRender)
+                {
+                    Console.WriteLine($"ID: {segA.Id} | Start: {segA.StartTime:F2} | End: {segA.EndTime:F2}");
+                }
+            }
+
+            SyncMediaTracks();
+
+            VideoTrack.Invalidate();
+            AudioTrack.Invalidate();
+            EditingRuller.Invalidate();
+
+            await GeneratePreview();
+        }
+
+        ///
+        /// Syncs media and audio tracks with placeholders for successfull generation of preview and/or render. 
+        ///
+        private void SyncMediaTracks()
+        {
+            string blackScreenVideoPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "lib", "EmptyMedia", "BlackScreenVideo.mp4");
+            string silentAudioPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "lib", "EmptyMedia", "SilentAudio.mp3");
+
+            fullVideoRender.RemoveAll(v => v.FilePath == blackScreenVideoPath);
+            fullAudioRender.RemoveAll(a => a.FilePath == silentAudioPath);
+
+            float totalVideoDuration = fullVideoRender.Sum(v => v.EndTime - v.StartTime);
+            float totalAudioDuration = fullAudioRender.Sum(a => a.EndTime - a.StartTime);
+
+            if (totalVideoDuration < totalAudioDuration)
+            {
+                float blackScreenDuration = totalAudioDuration - totalVideoDuration;
+                fullVideoRender.Add(new VideoRenderSegment
+                {
+                    FilePath = blackScreenVideoPath,
+                    StartTime = 0,
+                    EndTime = blackScreenDuration,
+                    TimeLinePosition = totalVideoDuration * pixelsPerSecond,
+                    Id = ++segmentsVideoCount
+                });
+            }
+            else if (totalAudioDuration < totalVideoDuration)
+            {
+                float silentAudioDuration = totalVideoDuration - totalAudioDuration;
+
+                fullAudioRender.Add(new AudioRenderSegment
+                {
+                    FilePath = silentAudioPath,
+                    StartTime = 0,
+                    EndTime = silentAudioDuration,
+                    TimeLinePosition = totalAudioDuration * pixelsPerSecond,
+                    Id = ++segmentsAudioCount
+                });
+            }
+        }
+
+        ///
         /// Exits the application when the close button is clicked.
         ///
         private void button3_Click(object sender, EventArgs e)
@@ -451,14 +547,17 @@ namespace RenCloud
         private Timer playbackTimer;
         private Stopwatch playbackStopwatch;
         private int autoScrollDirection = 0;
+        private const int seekUpdateThreshold = 50;
         private long lastKnownVlcTime = 0;
         private float trackerXPosition = 0f;
         private float currentPlaybackTime = 0f;
         private float pixelsPerSecond = 50f;
         private float pixelsPerMillisecond;
         private float widthVideo = 0f;
+        private long lastSeekUpdate = 0;
         private bool wasPlayingBeforeDrag = false;
         private bool isDraggingTracker = false;
+        private bool isUpdatingPreview = false;
 
         ////PAINT & EVENT HANDLERS////
 
@@ -560,7 +659,30 @@ namespace RenCloud
 
                 trackerXPosition = proposedX;
                 currentPlaybackTime = trackerXPosition / pixelsPerMillisecond;
-                PreviewBox.Time = (long)(currentPlaybackTime);
+
+                long now = Environment.TickCount;
+                if (now - lastSeekUpdate > seekUpdateThreshold)
+                {
+                    lastSeekUpdate = now;
+
+                    if (!isUpdatingPreview)
+                    {
+                        isUpdatingPreview = true;
+
+                        try
+                        {
+                            PreviewBox.Time = (long)currentPlaybackTime;
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Failed to update preview: {ex.Message}");
+                        }
+                        finally
+                        {
+                            isUpdatingPreview = false;
+                        }
+                    }
+                }
 
                 if (!wasPlayingBeforeDrag)
                 {
@@ -591,6 +713,7 @@ namespace RenCloud
             }
         }
 
+
         ///
         /// Occurs when the user releases the mouse button on the timeline; finalizes tracker movement.
         ///
@@ -600,13 +723,23 @@ namespace RenCloud
             {
                 trackerXPosition = Math.Max(0, Math.Min(e.X, widthVideo));
                 currentPlaybackTime = trackerXPosition / pixelsPerMillisecond;
-                PreviewBox.Time = (long)currentPlaybackTime;
+
+                try
+                {
+                    PreviewBox.Time = (long)currentPlaybackTime; // Direct update
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Failed to update preview on mouse up: {ex.Message}");
+                }
+
                 UpdatePlaybackLabel(currentPlaybackTime);
                 isDraggingTracker = false;
                 autoScrollTimer.Stop();
                 autoScrollDirection = 0;
                 lastKnownVlcTime = (long)currentPlaybackTime;
                 playbackStopwatch.Reset();
+
                 if (!isUpdatingUI)
                 {
                     isUpdatingUI = true;
@@ -615,6 +748,7 @@ namespace RenCloud
                     AudioTrack.Invalidate();
                     isUpdatingUI = false;
                 }
+
                 if (wasPlayingBeforeDrag)
                 {
                     PlayPreview();
@@ -625,6 +759,7 @@ namespace RenCloud
                 }
             }
         }
+
 
         ///
         /// Paints the ruler, draws major/minor ticks, and renders the tracker arrow on the timeline.
@@ -928,94 +1063,87 @@ namespace RenCloud
         ///
         /// Generates a preview video using FFmpeg by concatenating/trimming segments.
         ///
-        private async Task GeneratePreview(int targetSizeMB = 30)
+        private async Task GeneratePreview()
         {
-            List<string> filterComplexVideo = new List<string>();
-            List<string> filterComplexAudio = new List<string>();
-            double totalDurationSeconds = fullVideoRender.Sum(segment => segment.EndTime - segment.StartTime);
-            int fileIndex = 0;
-            int targetWidth = 472;
-            int targetHeight = 404;
-            int targetFps = 30;
-            int audioBitrateKbps = 128;
-            int totalBitrate = (int)((targetSizeMB * 8192) / totalDurationSeconds) - audioBitrateKbps;
-            string videoFormat = "yuv420p";
-            string videoBitrate = totalBitrate.ToString() + "k";
-            string previewDirectory = Path.Combine(Path.GetTempPath(), "VideoPreviews");
+            string outputDirectory = outputPath;
+            string tempDirectory = Path.Combine(outputPath, "tempBuild");
+            int fps = 15;
+            int width = 472;
+            int height = 404;
 
-            if (!Directory.Exists(previewDirectory))
+            if (!Directory.Exists(outputDirectory))
             {
-                Directory.CreateDirectory(previewDirectory);
+                Directory.CreateDirectory(outputDirectory);
             }
-            outputPath = Path.Combine(previewDirectory, $"preview_{DateTime.Now:yyyyMMddHHmmssfff}.mp4");
-            StringBuilder ffmpegCmd = new StringBuilder("-y ");
+
+            if (!Directory.Exists(tempDirectory))
+            {
+                Directory.CreateDirectory(tempDirectory);
+            }
+
+            string timestamp = DateTime.Now.ToString("yyyyMMddHHmmssfff");
+            string tempVideoPath = Path.Combine(tempDirectory, $"temp_video_{timestamp}.mp4");
+            string tempAudioPath = Path.Combine(tempDirectory, $"temp_audio_{timestamp}.mp4");
+            string finalOutputPath = Path.Combine(outputDirectory, $"preview_{timestamp}.mp4");
+
+            StringBuilder videoCmd = new StringBuilder("-y ");
+            List<string> videoFilters = new List<string>();
+            int videoIndex = 0;
 
             foreach (var segment in fullVideoRender)
             {
-                ffmpegCmd.AppendFormat("-hwaccel cuda -c:v h264_cuvid -i \"{0}\" ", segment.FilePath);
-                filterComplexVideo.Add($"[{fileIndex}:v]trim=start={segment.StartTime}:end={segment.EndTime},setpts=PTS-STARTPTS,scale={targetWidth}:{targetHeight},fps={targetFps},setsar=1,format={videoFormat}[v{fileIndex}];");
-                filterComplexAudio.Add($"[{fileIndex}:a]atrim=start={segment.StartTime}:end={segment.EndTime},asetpts=PTS-STARTPTS,aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo[a{fileIndex}];");
-                fileIndex++;
+                videoCmd.AppendFormat("-i \"{0}\" -an ", segment.FilePath);
+                videoFilters.Add($"[{videoIndex}:v]trim=start={segment.StartTime}:end={segment.EndTime},setpts=PTS-STARTPTS,scale={width}:{height},fps={fps},setsar=1,format=yuv420p[v{videoIndex}];");
+                videoIndex++;
             }
 
-            if (fileIndex > 0)
+            string videoInputs = string.Join("", Enumerable.Range(0, videoIndex).Select(i => $"[v{i}]"));
+            videoFilters.Add($"{videoInputs}concat=n={videoIndex}:v=1[outv]");
+            videoCmd.Append($"-filter_complex \"{string.Join(" ", videoFilters)}\" -map \"[outv]\" -an -c:v libx264 -crf 25 -preset ultrafast -b:v 8000k \"{tempVideoPath}\"");
+
+            StringBuilder audioCmd = new StringBuilder("-y ");
+            List<string> audioFilters = new List<string>();
+            int audioIndex = 0;
+
+            foreach (var segment in fullAudioRender)
             {
-                string videoFilter = string.Join("", Enumerable.Range(0, fileIndex).Select(i => $"[v{i}]"));
-                string audioFilter = string.Join("", Enumerable.Range(0, fileIndex).Select(i => $"[a{i}]"));
-                string filterComplex = $"{string.Join("", filterComplexVideo)}{videoFilter}concat=n={fileIndex}:v=1:a=0[outv];{string.Join("", filterComplexAudio)}{audioFilter}concat=n={fileIndex}:v=0:a=1[outa]";
-                ffmpegCmd.Append($"-filter_complex \"{filterComplex}\" ");
-                ffmpegCmd.Append($"-b:v {videoBitrate} -preset ultrafast -b:a {audioBitrateKbps}k -c:a aac -threads 2 ");
-                ffmpegCmd.Append($"-map \"[outv]\" -map \"[outa]\" \"{outputPath}\"");
-            }
-            else
-            {
-                MessageBox.Show("No video segments to process.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
+                audioCmd.AppendFormat("-i \"{0}\" ", segment.FilePath);
+                audioFilters.Add($"[{audioIndex}:a]atrim=start={segment.StartTime}:end={segment.EndTime},asetpts=PTS-STARTPTS[a{audioIndex}];");
+                audioIndex++;
             }
 
-            await Task.Run(() =>
+            string audioInputs = string.Join("", Enumerable.Range(0, audioIndex).Select(i => $"[a{i}]"));
+            audioFilters.Add($"{audioInputs}concat=n={audioIndex}:v=0:a=1[outa]");
+            audioCmd.Append($"-filter_complex \"{string.Join(" ", audioFilters)}\" -map \"[outa]\" -vn -c:a aac -b:a 192k \"{tempAudioPath}\"");
+
+            StringBuilder mergeCmd = new StringBuilder("-y ");
+            mergeCmd.AppendFormat("-i \"{0}\" -i \"{1}\" -c:v copy -c:a copy \"{2}\"", tempVideoPath, tempAudioPath, finalOutputPath);
+
+            var videoTask = RunFFmpegCommand(videoCmd.ToString(), "Video Generation");
+            var audioTask = RunFFmpegCommand(audioCmd.ToString(), "Audio Generation");
+            await Task.WhenAll(videoTask, audioTask);
+            await RunFFmpegCommand(mergeCmd.ToString(), "Final Merging");
+            if (Directory.Exists(tempDirectory))
             {
-                using (Process ffmpegProcess = new Process())
+                Directory.Delete(tempDirectory, true);
+                Console.WriteLine($"Deleted the output directory: {tempDirectory}");
+            }
+            this.Invoke(new Action(() =>
+            {
+                var mediaOptions = new string[] { "input-repeat=65535" };
+                PreviewBox.SetMedia(new FileInfo(finalOutputPath), mediaOptions);
+                PreviewBox.Play();
+                Task.Delay(872).ContinueWith(t =>
                 {
-                    ffmpegProcess.StartInfo = new ProcessStartInfo
+                    if (!wasPlayingBeforeDrag)
                     {
-                        FileName = ffmpegPath,
-                        Arguments = ffmpegCmd.ToString(),
-                        UseShellExecute = false,
-                        RedirectStandardError = true,
-                        CreateNoWindow = true
-                    };
-
-                    ffmpegProcess.Start();
-                    string errorOutput = ffmpegProcess.StandardError.ReadToEnd();
-                    ffmpegProcess.WaitForExit();
-
-                    if (ffmpegProcess.ExitCode == 0)
+                        PreviewBox.Pause();
+                    } else
                     {
-                        this.Invoke(new Action(() =>
-                        {
-                            var mediaOptions = new string[] { "input-repeat=65535" };
-                            PreviewBox.SetMedia(new FileInfo(outputPath), mediaOptions);
-                            PreviewBox.Play();
-                            Task.Delay(872).ContinueWith(t =>
-                            {
-                                if (!wasPlayingBeforeDrag)
-                                {
-                                    PreviewBox.Pause();
-                                }
-                            }, TaskScheduler.FromCurrentSynchronizationContext());
-                        }));
+                        PreviewBox.Play();
                     }
-                    else
-                    {
-                        this.Invoke(new Action(() =>
-                        {
-                            MessageBox.Show("Failed to create preview. See console output for details.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                            Console.WriteLine($"ffmpeg error: {errorOutput}");
-                        }));
-                    }
-                }
-            });
+                }, TaskScheduler.FromCurrentSynchronizationContext());
+            }));
         }
 
         ///
@@ -1032,15 +1160,14 @@ namespace RenCloud
             float barWidthIncludingSpacing = barWidth + barSpacing;
             float newWidth = videoDuration * pixelsPerSecond;
 
-            if ((widthVideo + newWidth) / pixelsPerSecond > 600) // 600 seconds = 10 minutes
+            if ((widthVideo + newWidth) / pixelsPerSecond > 600)
             {
                 MessageBox.Show("Adding this video will exceed the 10-minute limit. Please adjust your timeline.",
                     "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 button4.Enabled = true;
-                return; // Exit without modifying the timeline
+                return;
             }
 
-            // UI update
             this.Invoke(new Action(() =>
             {
                 widthVideo += newWidth;
@@ -1060,7 +1187,6 @@ namespace RenCloud
             float videoStartPosition = widthVideo - newWidth;
             float thumbnailWidth = 100f;
 
-            // UI update for thumbnails and audio bars
             this.Invoke(new Action(() =>
             {
                 for (int i = 0; i < thumbnailCount; i++)
@@ -1316,6 +1442,53 @@ namespace RenCloud
         }
 
         ///
+        /// Called on initialization to ensure temp folders/files are removed if application not closed properly.
+        ///
+        public void ClearingTempPaths()
+        {
+            if (Directory.Exists(outputPath))
+            {
+                Directory.Delete(outputPath, true);
+                Console.WriteLine($"Deleted the output directory: {outputPath}");
+            }
+            else
+            {
+                Console.WriteLine($"Output directory does not exist: {outputPath}");
+            }
+        }
+
+        ///
+        /// Run ffmpeg generated commands on call.
+        ///
+        private async Task RunFFmpegCommand(string ffmpegArguments, string description)
+        {
+            Console.WriteLine($"Running FFmpeg {description} command: {ffmpegArguments}");
+            await Task.Run(() =>
+            {
+                using (Process ffmpegProcess = new Process())
+                {
+                    ffmpegProcess.StartInfo = new ProcessStartInfo
+                    {
+                        FileName = ffmpegPath,
+                        Arguments = ffmpegArguments,
+                        UseShellExecute = false,
+                        RedirectStandardError = true,
+                        CreateNoWindow = true
+                    };
+
+                    ffmpegProcess.Start();
+                    string errorOutput = ffmpegProcess.StandardError.ReadToEnd();
+                    ffmpegProcess.WaitForExit();
+
+                    if (ffmpegProcess.ExitCode != 0)
+                    {
+                        throw new Exception($"FFmpeg {description} failed. See error: {errorOutput}");
+                    }
+                }
+            });
+        }
+
+        ///
         /// Updates the playback label to display the current time in mm:ss:ms format, ensuring the displayed time does not exceed the total duration.
         ///
         private void UpdatePlaybackLabel(float playbackTime)
@@ -1391,6 +1564,25 @@ namespace RenCloud
             typeof(Control).InvokeMember("DoubleBuffered",
                 BindingFlags.SetProperty | BindingFlags.Instance | BindingFlags.NonPublic,
                 null, control, new object[] { true });
+        }
+
+        private void TestGen_Click(object sender, EventArgs e)
+        {
+            GeneratePreview();
+        }
+
+        private void Debug_Click(object sender, EventArgs e)
+        {
+            Console.WriteLine("\nVIDEO\n");
+            foreach (VideoRenderSegment segment in fullVideoRender)
+            {
+                Console.WriteLine($"ID: {segment.Id} | Start: {segment.StartTime:F2} | End: {segment.EndTime:F2} | Path: {segment.FilePath} | TimeLinePosition: {segment.TimeLinePosition}");
+            }
+            Console.WriteLine("\nAUDIO\n");
+            foreach (AudioRenderSegment segment in fullAudioRender)
+            {
+                Console.WriteLine($"ID: {segment.Id} | Start: {segment.StartTime:F2} | End: {segment.EndTime:F2} | Path: {segment.FilePath} | TimeLinePosition: {segment.TimeLinePosition}");
+            }
         }
     }
 }

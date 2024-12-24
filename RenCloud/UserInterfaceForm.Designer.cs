@@ -45,6 +45,8 @@ namespace RenCloud
             this.PlayButton = new System.Windows.Forms.Button();
             this.TimeStamp = new System.Windows.Forms.Label();
             this.panel13 = new System.Windows.Forms.Panel();
+            this.TestGen = new System.Windows.Forms.Button();
+            this.RemoveSegment = new System.Windows.Forms.Button();
             this.Split = new System.Windows.Forms.Button();
             this.button4 = new System.Windows.Forms.Button();
             this.PreviewPanel = new System.Windows.Forms.Panel();
@@ -59,6 +61,7 @@ namespace RenCloud
             this.VideoTrackPlaceholder = new System.Windows.Forms.Panel();
             this.panel7 = new System.Windows.Forms.Panel();
             this.panel11 = new System.Windows.Forms.Panel();
+            this.Debug = new System.Windows.Forms.Button();
             this.panel1.SuspendLayout();
             this.panel3.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
@@ -227,6 +230,9 @@ namespace RenCloud
             // panel13
             // 
             this.panel13.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.panel13.Controls.Add(this.Debug);
+            this.panel13.Controls.Add(this.TestGen);
+            this.panel13.Controls.Add(this.RemoveSegment);
             this.panel13.Controls.Add(this.Split);
             this.panel13.Location = new System.Drawing.Point(0, 305);
             this.panel13.Margin = new System.Windows.Forms.Padding(0);
@@ -234,9 +240,31 @@ namespace RenCloud
             this.panel13.Size = new System.Drawing.Size(419, 172);
             this.panel13.TabIndex = 2;
             // 
+            // TestGen
+            // 
+            this.TestGen.Location = new System.Drawing.Point(332, 132);
+            this.TestGen.Margin = new System.Windows.Forms.Padding(0);
+            this.TestGen.Name = "TestGen";
+            this.TestGen.Size = new System.Drawing.Size(75, 32);
+            this.TestGen.TabIndex = 2;
+            this.TestGen.Text = "Generate";
+            this.TestGen.UseVisualStyleBackColor = true;
+            this.TestGen.Click += new System.EventHandler(this.TestGen_Click);
+            // 
+            // RemoveSegment
+            // 
+            this.RemoveSegment.Location = new System.Drawing.Point(243, 135);
+            this.RemoveSegment.Margin = new System.Windows.Forms.Padding(0);
+            this.RemoveSegment.Name = "RemoveSegment";
+            this.RemoveSegment.Size = new System.Drawing.Size(75, 32);
+            this.RemoveSegment.TabIndex = 1;
+            this.RemoveSegment.Text = "Delete";
+            this.RemoveSegment.UseVisualStyleBackColor = true;
+            this.RemoveSegment.Click += new System.EventHandler(this.RemoveSegment_Click);
+            // 
             // Split
             // 
-            this.Split.Location = new System.Drawing.Point(304, 135);
+            this.Split.Location = new System.Drawing.Point(158, 135);
             this.Split.Margin = new System.Windows.Forms.Padding(0);
             this.Split.Name = "Split";
             this.Split.Size = new System.Drawing.Size(75, 32);
@@ -359,7 +387,6 @@ namespace RenCloud
             this.VideoTrackPlaceholder.Name = "VideoTrackPlaceholder";
             this.VideoTrackPlaceholder.Size = new System.Drawing.Size(733, 31);
             this.VideoTrackPlaceholder.TabIndex = 2;
-            this.VideoTrackPlaceholder.Paint += new System.Windows.Forms.PaintEventHandler(this.VideoTrackPlaceholder_Paint_1);
             // 
             // panel7
             // 
@@ -378,6 +405,16 @@ namespace RenCloud
             this.panel11.Name = "panel11";
             this.panel11.Size = new System.Drawing.Size(419, 275);
             this.panel11.TabIndex = 1;
+            // 
+            // Debug
+            // 
+            this.Debug.Location = new System.Drawing.Point(22, 132);
+            this.Debug.Name = "Debug";
+            this.Debug.Size = new System.Drawing.Size(120, 31);
+            this.Debug.TabIndex = 0;
+            this.Debug.Text = "DataDebug";
+            this.Debug.UseVisualStyleBackColor = true;
+            this.Debug.Click += new System.EventHandler(this.Debug_Click);
             // 
             // UserInterfaceForm
             // 
@@ -446,5 +483,8 @@ namespace RenCloud
         private System.Windows.Forms.Button PauseButton;
         private Vlc.DotNet.Forms.VlcControl PreviewBox;
         private System.Windows.Forms.Button Split;
+        private System.Windows.Forms.Button RemoveSegment;
+        private System.Windows.Forms.Button TestGen;
+        private System.Windows.Forms.Button Debug;
     }
 }
