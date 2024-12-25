@@ -36,6 +36,9 @@ namespace RenCloud
             InitializePlayBackStopWatch();
             InitializingDoubleBuffersForComponents();
             ClearingTempPaths();
+            VideoTrack.MouseDown += VideoTrack_MouseDownHandler;
+            VideoTrack.MouseMove += VideoTrack_MouseMoveHandler;
+            VideoTrack.MouseUp += VideoTrack_MouseUpHandler;
 
             //VARIABLES&ADJUSTMENTS//
 
@@ -60,12 +63,107 @@ namespace RenCloud
         private Corners applyCorners;
         private DragFunctionality dragFunctionality;
         private bool isActive = false;
+        private bool isDraggingSegment = false;
+        private Point initialMousePosition;
+        private RectangleF initialSegmentBounds;
+        private List<(Image thumbnail, float position)> draggedThumbnails = new List<(Image, float)>();
+
 
         ////FEATURES & EVENT HANDLERS & INTERACTIONS////
 
+        ///
+        /// MouseDown handler for the video track; marks the selected region if clicked inside a segment and storing necessary info for dragging selected segments.
+        ///
+        private void VideoTrack_MouseDownHandler(object sender, MouseEventArgs e)
+        {
+            selectedVideoBounds = Rectangle.Empty;
+            selectedAudioBounds = Rectangle.Empty;
+            draggedThumbnails.Clear();
 
+            foreach (var bounds in allVideoBounds)
+            {
+                if (bounds.Contains(e.Location))
+                {
+                    selectedVideoBounds = bounds;
 
+                    isDraggingSegment = true;
+                    initialMousePosition = e.Location;
+                    initialSegmentBounds = bounds;
 
+                    foreach (var (thumbnail, position) in allThumbnailsWithPositions)
+                    {
+                        if (position >= bounds.Left && position < bounds.Right)
+                        {
+                            draggedThumbnails.Add((thumbnail, position));
+                        }
+                    }
+
+                    break;
+                }
+            }
+
+            VideoTrack.Invalidate();
+            AudioTrack.Invalidate();
+        }
+
+        ///
+        /// MouseMove handler for the video track; moves the selected segment and images based on user movement.
+        ///
+        private void VideoTrack_MouseMoveHandler(object sender, MouseEventArgs e)
+        {
+            if (isDraggingSegment && selectedVideoBounds != RectangleF.Empty)
+            {
+                float offsetX = e.Location.X - initialMousePosition.X;
+
+                float newSegmentLeft = Math.Max(0, initialSegmentBounds.Left + offsetX);
+                newSegmentLeft = Math.Min(VideoTrack.Width - initialSegmentBounds.Width, newSegmentLeft);
+                float segmentOffset = newSegmentLeft - selectedVideoBounds.Left;
+
+                RectangleF updatedBounds = new RectangleF(
+                    newSegmentLeft,
+                    initialSegmentBounds.Top,
+                    initialSegmentBounds.Width,
+                    initialSegmentBounds.Height
+                );
+
+                int segmentIndex = allVideoBounds.IndexOf(selectedVideoBounds);
+                allVideoBounds[segmentIndex] = updatedBounds;
+
+                for (int i = 0; i < draggedThumbnails.Count; i++)
+                {
+                    var (thumbnail, originalPosition) = draggedThumbnails[i];
+
+                    float newPosition = originalPosition + segmentOffset;
+                    draggedThumbnails[i] = (thumbnail, newPosition);
+
+                    int globalIndex = allThumbnailsWithPositions.FindIndex(t => t.thumbnail == thumbnail && t.position == originalPosition);
+                    if (globalIndex != -1)
+                    {
+                        allThumbnailsWithPositions[globalIndex] = (thumbnail, newPosition);
+                    }
+                }
+
+                selectedVideoBounds = updatedBounds;
+                VideoTrack.Invalidate();
+            }
+        }
+
+        ///
+        /// MouseUp handler for the video track; on release specifies logic whether to move the segment or not and clearing information.
+        /// 
+        private void VideoTrack_MouseUpHandler(object sender, MouseEventArgs e)
+        {
+            if (isDraggingSegment)
+            {
+                isDraggingSegment = false;
+                initialMousePosition = Point.Empty;
+                initialSegmentBounds = RectangleF.Empty;
+
+                draggedThumbnails.Clear();
+            }
+
+            VideoTrack.Invalidate();
+        }
 
         ///
         /// Set round corners to the form. 
@@ -980,58 +1078,50 @@ namespace RenCloud
         private void VideoTrack_PaintHandler(object sender, PaintEventArgs e)
         {
             Graphics g = e.Graphics;
+
             using (Brush backgroundBrush = new SolidBrush(Color.Gray))
             {
                 g.FillRectangle(backgroundBrush, 0, 0, widthVideo, VideoTrack.Height);
             }
-            foreach (var (thumbnail, position) in allThumbnailsWithPositions)
-            {
-                float thumbnailHeight = VideoTrack.Height - 20f;
-                float thumbnailY = 10f;
-                g.DrawImage(thumbnail, position, thumbnailY, 100, thumbnailHeight);
-            }
             using (Pen borderPen = new Pen(Color.Green, 2))
-            using (Pen selectedPen = new Pen(Color.Red, 3))
             {
                 foreach (var bounds in allVideoBounds)
                 {
-                    if (bounds == selectedVideoBounds)
-                    {
-                        using (Brush overlayBrush = new SolidBrush(Color.FromArgb(128, Color.Purple)))
-                        {
-                            g.FillRectangle(overlayBrush, bounds);
-                        }
-                        g.DrawRectangle(selectedPen, Rectangle.Round(bounds));
-                    }
-                    else
+                    if (bounds != selectedVideoBounds)
                     {
                         g.DrawRectangle(borderPen, Rectangle.Round(bounds));
                     }
+                }
+            }
+            foreach (var (thumbnail, position) in allThumbnailsWithPositions)
+            {
+                if (!draggedThumbnails.Any(t => t.thumbnail == thumbnail))
+                {
+                    float thumbnailHeight = VideoTrack.Height - 20f;
+                    float thumbnailY = 10f;
+                    g.DrawImage(thumbnail, position, thumbnailY, 100, thumbnailHeight);
+                }
+            }
+            if (selectedVideoBounds != RectangleF.Empty)
+            {
+                using (Pen selectedPen = new Pen(Color.Red, 3))
+                using (Brush overlayBrush = new SolidBrush(Color.FromArgb(128, Color.Purple)))
+                {
+                    g.FillRectangle(overlayBrush, selectedVideoBounds);
+                    g.DrawRectangle(selectedPen, Rectangle.Round(selectedVideoBounds));
+                }
+
+                foreach (var (thumbnail, position) in draggedThumbnails)
+                {
+                    float thumbnailHeight = VideoTrack.Height - 20f;
+                    float thumbnailY = 10f;
+                    g.DrawImage(thumbnail, position, thumbnailY, 100, thumbnailHeight);
                 }
             }
             using (Pen trackerPen = new Pen(Color.Blue, 2))
             {
                 g.DrawLine(trackerPen, trackerXPosition, 0, trackerXPosition, VideoTrack.Height);
             }
-        }
-
-
-        ///
-        /// MouseDown handler for the video track; marks the selected region if clicked inside a segment.
-        ///
-        private void VideoTrack_MouseDownHandler(object sender, MouseEventArgs e)
-        {
-            selectedVideoBounds = Rectangle.Empty;
-            selectedAudioBounds = Rectangle.Empty;
-            foreach (var bounds in from bounds in allVideoBounds
-                                   where bounds.Contains(e.Location)
-                                   select bounds)
-            {
-                selectedVideoBounds = bounds;
-            }
-
-            VideoTrack.Invalidate();
-            AudioTrack.Invalidate();
         }
 
         ///
