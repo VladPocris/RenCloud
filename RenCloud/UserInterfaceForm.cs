@@ -205,8 +205,8 @@ namespace RenCloud
             }
 
             float trackerPosition = trackerXPosition;
-
             float epsilonSeconds = 0.01f;
+
             if (selectedVideoBounds != RectangleF.Empty)
             {
                 if (trackerPosition < selectedVideoBounds.Left || trackerPosition > selectedVideoBounds.Right)
@@ -215,29 +215,21 @@ namespace RenCloud
                                     "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
-
                 float oldTimeLinePos = selectedVideoBounds.Left / pixelsPerSecond;
-                var originalVideo = fullVideoRender.FirstOrDefault(v => v.TimeLinePosition == oldTimeLinePos);
+                var originalVideo = fullVideoRender.FirstOrDefault(v =>
+                    Math.Abs(v.TimeLinePosition - oldTimeLinePos) < epsilonSeconds);
+
                 if (originalVideo == null)
                 {
-                    MessageBox.Show("Could not find the original video segment.",
+                    MessageBox.Show("Could not find the original video segment for the selected bounds.",
                                     "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
 
-                float segmentDuration = originalVideo.EndTime - originalVideo.StartTime;
-                if (segmentDuration <= 0f)
-                {
-                    MessageBox.Show("Segment has zero or negative duration?!",
-                                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
-                }
+                float splitTimeSeconds = (trackerPosition - selectedVideoBounds.Left) / pixelsPerSecond;
 
-                float splitTimeMilliseconds = (trackerPosition - selectedVideoBounds.Left) / pixelsPerMillisecond;
-                float splitTimeSeconds = splitTimeMilliseconds / 1000f;
-
-                if (splitTimeSeconds < epsilonSeconds ||
-                    (segmentDuration - splitTimeSeconds) < epsilonSeconds)
+                if (splitTimeSeconds <= epsilonSeconds ||
+                    (selectedVideoBounds.Width / pixelsPerSecond - splitTimeSeconds) <= epsilonSeconds)
                 {
                     Console.WriteLine("Cannot split at the exact boundary (zero-length segment). No split performed.");
                     return;
@@ -260,55 +252,34 @@ namespace RenCloud
                 allVideoBounds.Add(firstSegment);
                 allVideoBounds.Add(secondSegment);
 
-                int oldIndex = fullVideoRender.IndexOf(originalVideo);
-                if (oldIndex == -1)
-                {
-                    MessageBox.Show("Could not find the original segment in the list.",
-                                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
-                }
-                fullVideoRender.RemoveAt(oldIndex);
+                float firstStartTime = originalVideo.StartTime;
+                float secondStartTime = firstStartTime + splitTimeSeconds;
 
-                float firstSegmentStartTime = originalVideo.StartTime;
-                float firstSegmentEndTime = originalVideo.StartTime + splitTimeSeconds;
-                float secondSegmentStartTime = firstSegmentEndTime;
-                float secondSegmentEndTime = originalVideo.EndTime;
+                fullVideoRender.Remove(originalVideo);
 
-                var newSegment1 = new VideoRenderSegment
+                fullVideoRender.Add(new VideoRenderSegment
                 {
                     FilePath = originalVideo.FilePath,
-                    StartTime = firstSegmentStartTime,
-                    EndTime = firstSegmentEndTime,
+                    StartTime = firstStartTime,
+                    EndTime = firstStartTime + splitTimeSeconds,
                     TimeLinePosition = firstSegment.Left / pixelsPerSecond,
-                    Id = originalVideo.Id
-                };
-                var newSegment2 = new VideoRenderSegment
+                    Id = ++segmentsVideoCount
+                });
+
+                fullVideoRender.Add(new VideoRenderSegment
                 {
                     FilePath = originalVideo.FilePath,
-                    StartTime = secondSegmentStartTime,
-                    EndTime = secondSegmentEndTime,
+                    StartTime = secondStartTime,
+                    EndTime = originalVideo.EndTime,
                     TimeLinePosition = secondSegment.Left / pixelsPerSecond,
                     Id = ++segmentsVideoCount
-                };
+                });
 
-                fullVideoRender.Insert(oldIndex, newSegment1);
-                fullVideoRender.Insert(oldIndex + 1, newSegment2);
-                for (int i = 0; i < fullVideoRender.Count; i++)
-                {
-                    fullVideoRender[i].Id = i + 1;
-                }
-                segmentsVideoCount = fullVideoRender.Count;
                 selectedVideoBounds = RectangleF.Empty;
-                selectedAudioBounds = RectangleF.Empty;
-                Console.WriteLine("Video segments after split:");
-                foreach (VideoRenderSegment seg in fullVideoRender)
-                {
-                    Console.WriteLine($"ID: {seg.Id} | Start: {seg.StartTime:F2} | End: {seg.EndTime:F2}");
-                }
                 VideoTrack.Invalidate();
             }
 
-            else if (selectedAudioBounds != RectangleF.Empty)
+            if (selectedAudioBounds != RectangleF.Empty)
             {
                 if (trackerPosition < selectedAudioBounds.Left || trackerPosition > selectedAudioBounds.Right)
                 {
@@ -316,29 +287,21 @@ namespace RenCloud
                                     "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
+                var originalAudio = fullAudioRender.FirstOrDefault(a =>
+                    Math.Abs(a.TimeLinePosition * pixelsPerSecond - selectedAudioBounds.Left) < 1e-2 &&
+                    Math.Abs((a.TimeLinePosition + (a.EndTime - a.StartTime)) * pixelsPerSecond - selectedAudioBounds.Right) < 1e-2);
 
-                float oldTimeLinePos = selectedAudioBounds.Left / pixelsPerSecond;
-                var originalAudio = fullAudioRender.FirstOrDefault(a => a.TimeLinePosition == oldTimeLinePos);
                 if (originalAudio == null)
                 {
-                    MessageBox.Show("Could not find the original audio segment.",
+                    MessageBox.Show("Could not find the original audio segment for the selected bounds.",
                                     "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
 
-                float segmentDuration = originalAudio.EndTime - originalAudio.StartTime;
-                if (segmentDuration <= 0f)
-                {
-                    MessageBox.Show("Segment has zero or negative duration?!",
-                                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
-                }
+                float splitTimeSeconds = (trackerPosition - selectedAudioBounds.Left) / pixelsPerSecond;
 
-                float splitTimeMilliseconds = (trackerPosition - selectedAudioBounds.Left) / pixelsPerMillisecond;
-                float splitTimeSeconds = splitTimeMilliseconds / 1000f;
-
-                if (splitTimeSeconds < epsilonSeconds ||
-                    (segmentDuration - splitTimeSeconds) < epsilonSeconds)
+                if (splitTimeSeconds <= epsilonSeconds ||
+                    (selectedAudioBounds.Width / pixelsPerSecond - splitTimeSeconds) <= epsilonSeconds)
                 {
                     Console.WriteLine("Cannot split at the exact boundary (zero-length segment). No split performed.");
                     return;
@@ -361,61 +324,34 @@ namespace RenCloud
                 allAudioSegments.Add(firstSegment);
                 allAudioSegments.Add(secondSegment);
 
-                int oldIndex = fullAudioRender.IndexOf(originalAudio);
-                if (oldIndex == -1)
-                {
-                    MessageBox.Show("Could not find the original audio segment in the list.",
-                                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
-                }
-                fullAudioRender.RemoveAt(oldIndex);
+                float firstStartTime = originalAudio.StartTime;
+                float secondStartTime = firstStartTime + splitTimeSeconds;
 
-                float firstSegmentStartTime = originalAudio.StartTime;
-                float firstSegmentEndTime = originalAudio.StartTime + splitTimeSeconds;
-                float secondSegmentStartTime = firstSegmentEndTime;
-                float secondSegmentEndTime = originalAudio.EndTime;
+                fullAudioRender.Remove(originalAudio);
 
-                var newSegment1 = new AudioRenderSegment
+                fullAudioRender.Add(new AudioRenderSegment
                 {
                     FilePath = originalAudio.FilePath,
-                    StartTime = firstSegmentStartTime,
-                    EndTime = firstSegmentEndTime,
+                    StartTime = firstStartTime,
+                    EndTime = firstStartTime + splitTimeSeconds,
                     TimeLinePosition = firstSegment.Left / pixelsPerSecond,
-                    Id = originalAudio.Id
-                };
-                var newSegment2 = new AudioRenderSegment
+                    Id = ++segmentsAudioCount
+                });
+
+                fullAudioRender.Add(new AudioRenderSegment
                 {
                     FilePath = originalAudio.FilePath,
-                    StartTime = secondSegmentStartTime,
-                    EndTime = secondSegmentEndTime,
+                    StartTime = secondStartTime,
+                    EndTime = originalAudio.EndTime,
                     TimeLinePosition = secondSegment.Left / pixelsPerSecond,
                     Id = ++segmentsAudioCount
-                };
+                });
 
-                fullAudioRender.Insert(oldIndex, newSegment1);
-                fullAudioRender.Insert(oldIndex + 1, newSegment2);
-
-                for (int i = 0; i < fullAudioRender.Count; i++)
-                {
-                    fullAudioRender[i].Id = i + 1;
-                }
-                segmentsAudioCount = fullAudioRender.Count;
-                selectedVideoBounds = RectangleF.Empty;
                 selectedAudioBounds = RectangleF.Empty;
-
-                Console.WriteLine("Audio segments after split:");
-                foreach (AudioRenderSegment seg in fullAudioRender)
-                {
-                    Console.WriteLine($"ID: {seg.Id} | Start: {seg.StartTime:F2} | End: {seg.EndTime:F2}");
-                }
                 AudioTrack.Invalidate();
             }
-            else
-            {
-                MessageBox.Show("No segment selected. Please select a video or audio segment to split.",
-                                "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
         }
+
 
         ///
         /// Removes selected segment from timeline.
@@ -535,14 +471,27 @@ namespace RenCloud
             }
             float videoWidth = allVideoBounds.Any() ? allVideoBounds.Max(b => b.Right) : 0;
             float audioWidth = allAudioSegments.Any() ? allAudioSegments.Max(b => b.Right) : 0;
+            int widthPlaceholderDefault = 733;
             this.Invoke(new Action(() =>
             {
                 if (videoChanged)
                 {
                     widthVideo = videoWidth;
-                    VideoTrack.Width = (int)Math.Ceiling(widthVideo + VideoTrackPlaceholder.Width);
+                    if (videoWidth < audioWidth)
+                    {
+                        AudioTrackPlaceholder.Width = widthPlaceholderDefault;
+                        VideoTrackPlaceholder.Width = (int)(AudioTrackPlaceholder.Width + (widthAudio - widthVideo + selectedVideoBounds.Width));
+                        VideoTrack.Width = (int)Math.Ceiling(widthVideo + VideoTrackPlaceholder.Width);
+                        AudioTrack.Width = VideoTrack.Width;
+                    } else {
+                        VideoTrackPlaceholder.Width = widthPlaceholderDefault;
+                        AudioTrackPlaceholder.Width = (int)(AudioTrackPlaceholder.Width - selectedVideoBounds.Width);
+                        VideoTrack.Width = (int)(audioWidth + VideoTrackPlaceholder.Width);
+                        AudioTrack.Width = VideoTrack.Width;
+                    }
                     VideoTrackPlaceholder.Location = new Point((int)Math.Round(widthVideo), VideoTrackPlaceholder.Location.Y);
                     VideoTrackPlaceholder.BackColor = Color.FromArgb(67, 38, 88);
+                    EditingRuller.Width = VideoTrack.Width;
                     VideoTrack.Invalidate();
                     VideoTrackPlaceholder.Invalidate();
                 }
@@ -550,14 +499,25 @@ namespace RenCloud
                 if (audioChanged)
                 {
                     widthAudio = audioWidth;
-                    AudioTrack.Width = (int)Math.Ceiling(widthAudio + AudioTrackPlaceholder.Width);
+                    if (audioWidth < videoWidth)
+                    {
+                        VideoTrackPlaceholder.Width = widthPlaceholderDefault;
+                        AudioTrackPlaceholder.Width = (int)(VideoTrackPlaceholder.Width + (widthVideo - widthAudio + selectedAudioBounds.Width));
+                        AudioTrack.Width = (int)Math.Ceiling(widthAudio + AudioTrackPlaceholder.Width);
+                        VideoTrack.Width = AudioTrack.Width;
+                    } else
+                    {
+                        AudioTrackPlaceholder.Width = widthPlaceholderDefault;
+                        VideoTrackPlaceholder.Width = (int)(VideoTrackPlaceholder.Width - selectedAudioBounds.Width);
+                        AudioTrack.Width = (int)(audioWidth + AudioTrackPlaceholder.Width);
+                        VideoTrack.Width = AudioTrack.Width;
+                    }
                     AudioTrackPlaceholder.Location = new Point((int)Math.Round(widthAudio), AudioTrackPlaceholder.Location.Y);
                     AudioTrackPlaceholder.BackColor = Color.FromArgb(67, 38, 88);
+                    EditingRuller.Width = AudioTrack.Width;
                     AudioTrack.Invalidate();
                     AudioTrackPlaceholder.Invalidate();
                 }
-
-                EditingRuller.Width = Math.Max(VideoTrack.Width, AudioTrack.Width);
                 EditingRuller.Invalidate();
             }));
 
@@ -593,7 +553,7 @@ namespace RenCloud
                     FilePath = blackScreenVideoPath,
                     StartTime = 0,
                     EndTime = blackScreenDuration,
-                    TimeLinePosition = totalVideoDuration * pixelsPerSecond,
+                    TimeLinePosition = totalVideoDuration,
                     Id = ++segmentsVideoCount
                 });
             }
@@ -606,9 +566,16 @@ namespace RenCloud
                     FilePath = silentAudioPath,
                     StartTime = 0,
                     EndTime = silentAudioDuration,
-                    TimeLinePosition = totalAudioDuration * pixelsPerSecond,
+                    TimeLinePosition = totalAudioDuration,
                     Id = ++segmentsAudioCount
                 });
+            }
+
+            float runningTime = 0f;
+            foreach (var segment in fullAudioRender)
+            {
+                segment.TimeLinePosition = runningTime;
+                runningTime += segment.EndTime - segment.StartTime;
             }
         }
 
@@ -969,7 +936,7 @@ namespace RenCloud
         private void VideoTrackPlaceholder_Paint_1(object sender, PaintEventArgs e)
         {
             Graphics g = e.Graphics;
-            g.Clear(Color.FromArgb(67, 38, 88)); // Ensure placeholder background stands out
+            g.Clear(Color.FromArgb(67, 38, 88));
 
             int stripHeight = 30;
             int spacing = 20;
@@ -1007,22 +974,16 @@ namespace RenCloud
         private void VideoTrack_PaintHandler(object sender, PaintEventArgs e)
         {
             Graphics g = e.Graphics;
-
-            // Fill only up to widthVideo, not beyond
             using (Brush backgroundBrush = new SolidBrush(Color.Gray))
             {
                 g.FillRectangle(backgroundBrush, 0, 0, widthVideo, VideoTrack.Height);
             }
-
-            // Draw thumbnails
             foreach (var (thumbnail, position) in allThumbnailsWithPositions)
             {
                 float thumbnailHeight = VideoTrack.Height - 20f;
                 float thumbnailY = 10f;
                 g.DrawImage(thumbnail, position, thumbnailY, 100, thumbnailHeight);
             }
-
-            // Draw video bounds
             using (Pen borderPen = new Pen(Color.Green, 2))
             using (Pen selectedPen = new Pen(Color.Red, 3))
             {
@@ -1031,8 +992,6 @@ namespace RenCloud
                     g.DrawRectangle(bounds == selectedVideoBounds ? selectedPen : borderPen, Rectangle.Round(bounds));
                 }
             }
-
-            // Draw tracker line
             using (Pen trackerPen = new Pen(Color.Blue, 2))
             {
                 g.DrawLine(trackerPen, trackerXPosition, 0, trackerXPosition, VideoTrack.Height);
@@ -1277,10 +1236,10 @@ namespace RenCloud
             {
                 widthVideo += newWidth;
                 widthAudio += newWidth;
-                widthEditing += newWidth;
-                EditingRuller.Width = (int)Math.Ceiling(widthEditing + VideoTrackPlaceholder.Width);
+                widthEditing = Math.Max(widthVideo, widthAudio);
                 VideoTrack.Width = (int)Math.Ceiling(widthVideo + VideoTrackPlaceholder.Width);
                 AudioTrack.Width = (int)Math.Ceiling(widthAudio + AudioTrackPlaceholder.Width);
+                EditingRuller.Width = Math.Max(VideoTrack.Width, AudioTrack.Width);
                 EditingRuller.Invalidate();
                 VideoTrackPlaceholder.Invalidate();
                 AudioTrackPlaceholder.Invalidate();
@@ -1691,6 +1650,7 @@ namespace RenCloud
             {
                 Console.WriteLine($"ID: {segment.Id} | Start: {segment.StartTime:F2} | End: {segment.EndTime:F2} | Path: {segment.FilePath} | TimeLinePosition: {segment.TimeLinePosition}");
             }
+            Console.WriteLine($"Editing Ruller Width: {EditingRuller.Width}\nVideo Track Width: {VideoTrack.Width}\nAudio Track Width: {AudioTrack.Width}");
         }
     }
 }
