@@ -36,7 +36,9 @@ namespace RenCloud
             InitializePlayBackStopWatch();
             InitializingDoubleBuffersForComponents();
             ClearingTempPaths();
+
             //VARIABLES&ADJUSTMENTS//
+
             pixelsPerMillisecond = pixelsPerSecond / 1000f;
         }
 
@@ -60,6 +62,10 @@ namespace RenCloud
         private bool isActive = false;
 
         ////FEATURES & EVENT HANDLERS & INTERACTIONS////
+
+
+
+
 
         ///
         /// Set round corners to the form. 
@@ -989,7 +995,18 @@ namespace RenCloud
             {
                 foreach (var bounds in allVideoBounds)
                 {
-                    g.DrawRectangle(bounds == selectedVideoBounds ? selectedPen : borderPen, Rectangle.Round(bounds));
+                    if (bounds == selectedVideoBounds)
+                    {
+                        using (Brush overlayBrush = new SolidBrush(Color.FromArgb(128, Color.Purple)))
+                        {
+                            g.FillRectangle(overlayBrush, bounds);
+                        }
+                        g.DrawRectangle(selectedPen, Rectangle.Round(bounds));
+                    }
+                    else
+                    {
+                        g.DrawRectangle(borderPen, Rectangle.Round(bounds));
+                    }
                 }
             }
             using (Pen trackerPen = new Pen(Color.Blue, 2))
@@ -1409,7 +1426,18 @@ namespace RenCloud
             {
                 foreach (var bounds in allAudioSegments)
                 {
-                    g.DrawRectangle(bounds == selectedAudioBounds ? selectedPen : borderPen, Rectangle.Round(bounds));
+                    if (bounds == selectedAudioBounds)
+                    {
+                        using (Brush overlayBrush = new SolidBrush(Color.FromArgb(128, Color.Purple)))
+                        {
+                            g.FillRectangle(overlayBrush, bounds);
+                        }
+                        g.DrawRectangle(selectedPen, Rectangle.Round(bounds));
+                    }
+                    else
+                    {
+                        g.DrawRectangle(borderPen, Rectangle.Round(bounds));
+                    }
                 }
             }
             using (Brush transparentBrush = new SolidBrush(Color.FromArgb(0, 0, 0, 0)))
