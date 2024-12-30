@@ -59,9 +59,10 @@ namespace RenCloud
         //-----------------------------//UX-UI Interactions//-------------------------------------//
         //----------------------------------------------------------------------------------------//
 
-         ////VARIABLES & OBJECTS///
+        ////VARIABLES & OBJECTS///
         private Corners applyCorners;
         private DragFunctionality dragFunctionality;
+        private int segmentsToLeft = 0;
         private bool isActive = false;
         private bool isDraggingSegment = false;
         private bool swapping = false;
@@ -71,44 +72,652 @@ namespace RenCloud
         private List<(Image thumbnail, float position)> tempPositions = new List<(Image, float)>();
         private List<(Image thumbnail, float position)> draggedThumbnails = new List<(Image, float)>();
         private List<(Image thumbnail, float position)> draggedThumbnailsInitialPosition = new List<(Image, float)>();
-
+        private List<(RectangleF bar, int id)> tempPositionsBars = new List<(RectangleF bar, int id)>();
+        private List<(RectangleF bar, int id)> draggedBars = new List<(RectangleF bar, int id)>();
+        private List<(RectangleF bar, int id)> draggedBarsInitialPosition = new List<(RectangleF bar, int id)>();
 
         ////FEATURES & EVENT HANDLERS & INTERACTIONS////
+        private void AudioTrack_MouseDownHandler(object sender, MouseEventArgs e)
+        {
+            selectedVideoBounds = Rectangle.Empty;
+            selectedAudioBounds = Rectangle.Empty;
+            draggedBars.Clear();
+            draggedBarsInitialPosition.Clear();
+
+            foreach (var bar in allAudioAmplitudeBars)
+            {
+                tempPositionsBars.Add(bar);
+            }
+            foreach (var bounds in allAudioSegments)
+            {
+                if (bounds.Contains(e.Location))
+                {
+                    selectedAudioBounds = bounds;
+                    isDraggingSegment = true;
+                    initialMousePosition = e.Location;
+                    initialSegmentBounds = bounds;
+
+                    foreach (var (bar, id) in allAudioAmplitudeBars)
+                    {
+                        if (bar.X >= bounds.Left && bar.X < bounds.Right)
+                        {
+                            draggedBars.Add((bar, id));
+                            draggedBarsInitialPosition.Add((bar, id));
+                        }
+                    }
+                    break;
+                }
+            }
+            segmentsToLeft = allAudioSegments.Count(segment => segment.Right <= selectedAudioBounds.Left);
+            AudioTrack.Invalidate();
+        }
+
+
+        ///
+        /// MouseMove handler for the video track; moves the selected segment and images based on user movement.
+        ///
+        private void AudioTrack_MouseMoveHandler(object sender, MouseEventArgs e)
+        {
+            if (isDraggingSegment && selectedAudioBounds != RectangleF.Empty)
+            {
+                float offsetX = e.Location.X - initialMousePosition.X;
+
+                float newSegmentLeft = Math.Max(0, initialSegmentBounds.Left + offsetX);
+                newSegmentLeft = Math.Min(AudioTrack.Width - initialSegmentBounds.Width, newSegmentLeft);
+                RectangleF updatedBounds = new RectangleF(
+                    newSegmentLeft,
+                    initialSegmentBounds.Top,
+                    initialSegmentBounds.Width,
+                    initialSegmentBounds.Height
+                );
+
+                int segmentIndex = allAudioSegments.IndexOf(selectedAudioBounds);
+                allAudioSegments[segmentIndex] = updatedBounds;
+
+                float segmentOffset = newSegmentLeft - selectedAudioBounds.Left;
+
+                for (int i = 0; i < draggedBars.Count; i++)
+                {
+                    var (bar, id) = draggedBars[i];
+                    var originalPosition = bar.X;
+                    float newPosition = bar.X + segmentOffset;
+                    draggedBars[i] = (new RectangleF(
+                        newPosition,
+                        bar.Top,
+                        bar.Width,
+                        bar.Height
+                        ), id);
+
+                    int globalIndex = allAudioAmplitudeBars.FindIndex(t => t.id == id && t.bar.X == originalPosition);
+                    if (globalIndex != -1)
+                    {
+                        allAudioAmplitudeBars[globalIndex] = (new RectangleF(
+                        newPosition,
+                        bar.Top,
+                        bar.Width,
+                        bar.Height
+                        ), id);
+                    }
+                }
+                foreach (RectangleF otherSegment in allAudioSegments)
+                {
+                    if (otherSegment != updatedBounds)
+                    {
+                        float otherSegmentMidpoint = otherSegment.Left + (otherSegment.Width / 2);
+                        if (updatedBounds.Left <= otherSegmentMidpoint && updatedBounds.Right >= otherSegmentMidpoint)
+                        {
+                            swapping = true;
+                            break;
+                        }
+                    }
+                }
+                selectedAudioBounds = updatedBounds;
+                AudioTrack.Invalidate();
+            }
+            AudioTrack.Invalidate();
+        }
+
+
+        ///
+        /// MouseUp handler for the video track; on release specifies logic whether to move the segment or not and clearing information.
+        /// 
+        private void AudioTrack_MouseUpHandler(object sender, MouseEventArgs e)
+        {
+            int index = 0;
+            if (isDraggingSegment)
+            {
+                int draggedIndex = allAudioSegments.IndexOf(selectedAudioBounds);
+                RectangleF draggedSegment = selectedAudioBounds;
+
+                if (draggedIndex != -1)
+                {
+                    int newIndex = DetermineNewAudioIndex(draggedIndex, draggedSegment);
+                    bool segmentMoved = newIndex != -1 && newIndex != draggedIndex;
+
+                    if (segmentMoved)
+                    {
+                        index = newIndex > draggedIndex ? newIndex - 1 : newIndex;
+                        MoveAudioSegment(draggedIndex, newIndex);
+                        NormalizeAudioSegmentPositions();
+                        selectedAudioBounds = allAudioSegments[index];
+                        SyncFullAudioRender();
+                        UpdateBarPositions(index);
+                        draggedSegment = selectedAudioBounds;
+                        if (rightMv)
+                        {
+                            UpdateBarsForRightDraggingFix();
+                            rightMv = false;
+                        }
+                        else
+                        {
+                            if (selectedAudioBounds.Left < 0.1f) {
+                                UpdateBarsForLeftDraggingFix(index + 1); 
+                            }
+                        }
+                    }
+                    else
+                    {
+                        RevertSegmentAndBars();
+                        ResetDraggingState();
+                        AudioTrack.Invalidate();
+                        return;
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Error: Dragged segment index not found.");
+                }
+
+                ResetDraggingState();
+            }
+            else
+            {
+                Console.WriteLine("MouseUp detected without dragging.");
+            }
+            AudioTrack.Invalidate();
+            GeneratePreview();
+        }
+        private void MoveAudioSegment(int oldIndex, int newIndex)
+        {
+            if (oldIndex == newIndex) return;
+
+            RectangleF segment = allAudioSegments[oldIndex];
+            allAudioSegments.RemoveAt(oldIndex);
+
+            if (newIndex > oldIndex) newIndex--;
+
+            allAudioSegments.Insert(newIndex, segment);
+
+            var segmentData = fullAudioRender[oldIndex];
+            fullAudioRender.RemoveAt(oldIndex);
+
+            fullAudioRender.Insert(newIndex, segmentData);
+
+            AudioTrack.Invalidate();
+        }
+
+
+        private void NormalizeAudioSegmentPositions()
+        {
+            int debug = 0;
+            float currentLeft = 0;
+
+            for (int i = 0; i < allAudioSegments.Count; i++)
+            {
+                Console.WriteLine("CALLED NOW");
+                RectangleF segment = allAudioSegments[i];
+
+                if (Math.Abs(segment.Left - currentLeft) > 0.1f)
+                {
+
+                    allAudioSegments[i] = new RectangleF(
+                        currentLeft,
+                        segment.Top,
+                        segment.Width,
+                        segment.Height
+                    );
+
+                    if (initialSegmentBounds.Left > currentLeft)
+                    {
+                        UpdateBarsForLeftDragging();
+                    }
+                    else
+                    {
+                        if (debug < 1)
+                        {
+                            UpdateBarsForRightDragging(segment, currentLeft);
+                        }
+                        debug++;
+                    }
+
+                    if (i < fullAudioRender.Count)
+                    {
+                        fullAudioRender[i].TimeLinePosition = currentLeft / pixelsPerSecond;
+                    }
+                }
+
+                currentLeft += segment.Width;
+            }
+
+            AudioTrack.Invalidate();
+        }
+
+
+        ///
+        /// When moving the segments this function help to identify if the user drags the selected segment over a segment located left from its position or right in order to determine the appropriate logic to proceed.
+        ///
+        private int DetermineNewAudioIndex(int draggedIndex, RectangleF draggedSegment)
+        {
+            int newIndex = draggedIndex;
+
+            for (int i = 0; i < allAudioSegments.Count; i++)
+            {
+                if (i == draggedIndex) continue;
+
+                RectangleF currentSegment = allAudioSegments[i];
+                float currentSegmentMiddle = currentSegment.Left + currentSegment.Width / 2;
+
+                if (draggedSegment.Left < currentSegmentMiddle && draggedIndex > i)
+                {
+                    newIndex = Math.Min(newIndex, i);
+                }
+
+                if (draggedSegment.Right > currentSegmentMiddle && draggedIndex < i)
+                {
+                    newIndex = Math.Max(newIndex, i + 1);
+                }
+            }
+            AudioTrack.Invalidate();
+            return newIndex;
+        }
+
+        ///
+        /// Function to sync data to pass to PreviewGeneration function.
+        ///
+        private void SyncFullAudioRender()
+        {
+            for (int i = 0; i < allAudioSegments.Count; i++)
+            {
+                if (i < fullAudioRender.Count)
+                {
+                    fullAudioRender[i].TimeLinePosition = allAudioSegments[i].Left / pixelsPerSecond;
+                }
+                else
+                {
+                    Console.WriteLine($"Warning: Missing render data for segment {i}");
+                }
+            }
+            AudioTrack.Invalidate();
+        }
+
+        ///
+        /// If no swap should occur just return the segment and it's position at the original place.
+        ///
+        private void RevertSegmentAndBars()
+        {
+            int segmentIndex = allAudioSegments.IndexOf(selectedAudioBounds);
+            if (segmentIndex != -1)
+            {
+                allAudioSegments[segmentIndex] = initialSegmentBounds;
+            }
+            for (int i = 0; i < draggedBarsInitialPosition.Count; i++)
+            {
+                var (bar, id) = draggedBarsInitialPosition[i];
+                int barIndex = allAudioAmplitudeBars.FindIndex(t => t.id == id);
+                if (barIndex != -1)
+                {
+                    allAudioAmplitudeBars[barIndex] = (new RectangleF(
+                        bar.X,
+                        bar.Top,
+                        bar.Width,
+                        bar.Height
+                        ), id);
+                }
+            }
+            selectedAudioBounds = initialSegmentBounds;
+        }
+
+        /// 
+        /// Update the selected thumbnails of the segment to the right position.
+        /// 
+        private void UpdateBarPositions(int segmentIndex)
+        {
+            RectangleF newSegmentBounds = allAudioSegments[segmentIndex];
+            float offset = newSegmentBounds.Left - initialSegmentBounds.Left;
+
+            foreach (var (bar, id) in draggedBarsInitialPosition)
+            {
+                if (bar.X >= initialSegmentBounds.Left && bar.X < initialSegmentBounds.Right)
+                {
+                    float newPosition = bar.X + offset;
+                    int index = allAudioAmplitudeBars.FindIndex(t => t.id == id);
+                    if (index != -1)
+                    {
+                        allAudioAmplitudeBars[index] = (new RectangleF(
+                            newPosition,
+                            bar.Top,
+                            bar.Width,
+                            bar.Height
+                            ), id);
+                    }
+                    int draggedIndex = draggedBars.FindIndex(t => t.id == id);
+                    if (draggedIndex != -1)
+                    {
+                        draggedBars[draggedIndex] = (new RectangleF(
+                            newPosition,
+                            bar.Top,
+                            bar.Width,
+                            bar.Height
+                            ), id);
+                    }
+                }
+            }
+        }
+
+        /// 
+        /// Right drag handle of thumbnails positions.
+        /// 
+        private void UpdateBarsForRightDragging(RectangleF oldSegmentRect, float newLeft)
+        {
+            float offset = newLeft - oldSegmentRect.Left;
+            var draggedTemp = draggedBars.Select(bar => bar.id).ToList();
+
+            Console.WriteLine($"CALLED NOW WITH OFFSET OF {offset}");
+
+            var initialBars = allAudioAmplitudeBars.ToList();
+
+            for (int i = 0; i < allAudioAmplitudeBars.Count; i++)
+            {
+                var (barRect, id) = allAudioAmplitudeBars[i];
+
+                if (barRect.X >= oldSegmentRect.Left)
+                {
+                    float newBarX = barRect.X + offset;
+                    allAudioAmplitudeBars[i] = (
+                        new RectangleF(newBarX, barRect.Top, barRect.Width, barRect.Height),
+                        id
+                    );
+                }
+            }
+
+            foreach (var (initialBar, id) in initialBars)
+            {
+                if (initialBar.X > oldSegmentRect.Right || (initialBar.X < oldSegmentRect.Right && initialBar.X >= oldSegmentRect.Left && draggedTemp.Contains(id)))
+                {
+                    int barIndex = allAudioAmplitudeBars.FindIndex(t => t.id == id);
+                    if (barIndex != -1)
+                    {
+                        var currentBar = allAudioAmplitudeBars[barIndex].bar;
+                        allAudioAmplitudeBars[barIndex] = (
+                            new RectangleF(
+                                initialBar.X,
+                                currentBar.Top,
+                                currentBar.Width,
+                                currentBar.Height
+                            ),
+                            id
+                        );
+                    }
+                }
+            }
+
+            rightMv = true;
+            AudioTrack.Invalidate();
+        }
+
+        private void UpdateBarsForRightDraggingFix()
+        {
+            Console.WriteLine("FIX CALLED");
+            bool moving = true;
+            var draggedBarsIds = draggedBars.Select(t => t.id).ToList();
+            var currentBounds = selectedAudioBounds;
+            var nextBounds = allAudioSegments
+                .Where(segment => segment.Right <= currentBounds.Left + 1)
+                .OrderByDescending(segment => segment.Right)
+                .FirstOrDefault();
+
+            var updatedBars = new List<(RectangleF bar, int id)>();
+
+            int remainingSegmentsCount = allAudioSegments
+                .Count(segment => segment.Right <= currentBounds.Left)
+                - segmentsToLeft;
+
+            while (moving)
+            {
+                if (remainingSegmentsCount >= 1)
+                {
+                    Console.WriteLine($"Current Segment bounds: {currentBounds.Left} - {currentBounds.Right}");
+                    Console.WriteLine($"Remaining Segments to the Left: {remainingSegmentsCount}");
+
+                    float leftEdge, rightEdge;
+                    if (remainingSegmentsCount >= 2 && nextBounds != null && nextBounds != default && nextBounds != currentBounds)
+                    {
+                        // --- Multi-segment scenario => merge bounding range
+                        leftEdge = Math.Min(currentBounds.Left, nextBounds.Left);
+                        rightEdge = Math.Max(currentBounds.Right, nextBounds.Right);
+                    }
+                    else
+                    {
+                        // --- Simple neighbor or no next => just use currentBounds
+                        leftEdge = currentBounds.Left;
+                        rightEdge = currentBounds.Right;
+                    }
+
+                    // Gather bars in [leftEdge, rightEdge] that are not in draggedBarsIds
+                    foreach (var (bar, id) in allAudioAmplitudeBars)
+                    {
+                        if (!draggedBarsIds.Contains(id) &&
+                            bar.X >= leftEdge &&
+                            bar.X <= rightEdge)
+                        {
+                            // Shift them left by currentBounds.Width
+                            updatedBars.Add((
+                                new RectangleF(
+                                    bar.X - currentBounds.Width-1,
+                                    bar.Top,
+                                    bar.Width,
+                                    bar.Height
+                                ),
+                                id
+                            ));
+                        }
+                    }
+
+                    // Apply the updates
+                    for (int i = 0; i < allAudioAmplitudeBars.Count; i++)
+                    {
+                        var (bar, id) = allAudioAmplitudeBars[i];
+                        var updatedBar = updatedBars.FirstOrDefault(t => t.id == id);
+                        if (updatedBar != default)
+                        {
+                            allAudioAmplitudeBars[i] = updatedBar;
+                        }
+                    }
+
+                    // Move to the next segment
+                    var nextSegmentToLeft = allAudioSegments
+                        .Where(segment => segment.Right <= currentBounds.Left + 1)
+                        .OrderByDescending(segment => segment.Right)
+                        .FirstOrDefault();
+
+                    // If it's the same or none, we stop
+                    if (nextSegmentToLeft == currentBounds || nextSegmentToLeft == default)
+                    {
+                        Console.WriteLine("SAME or none next => stopping");
+                        moving = false;
+                    }
+                    else
+                    {
+                        // Update currentBounds
+                        currentBounds = nextSegmentToLeft;
+                        remainingSegmentsCount = allAudioSegments
+                            .Count(segment => segment.Right <= currentBounds.Left)
+                            - segmentsToLeft;
+
+                        // Merge newly updated bar IDs
+                        draggedBarsIds = draggedBarsIds
+                            .Union(updatedBars.Select(t => t.id))
+                            .ToList();
+
+                        // Recompute nextBounds for next iteration
+                        nextBounds = allAudioSegments
+                            .Where(segment => segment.Right <= currentBounds.Left + 1)
+                            .OrderByDescending(segment => segment.Right)
+                            .FirstOrDefault();
+                    }
+
+                    updatedBars.Clear();
+                }
+                else
+                {
+                    moving = false;
+                }
+            }
+
+            AudioTrack.Invalidate();
+        }
+
+        /// 
+        /// Left drag handle of thumbnails positions.
+        /// 
+        private void UpdateBarsForLeftDragging()
+        {
+            float currentLeft = 0;
+
+            var updatedBars = new List<(RectangleF bar, int id)>();
+
+            for (int i = 0; i < allAudioSegments.Count; i++)
+            {
+                RectangleF segment = allAudioSegments[i];
+
+                if (Math.Abs(segment.Left - currentLeft) > 0.1f)
+                {
+
+                    allAudioSegments[i] = new RectangleF(
+                        currentLeft,
+                        segment.Top,
+                        segment.Width,
+                        segment.Height
+                    );
+
+                    foreach (var (bar, id) in allAudioAmplitudeBars.ToList())
+                    {
+                        if (bar.X >= segment.Left && bar.X < segment.Right)
+                        {
+                            float relativeOffset = bar.X - segment.Left;
+                            float newBarPosition = currentLeft + relativeOffset;
+                            updatedBars.Add((new RectangleF(
+                                newBarPosition,
+                                bar.Top,
+                                bar.Width,
+                                bar.Height
+                                ), id));
+                        }
+                    }
+
+                    if (i < fullAudioRender.Count)
+                    {
+                        fullAudioRender[i].TimeLinePosition = currentLeft / pixelsPerSecond;
+                    }
+                }
+
+                currentLeft += segment.Width;
+            }
+
+            foreach (var (bar, id) in updatedBars)
+            {
+                int barIndex = allAudioAmplitudeBars.FindIndex(t => t.id == id);
+                if (barIndex != -1)
+                {
+                    allAudioAmplitudeBars[barIndex] = (new RectangleF(
+                        bar.X,
+                        bar.Top,
+                        bar.Width,
+                        bar.Height
+                        ), id);
+                }
+            }
+            NormalizeAudioSegmentPositions();
+            AudioTrack.Invalidate();
+        }
+
+        private void UpdateBarsForLeftDraggingFix(int nextBoundsIndex)
+        {
+            var draggedBarsIds = draggedBars.Select(t => t.id).ToList();
+            var currentBounds = selectedAudioBounds;
+
+            var updatedBars = new List<(RectangleF bar, int id)>();
+
+            var nextBounds = allAudioSegments[nextBoundsIndex];
+
+            var leftEdge = Math.Min(currentBounds.Left, nextBounds.Left);
+            var rightEdge = Math.Max(currentBounds.Right, nextBounds.Right);
+
+            foreach (var (bar, id) in allAudioAmplitudeBars)
+            {
+                if (!draggedBarsIds.Contains(id) && bar.X >= leftEdge && bar.X <= rightEdge)
+                {
+                    updatedBars.Add((
+                        new RectangleF(
+                            bar.X + currentBounds.Width,
+                            bar.Top,
+                            bar.Width,
+                            bar.Height
+                        ),
+                        id
+                    ));
+                }
+            }
+
+            for (int i = 0; i < allAudioAmplitudeBars.Count; i++)
+            {
+                var (bar, id) = allAudioAmplitudeBars[i];
+                var updatedBar = updatedBars.FirstOrDefault(t => t.id == id);
+                if (updatedBar != default)
+                {
+                    allAudioAmplitudeBars[i] = updatedBar;
+                }
+            }
+
+            updatedBars.Clear();
+
+            AudioTrack.Invalidate();
+        }
 
         ///
         /// MouseDown handler for the video track; marks the selected region if clicked inside a segment and storing necessary info for dragging selected segments.
         ///
         private void VideoTrack_MouseDownHandler(object sender, MouseEventArgs e)
         {
-                selectedVideoBounds = Rectangle.Empty;
-                selectedAudioBounds = Rectangle.Empty;
-                draggedThumbnails.Clear();
-                draggedThumbnailsInitialPosition.Clear();
+            selectedVideoBounds = Rectangle.Empty;
+            selectedAudioBounds = Rectangle.Empty;
+            draggedThumbnails.Clear();
+            draggedThumbnailsInitialPosition.Clear();
 
-                foreach (var (thumbnail, position) in allThumbnailsWithPositions)
-                {
+            foreach (var (thumbnail, position) in allThumbnailsWithPositions)
+            {
                 tempPositions.Add((thumbnail, position));
-                }
-                foreach (var bounds in allVideoBounds)
+            }
+            foreach (var bounds in allVideoBounds)
+            {
+                if (bounds.Contains(e.Location))
                 {
-                    if (bounds.Contains(e.Location))
-                    {
-                        selectedVideoBounds = bounds;
-                        isDraggingSegment = true;
-                        initialMousePosition = e.Location;
-                        initialSegmentBounds = bounds;
+                    selectedVideoBounds = bounds;
+                    isDraggingSegment = true;
+                    initialMousePosition = e.Location;
+                    initialSegmentBounds = bounds;
 
-                        foreach (var (thumbnail, position) in allThumbnailsWithPositions)
+                    foreach (var (thumbnail, position) in allThumbnailsWithPositions)
+                    {
+                        if (position >= bounds.Left && position < bounds.Right)
                         {
-                            if (position >= bounds.Left && position < bounds.Right)
-                            {
-                                draggedThumbnails.Add((thumbnail, position));
-                                draggedThumbnailsInitialPosition.Add((thumbnail, position));
-                            }
+                            draggedThumbnails.Add((thumbnail, position));
+                            draggedThumbnailsInitialPosition.Add((thumbnail, position));
                         }
-                        break;
                     }
+                    break;
                 }
+            }
             AudioTrack.Invalidate();
             VideoTrack.Invalidate();
         }
@@ -252,6 +861,7 @@ namespace RenCloud
 
             for (int i = 0; i < allVideoBounds.Count; i++)
             {
+                Console.WriteLine("CALLLING NOW");
                 RectangleF segment = allVideoBounds[i];
 
                 if (Math.Abs(segment.Left - currentLeft) > 0.1f)
@@ -270,7 +880,7 @@ namespace RenCloud
                     }
                     else
                     {
-                        UpdateThumbnailsForRightDragging( segment, currentLeft);
+                        UpdateThumbnailsForRightDragging(segment, currentLeft);
                     }
 
                     if (i < fullVideoRender.Count)
@@ -544,6 +1154,7 @@ namespace RenCloud
 
                 selectedAudioBounds = firstSegment;
 
+                NormalizeAudioSegmentPositions();
                 NormalizeSegmentPositions();
                 AudioTrack.Invalidate();
             }
@@ -638,7 +1249,7 @@ namespace RenCloud
 
                 for (int i = allAudioAmplitudeBars.Count - 1; i >= 0; i--)
                 {
-                    var bar = allAudioAmplitudeBars[i];
+                    var bar = allAudioAmplitudeBars[i].bar;
                     if (bar.Left >= selectedAudioBounds.Left && bar.Right <= selectedAudioBounds.Right)
                     {
                         allAudioAmplitudeBars.RemoveAt(i);
@@ -646,7 +1257,7 @@ namespace RenCloud
                     else if (bar.Left >= selectedAudioBounds.Right)
                     {
                         RectangleF newBar = new RectangleF(bar.X - removedWidthAudio, bar.Y, bar.Width, bar.Height);
-                        allAudioAmplitudeBars[i] = newBar;
+                        allAudioAmplitudeBars[i] = (newBar, i);
                     }
                 }
 
@@ -1504,7 +2115,7 @@ namespace RenCloud
                     float barYPosition = AudioTrack.Height - amplitudeHeight;
                     if (barXPosition + barWidth > audioStartPosition + newWidth)
                         break;
-                    allAudioAmplitudeBars.Add(new RectangleF(barXPosition, barYPosition, barWidth, amplitudeHeight));
+                    allAudioAmplitudeBars.Add((new RectangleF(barXPosition, barYPosition, barWidth, amplitudeHeight), i));
                 }
 
                 videoThumbnails = null;
@@ -1537,7 +2148,7 @@ namespace RenCloud
                 Console.WriteLine($"ID: {segment.Id} | Start: {segment.StartTime:F2} | End: {segment.EndTime:F2}");
             }
             SyncMediaTracks();
-            //GeneratePreview();
+            GeneratePreview();
         }
 
         //---------------------------------------------------------------------------------------//
@@ -1548,14 +2159,9 @@ namespace RenCloud
         private RectangleF selectedAudioBounds = RectangleF.Empty;
         private Dictionary<RectangleF, RectangleF> videoToAudioMapping = new Dictionary<RectangleF, RectangleF>();
         private List<RectangleF> allAudioSegments = new List<RectangleF>();
-        private List<RectangleF> allAudioAmplitudeBars = new List<RectangleF>();
+        private List<(RectangleF bar, int id)> allAudioAmplitudeBars = new List<(RectangleF bar, int id)>();
         private List<AudioRenderSegment> fullAudioRender = new List<AudioRenderSegment>();
         private int segmentsAudioCount = 0;
-        private Dictionary<RectangleF, List<RectangleF>> segmentToAmplitudeBars = new Dictionary<RectangleF, List<RectangleF>>();
-
-        private List<RectangleF> draggedAmplitudeBars = new List<RectangleF>();
-        private List<RectangleF> draggedAmplitudeBarsInitialPosition = new List<RectangleF>();
-
 
         class AudioRenderSegment
         {
@@ -1619,7 +2225,7 @@ namespace RenCloud
             }
             using (Brush barBrush = new SolidBrush(Color.LightGreen))
             {
-                foreach (RectangleF bar in allAudioAmplitudeBars)
+                foreach ((RectangleF bar, int id) in allAudioAmplitudeBars)
                 {
                     g.FillRectangle(barBrush, bar);
                 }
@@ -1652,277 +2258,6 @@ namespace RenCloud
                 g.DrawLine(trackerPen, trackerXPosition, 0, trackerXPosition, AudioTrack.Height);
             }
         }
-
-        ///
-        /// MouseDown handler for the audio track; marks the selected region if clicked inside a segment.
-        ///
-        private void AudioTrack_MouseDownHandler(object sender, MouseEventArgs e)
-        {
-            Console.WriteLine($"MouseDown at location: {e.Location}");
-            selectedAudioBounds = RectangleF.Empty;
-            draggedAmplitudeBars.Clear();
-            draggedAmplitudeBarsInitialPosition.Clear();
-
-            foreach (var bounds in allAudioSegments)
-            {
-                if (bounds.Contains(e.Location))
-                {
-                    selectedAudioBounds = bounds;
-                    Console.WriteLine($"Selected audio segment: {selectedAudioBounds}");
-                    isDraggingSegment = true;
-                    initialMousePosition = e.Location;
-                    initialSegmentBounds = bounds;
-
-                    foreach (var bar in allAudioAmplitudeBars)
-                    {
-                        if (bar.Left >= bounds.Left && bar.Right <= bounds.Right)
-                        {
-                            draggedAmplitudeBars.Add(bar);
-                            draggedAmplitudeBarsInitialPosition.Add(bar);
-                        }
-                    }
-                    break;
-                }
-            }
-            AudioTrack.Invalidate();
-        }
-
-
-
-
-        private void AudioTrack_MouseMoveHandler(object sender, MouseEventArgs e)
-        {
-            if (isDraggingSegment && !selectedAudioBounds.IsEmpty)
-            {
-                float offsetX = e.Location.X - initialMousePosition.X;
-
-                // Calculate new position of the selected segment
-                float newSegmentLeft = Math.Max(0, initialSegmentBounds.Left + offsetX);
-                newSegmentLeft = Math.Min(AudioTrack.Width - initialSegmentBounds.Width, newSegmentLeft);
-                RectangleF updatedBounds = new RectangleF(
-                    newSegmentLeft,
-                    initialSegmentBounds.Top,
-                    initialSegmentBounds.Width,
-                    initialSegmentBounds.Height
-                );
-
-                int segmentIndex = allAudioSegments.IndexOf(selectedAudioBounds);
-                if (segmentIndex != -1)
-                {
-                    allAudioSegments[segmentIndex] = updatedBounds;
-
-                    // Move the amplitude bars associated with this segment
-                    float segmentOffset = newSegmentLeft - selectedAudioBounds.Left;
-                    for (int i = 0; i < draggedAmplitudeBars.Count; i++)
-                    {
-                        var originalBar = draggedAmplitudeBarsInitialPosition[i];
-                        RectangleF updatedBar = new RectangleF(
-                            originalBar.Left + segmentOffset,
-                            originalBar.Top,
-                            originalBar.Width,
-                            originalBar.Height
-                        );
-
-                        draggedAmplitudeBars[i] = updatedBar;
-                        int barIndex = allAudioAmplitudeBars.IndexOf(originalBar);
-                        if (barIndex != -1)
-                        {
-                            allAudioAmplitudeBars[barIndex] = updatedBar;
-                        }
-                    }
-
-                    selectedAudioBounds = updatedBounds;
-                }
-
-                AudioTrack.Invalidate();
-            }
-        }
-
-
-
-
-        private void MoveAmplitudeBars(int segmentIndex, float offsetX)
-        {
-            RectangleF segmentBounds = allAudioSegments[segmentIndex];
-            List<RectangleF> currentBars = draggedAmplitudeBarsInitialPosition.ToList(); // Using a cloned list to avoid modification during enumeration
-
-            for (int i = 0; i < currentBars.Count; i++)
-            {
-                float newLeft = currentBars[i].Left + offsetX;
-                if (newLeft < segmentBounds.Left || newLeft + currentBars[i].Width > segmentBounds.Right)
-                    continue; // Skip update if it moves out of bounds
-
-                RectangleF updatedBar = new RectangleF(newLeft, currentBars[i].Top, currentBars[i].Width, currentBars[i].Height);
-                draggedAmplitudeBars[i] = updatedBar;
-
-                int barIndex = allAudioAmplitudeBars.IndexOf(draggedAmplitudeBarsInitialPosition[i]);
-                if (barIndex != -1)
-                {
-                    allAudioAmplitudeBars[barIndex] = updatedBar;
-                }
-            }
-        }
-
-
-
-
-
-        private void AudioTrack_MouseUpHandler(object sender, MouseEventArgs e)
-        {
-            if (isDraggingSegment)
-            {
-                int draggedIndex = allAudioSegments.IndexOf(selectedAudioBounds);
-                if (draggedIndex != -1)
-                {
-                    int newIndex = DetermineNewAudioIndex(draggedIndex, selectedAudioBounds);
-                    if (newIndex != draggedIndex)
-                    {
-                        MoveAudioSegment(draggedIndex, newIndex);
-                    }
-                    NormalizeAudioSegmentPositions();
-                }
-                else
-                {
-                    Console.WriteLine("Error: Dragged segment index not found.");
-                }
-                ResetDraggingState();
-            }
-            AudioTrack.Invalidate();
-        }
-
-
-
-
-
-
-
-        private void MoveAudioSegment(int oldIndex, int newIndex)
-        {
-            RectangleF segment = allAudioSegments[oldIndex];
-            allAudioSegments.RemoveAt(oldIndex);
-            // If the new index is beyond the current position, adjust for the shift caused by removal
-            if (newIndex > oldIndex) newIndex--;
-            allAudioSegments.Insert(newIndex, segment);
-
-            // Handle amplitude bars moving with the segment
-            MoveAmplitudeBarsWithSegment(oldIndex, newIndex);
-            Console.WriteLine($"MoveAudioSegment: Moved segment from index {oldIndex} to {newIndex}");
-            AudioTrack.Invalidate();
-        }
-
-        private void MoveAmplitudeBarsWithSegment(int oldIndex, int newIndex)
-        {
-            var barsToMove = draggedAmplitudeBars;
-            foreach (RectangleF bar in barsToMove)
-            {
-                allAudioAmplitudeBars.Remove(bar);
-                allAudioAmplitudeBars.Insert(newIndex, bar); // This assumes a 1:1 mapping, might need adjustment
-            }
-        }
-
-
-
-        private void NormalizeAudioSegmentPositions()
-        {
-            float currentLeft = 0;
-            for (int i = 0; i < allAudioSegments.Count; i++)
-            {
-                RectangleF segment = allAudioSegments[i];
-                allAudioSegments[i] = new RectangleF(
-                    currentLeft,
-                    segment.Top,
-                    segment.Width,
-                    segment.Height
-                );
-
-                // Normalize associated amplitude bars
-                UpdateAmplitudeBars(i, currentLeft - segment.Left);
-                currentLeft += segment.Width;
-            }
-            AudioTrack.Invalidate();
-        }
-
-        private void UpdateAmplitudeBars(int segmentIndex, float deltaX)
-        {
-            if (segmentIndex < 0 || segmentIndex >= allAudioSegments.Count)
-                return;
-
-            RectangleF segment = allAudioSegments[segmentIndex];
-
-            // Find all bars that are currently within the segment's original bounds
-            var barsToUpdate = allAudioAmplitudeBars
-                .Where(bar => bar.Left >= segment.Left && bar.Right <= segment.Right + segment.Width)
-                .ToList();
-
-            foreach (RectangleF bar in barsToUpdate)
-            {
-                // Calculate new position for each bar based on deltaX
-                RectangleF updatedBar = new RectangleF(
-                    bar.Left + deltaX,  // Shift bar horizontally
-                    bar.Top,
-                    bar.Width,
-                    bar.Height
-                );
-
-                // Find the index of the bar to update in the main list
-                int barIndex = allAudioAmplitudeBars.IndexOf(bar);
-                if (barIndex != -1)
-                {
-                    allAudioAmplitudeBars[barIndex] = updatedBar;  // Update the bar's position in the global list
-                }
-            }
-
-            // Optionally, trigger a UI update or a redraw of the component that displays the bars
-            AudioTrack.Invalidate();
-        }
-
-
-
-
-        private int DetermineNewAudioIndex(int draggedIndex, RectangleF draggedSegment)
-        {
-            int newIndex = draggedIndex;
-            for (int i = 0; i < allAudioSegments.Count; i++)
-            {
-                if (i == draggedIndex) continue;
-
-                RectangleF currentSegment = allAudioSegments[i];
-                float currentSegmentMiddle = currentSegment.Left + (currentSegment.Width / 2);
-
-                if (draggedSegment.Left < currentSegmentMiddle && draggedIndex > i)
-                {
-                    newIndex = Math.Min(newIndex, i);
-                    Console.WriteLine($"DetermineNewAudioIndex: Moving Left, New Index {newIndex}");
-                }
-                else if (draggedSegment.Right > currentSegmentMiddle && draggedIndex < i)
-                {
-                    newIndex = Math.Max(newIndex, i + 1);
-                    Console.WriteLine($"DetermineNewAudioIndex: Moving Right, New Index {newIndex}");
-                }
-            }
-
-            return newIndex;
-        }
-
-
-
-        private void SyncFullAudioRender()
-        {
-            for (int i = 0; i < allAudioSegments.Count; i++)
-            {
-                if (i < fullAudioRender.Count)
-                {
-                    fullAudioRender[i].TimeLinePosition = allAudioSegments[i].Left / pixelsPerSecond;
-                }
-                else
-                {
-                    Console.WriteLine($"Warning: Missing render data for segment {i}");
-                }
-            }
-            Console.WriteLine("SyncFullAudioRender: Full audio render data synchronized.");
-            AudioTrack.Invalidate();
-        }
-
 
         ///
         /// Extracts audio amplitude data from a video file for waveform visualization.
@@ -2139,9 +2474,10 @@ namespace RenCloud
             initialMousePosition = Point.Empty;
             draggedThumbnails.Clear();
             draggedThumbnailsInitialPosition.Clear();
-            draggedAmplitudeBars.Clear();
-            draggedAmplitudeBarsInitialPosition.Clear();
+            draggedBars.Clear();
+            draggedBarsInitialPosition.Clear();
             tempPositions.Clear();
+            tempPositionsBars.Clear();
             AudioTrack.Invalidate();
             VideoTrack.Invalidate();
         }
