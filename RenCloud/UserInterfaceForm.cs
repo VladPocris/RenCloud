@@ -279,7 +279,10 @@ namespace RenCloud
 
                     if (initialSegmentBounds.Left > currentLeft)
                     {
-                        UpdateBarsForLeftDragging();
+                        if(currentLeft != 0)
+                        {
+                            UpdateBarsForLeftDragging();
+                        }
                     }
                     else
                     {
@@ -2285,7 +2288,7 @@ namespace RenCloud
                 for (int i = 0; i < bytesRead; i += 2)
                 {
                     short sample = BitConverter.ToInt16(buffer, i);
-                    float amplitude = Math.Abs(sample) / 32768f;
+                    float amplitude = sample == short.MinValue ? 1.0f : Math.Abs(sample) / 32768f;
                     amplitudes.Add(amplitude);
                 }
             }
