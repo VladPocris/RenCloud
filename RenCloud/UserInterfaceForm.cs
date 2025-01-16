@@ -174,7 +174,6 @@ namespace RenCloud
                 selectedAudioBounds = updatedBounds;
                 AudioTrack.Invalidate();
             }
-            AudioTrack.Invalidate();
         }
 
 
@@ -219,7 +218,6 @@ namespace RenCloud
                     {
                         RevertSegmentAndBars();
                         ResetDraggingState();
-                        AudioTrack.Invalidate();
                         return;
                     }
                 }
@@ -330,7 +328,6 @@ namespace RenCloud
                     newIndex = Math.Max(newIndex, i + 1);
                 }
             }
-            AudioTrack.Invalidate();
             return newIndex;
         }
 
@@ -350,7 +347,6 @@ namespace RenCloud
                     Console.WriteLine($"Warning: Missing render data for segment {i}");
                 }
             }
-            AudioTrack.Invalidate();
         }
 
         ///
@@ -721,7 +717,6 @@ namespace RenCloud
                     break;
                 }
             }
-            AudioTrack.Invalidate();
             VideoTrack.Invalidate();
         }
 
@@ -776,7 +771,6 @@ namespace RenCloud
                 selectedVideoBounds = updatedBounds;
                 VideoTrack.Invalidate();
             }
-            VideoTrack.Invalidate();
         }
 
         ///
@@ -1590,8 +1584,6 @@ namespace RenCloud
                 }
 
                 EditingRuller.Invalidate();
-                VideoTrack.Invalidate();
-                AudioTrack.Invalidate();
             }
         }
 
@@ -1626,8 +1618,6 @@ namespace RenCloud
                 {
                     isUpdatingUI = true;
                     EditingRuller.Invalidate();
-                    VideoTrack.Invalidate();
-                    AudioTrack.Invalidate();
                     isUpdatingUI = false;
                 }
 
@@ -1842,7 +1832,6 @@ namespace RenCloud
             {
                 g.DrawLine(trackerPen, trackerXPosition, 0, trackerXPosition, VideoTrack.Height);
             }
-            VideoTrack.Invalidate();
         }
 
         ///
@@ -2120,8 +2109,6 @@ namespace RenCloud
                         break;
                     allAudioAmplitudeBars.Add((new RectangleF(barXPosition, barYPosition, barWidth, amplitudeHeight), i));
                 }
-
-                videoThumbnails = null;
 
 
                 segmentsVideoCount++;
@@ -2692,6 +2679,15 @@ namespace RenCloud
                 Console.WriteLine($"ID: {segment.Id} | Start: {segment.StartTime:F2} | End: {segment.EndTime:F2} | Path: {segment.FilePath} | TimeLinePosition: {segment.TimeLinePosition}");
             }
             Console.WriteLine($"Editing Ruller Width: {EditingRuller.Width}\nVideo Track Width: {VideoTrack.Width}\nAudio Track Width: {AudioTrack.Width}");
+        }
+
+        protected override void WndProc(ref Message m)
+        {
+            if (m.Msg == 0x000F) // WM_PAINT
+            {
+                Console.WriteLine($"WM_PAINT at {DateTime.Now}");
+            }
+            base.WndProc(ref m);
         }
     }
 }
