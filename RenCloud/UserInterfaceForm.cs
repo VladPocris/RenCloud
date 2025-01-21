@@ -466,7 +466,6 @@ namespace RenCloud
 
         private void UpdateBarsForRightDraggingFix()
         {
-            Console.WriteLine("FIX CALLED");
             bool moving = true;
             var draggedBarsIds = draggedBars.Select(t => t.id).ToList();
             var currentBounds = selectedAudioBounds;
@@ -485,31 +484,25 @@ namespace RenCloud
             {
                 if (remainingSegmentsCount >= 1)
                 {
-                    Console.WriteLine($"Current Segment bounds: {currentBounds.Left} - {currentBounds.Right}");
-                    Console.WriteLine($"Remaining Segments to the Left: {remainingSegmentsCount}");
 
                     float leftEdge, rightEdge;
                     if (remainingSegmentsCount >= 2 && nextBounds != null && nextBounds != default && nextBounds != currentBounds)
                     {
-                        // --- Multi-segment scenario => merge bounding range
                         leftEdge = Math.Min(currentBounds.Left, nextBounds.Left);
                         rightEdge = Math.Max(currentBounds.Right, nextBounds.Right);
                     }
                     else
                     {
-                        // --- Simple neighbor or no next => just use currentBounds
                         leftEdge = currentBounds.Left;
                         rightEdge = currentBounds.Right;
                     }
 
-                    // Gather bars in [leftEdge, rightEdge] that are not in draggedBarsIds
                     foreach (var (bar, id) in allAudioAmplitudeBars)
                     {
                         if (!draggedBarsIds.Contains(id) &&
                             bar.X >= leftEdge &&
                             bar.X <= rightEdge)
                         {
-                            // Shift them left by currentBounds.Width
                             updatedBars.Add((
                                 new RectangleF(
                                     bar.X - currentBounds.Width-1,
@@ -522,7 +515,6 @@ namespace RenCloud
                         }
                     }
 
-                    // Apply the updates
                     for (int i = 0; i < allAudioAmplitudeBars.Count; i++)
                     {
                         var (bar, id) = allAudioAmplitudeBars[i];
@@ -533,32 +525,26 @@ namespace RenCloud
                         }
                     }
 
-                    // Move to the next segment
                     var nextSegmentToLeft = allAudioSegments
                         .Where(segment => segment.Right <= currentBounds.Left + 1)
                         .OrderByDescending(segment => segment.Right)
                         .FirstOrDefault();
 
-                    // If it's the same or none, we stop
                     if (nextSegmentToLeft == currentBounds || nextSegmentToLeft == default)
                     {
-                        Console.WriteLine("SAME or none next => stopping");
                         moving = false;
                     }
                     else
                     {
-                        // Update currentBounds
                         currentBounds = nextSegmentToLeft;
                         remainingSegmentsCount = allAudioSegments
                             .Count(segment => segment.Right <= currentBounds.Left)
                             - segmentsToLeft;
 
-                        // Merge newly updated bar IDs
                         draggedBarsIds = draggedBarsIds
                             .Union(updatedBars.Select(t => t.id))
                             .ToList();
 
-                        // Recompute nextBounds for next iteration
                         nextBounds = allAudioSegments
                             .Where(segment => segment.Right <= currentBounds.Left + 1)
                             .OrderByDescending(segment => segment.Right)
@@ -683,6 +669,44 @@ namespace RenCloud
             AudioTrack.Invalidate();
         }
 
+        private void UpdateThumbnailsForLeftDraggingFix(int nextBoundsIndex)
+        {
+            Console.WriteLine("LEFT DRAG FIX CALLED");
+            var draggedThumbnailsIds = draggedThumbnails.Select(t => t.thumbnail).ToList();
+            var currentBounds = selectedVideoBounds;
+
+            var updatedBars = new List<(Image thumbnail, float position)>();
+
+            var nextBounds = allVideoBounds[nextBoundsIndex];
+
+            var leftEdge = Math.Min(currentBounds.Left, nextBounds.Left);
+            var rightEdge = Math.Max(currentBounds.Right, nextBounds.Right);
+
+            foreach (var (thumbnail, position) in allThumbnailsWithPositions)
+            {
+                if (!draggedThumbnailsIds.Contains(thumbnail) && position >= leftEdge && position < rightEdge)
+                {
+                    updatedBars.Add((
+                        thumbnail,
+                        position + currentBounds.Width
+                    ));
+                }
+            }
+
+            for (int i = 0; i < allThumbnailsWithPositions.Count; i++)
+            {
+                var (thumbnail, position) = allThumbnailsWithPositions[i];
+                var updatedBar = updatedBars.FirstOrDefault(t => t.thumbnail == thumbnail);
+                if (updatedBar != default)
+                {
+                    allThumbnailsWithPositions[i] = updatedBar;
+                }
+            }
+
+            updatedBars.Clear();
+
+            VideoTrack.Invalidate();
+        }
         ///
         /// MouseDown handler for the video track; marks the selected region if clicked inside a segment and storing necessary info for dragging selected segments.
         ///
@@ -782,6 +806,7 @@ namespace RenCloud
             {
                 int draggedIndex = allVideoBounds.IndexOf(selectedVideoBounds);
                 RectangleF draggedSegment = selectedVideoBounds;
+                int index = 0;
 
                 if (draggedIndex != -1)
                 {
@@ -790,16 +815,24 @@ namespace RenCloud
 
                     if (segmentMoved)
                     {
+                        index = newIndex > draggedIndex ? newIndex - 1 : newIndex;
                         MoveSegment(draggedIndex, newIndex);
                         NormalizeSegmentPositions();
                         SyncFullVideoRender();
-                        UpdateThumbnailPositions(newIndex > draggedIndex ? newIndex - 1 : newIndex);
-                        selectedVideoBounds = allVideoBounds[newIndex > draggedIndex ? newIndex - 1 : newIndex];
+                        UpdateThumbnailPositions(index);
+                        selectedVideoBounds = allVideoBounds[index];
                         draggedSegment = selectedVideoBounds;
                         if (rightMv)
                         {
                             FixImages(draggedSegment);
                             rightMv = false;
+                        }
+                        else
+                        {
+                            if (selectedVideoBounds.Left < 0.01f)
+                            {
+                                UpdateThumbnailsForLeftDraggingFix(index + 1);
+                            }
                         }
                     }
                     else
@@ -1583,6 +1616,8 @@ namespace RenCloud
                     autoScrollTimer.Stop();
                 }
 
+                AudioTrack.Invalidate();
+                VideoTrack.Invalidate();
                 EditingRuller.Invalidate();
             }
         }
@@ -1630,6 +1665,8 @@ namespace RenCloud
                     PausePreview();
                 }
             }
+            AudioTrack.Invalidate();
+            VideoTrack.Invalidate();
         }
 
 
