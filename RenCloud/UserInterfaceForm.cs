@@ -1059,6 +1059,8 @@ namespace RenCloud
         ///
         private void Split_Click(object sender, EventArgs e)
         {
+            float epsilon = 0.01f;
+
             if (selectedVideoBounds == RectangleF.Empty && selectedAudioBounds == RectangleF.Empty)
             {
                 MessageBox.Show("No segment selected. Please select a video or audio segment to split.",
@@ -1081,7 +1083,7 @@ namespace RenCloud
                 float splitOffset = trackerPosition - selectedVideoBounds.Left;
 
                 var originalVideo = fullVideoRender.FirstOrDefault(v =>
-                    Math.Abs(v.TimeLinePosition - oldStartTime) < float.Epsilon);
+                    Math.Abs(v.TimeLinePosition - oldStartTime) < epsilon);
 
                 if (originalVideo == null)
                 {
@@ -1141,7 +1143,7 @@ namespace RenCloud
                 float splitOffset = trackerPosition - selectedAudioBounds.Left;
 
                 var originalAudio = fullAudioRender.FirstOrDefault(a =>
-                    Math.Abs((a.TimeLinePosition * pixelsPerSecond) - selectedAudioBounds.Left) < float.Epsilon);
+                    Math.Abs((a.TimeLinePosition * pixelsPerSecond) - selectedAudioBounds.Left) < epsilon);
 
                 if (originalAudio == null)
                 {
