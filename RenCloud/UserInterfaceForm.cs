@@ -37,6 +37,7 @@ namespace RenCloud
             InitializePlayBackTimer();
             InitializePlayBackStopWatch();
             InitializeMouseEvents();
+            ToolTipDropdownPanel_Initialization();
             InitializingDoubleBuffersForComponents();
             ClearingTempPaths();
 
@@ -51,6 +52,8 @@ namespace RenCloud
             AttachEditingRullerPaintEvent();
             AttachFormDraggingToComponents();
             AttachPlaceHolderPaintEvents();
+            AttachToolBarEvents();
+     
             ApplyRoundCorners();
         }
 
@@ -61,6 +64,7 @@ namespace RenCloud
         ////VARIABLES & OBJECTS///
         private Corners applyCorners;
         private DragFunctionality dragFunctionality;
+        private System.Windows.Forms.Label selectedLabel = null;
         private int segmentsToLeft = 0;
         private bool isActive = false;
         private bool isDraggingSegment = false;
@@ -68,6 +72,9 @@ namespace RenCloud
         private bool rightMv = false;
         private Point initialMousePosition;
         private RectangleF initialSegmentBounds;
+        private readonly Color _transparentColor = Color.Transparent;
+        private readonly Color _hoverColor = Color.FromArgb(50, Color.Gray);
+        private readonly Color _clickedColor = Color.FromArgb(120, Color.Gray);
         private List<(Image thumbnail, float position)> tempPositions = new List<(Image, float)>();
         private List<(Image thumbnail, float position)> draggedThumbnails = new List<(Image, float)>();
         private List<(Image thumbnail, float position)> draggedThumbnailsInitialPosition = new List<(Image, float)>();
@@ -76,6 +83,92 @@ namespace RenCloud
         private List<(RectangleF bar, int id)> draggedBarsInitialPosition = new List<(RectangleF bar, int id)>();
 
         ////FEATURES & EVENT HANDLERS & INTERACTIONS////
+
+        ///
+        /// On hover, if not selected, show the "hoverColor"
+        ///
+        private void Label_MouseEnter(object sender, EventArgs e)
+        {
+            var lbl = sender as System.Windows.Forms.Label;
+            if (lbl != selectedLabel)
+            {
+                lbl.BackColor = _hoverColor;
+            }
+        }
+
+        ///
+        /// On mouse leave, if not selected, revert to transparent; if selected, keep hover color
+        ///
+        private void Label_MouseLeave(object sender, EventArgs e)
+        {
+            var lbl = sender as System.Windows.Forms.Label;
+            if (lbl != selectedLabel)
+            {
+                lbl.BackColor = _transparentColor;
+            }
+        }
+
+        ///
+        /// On mouse down, if not selected, show a more "clickedColor"
+        ///
+        private void Label_MouseDown(object sender, MouseEventArgs e)
+        {
+            var lbl = sender as System.Windows.Forms.Label;
+            if (lbl != selectedLabel)
+            {
+                lbl.BackColor = _clickedColor;
+            }
+        }
+
+        ///
+        /// On mouse up, if not selected, revert to the hover color
+        ///
+        private void Label_MouseUp(object sender, MouseEventArgs e)
+        {
+            var lbl = sender as System.Windows.Forms.Label;
+            if (lbl != selectedLabel)
+            {
+                lbl.BackColor = _hoverColor;
+            }
+        }
+
+        ///
+        /// Actual Click event: unselect the old label, select the new one
+        ///
+        private void Label_Click(object sender, EventArgs e)
+        {
+            var lbl = sender as System.Windows.Forms.Label;
+            if (selectedLabel != null && selectedLabel != lbl)
+            {
+                selectedLabel.BackColor = _transparentColor;
+            }
+            selectedLabel = lbl;
+            selectedLabel.BackColor = _hoverColor;
+            var labelLocation = lbl.PointToScreen(Point.Empty);
+            var formLocation = this.PointToScreen(Point.Empty);
+            int labelXonForm = labelLocation.X - formLocation.X;
+            int labelYonForm = labelLocation.Y - formLocation.Y;
+            int x = labelXonForm + (lbl.Width / 2) - (dropDownPanel.Width / 2);
+            int y = labelYonForm + lbl.Height;
+            dropDownPanel.Location = new Point(x, y);
+            dropDownPanel.Visible = true;
+            dropDownPanel.BringToFront();
+        }
+
+        ///
+        /// Handler that closes the panel on click
+        /// 
+        private void HideDropDownPanel(object sender, MouseEventArgs e)
+        {
+            dropDownPanel.Visible = false;
+
+            if (selectedLabel != null)
+            {
+                selectedLabel.BackColor = _transparentColor;
+                selectedLabel = null;
+            }
+        }
+
 
         ///
         /// MouseDown handler for the audio track; marks the selected region if clicked inside a segment and storing necessary info for dragging selected segments.
@@ -1924,7 +2017,10 @@ namespace RenCloud
 
         ////VARIABLES & OBJECTS///
         private bool isUpdatingUI = false;
-
+        private Panel dropDownPanel;
+        private System.Windows.Forms.Label option1Label;
+        private System.Windows.Forms.Label option2Label;
+        private System.Windows.Forms.Label option3Label;
 
         ////FUNCTIONS////
 
@@ -1935,6 +2031,36 @@ namespace RenCloud
         {
             VideoTrackPlaceholder.Paint += VideoTrackPlaceholder_Paint_1;
             AudioTrackPlaceholder.Paint += AudioTrackPlaceholder_Paint;
+        }
+
+        ///
+        /// Attach tool-bar events 
+        /// 
+        public void AttachToolBarEvents()
+        {
+            AttachHoverClickHandlers(file_label);
+            AttachHoverClickHandlers(controlPanel_label);
+            AttachHoverClickHandlers(help_label);
+        }
+
+        ///
+        /// One-time hookup so each label reuses the event logic
+        ///
+        private void AttachHoverClickHandlers(System.Windows.Forms.Label label)
+        {
+            label.MouseEnter += Label_MouseEnter;
+            label.MouseLeave += Label_MouseLeave;
+            label.MouseDown += Label_MouseDown;
+            label.MouseUp += Label_MouseUp;
+            label.Click += Label_Click;
+
+            foreach (Control ctrl in this.Controls)
+            {
+                if (ctrl == dropDownPanel)
+                    continue;
+
+                ctrl.MouseDown += HideDropDownPanel;
+            }
         }
 
         ///
@@ -2761,6 +2887,27 @@ namespace RenCloud
             PreviewBox.VlcLibDirectory = new DirectoryInfo(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "lib", "VlcLibs"));
             ((System.ComponentModel.ISupportInitialize)(PreviewBox)).EndInit();
             this.PreviewPanel.Controls.Add(this.PreviewBox);
+        }
+
+        ///
+        /// Initialize a hidden pannel that would act as options for clicked labels on tool tip bar
+        ///
+        private void ToolTipDropdownPanel_Initialization()
+        {
+            dropDownPanel = new Panel
+            {
+                Width = 140,
+                Height = 90,
+                BackColor = Color.LightGray,
+                Visible = false   // initially hidden
+            };
+            option1Label = new System.Windows.Forms.Label { Text = "Option 1", Dock = DockStyle.Top, TextAlign = ContentAlignment.MiddleCenter };
+            option2Label = new System.Windows.Forms.Label { Text = "Option 2", Dock = DockStyle.Top, TextAlign = ContentAlignment.MiddleCenter };
+            option3Label = new System.Windows.Forms.Label { Text = "Option 3", Dock = DockStyle.Top, TextAlign = ContentAlignment.MiddleCenter };
+            dropDownPanel.Controls.Add(option3Label);
+            dropDownPanel.Controls.Add(option2Label);
+            dropDownPanel.Controls.Add(option1Label);
+            this.Controls.Add(dropDownPanel);
         }
     }   
 }
