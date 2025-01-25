@@ -9,7 +9,7 @@ namespace RenCloud
         /// Required designer variable.
         /// </summary>
         private System.ComponentModel.IContainer components = null;
-
+        
         /// <summary>
         /// Clean up any resources being used.
         /// </summary>
@@ -45,13 +45,16 @@ namespace RenCloud
             this.PlayButton = new System.Windows.Forms.Button();
             this.TimeStamp = new System.Windows.Forms.Label();
             this.panel13 = new System.Windows.Forms.Panel();
+            this.Debug = new System.Windows.Forms.Button();
             this.TestGen = new System.Windows.Forms.Button();
             this.RemoveSegment = new System.Windows.Forms.Button();
             this.Split = new System.Windows.Forms.Button();
             this.button4 = new System.Windows.Forms.Button();
             this.PreviewPanel = new System.Windows.Forms.Panel();
-            this.PreviewBox = new Vlc.DotNet.Forms.VlcControl();
             this.panel10 = new System.Windows.Forms.Panel();
+            this.help_label = new System.Windows.Forms.Label();
+            this.controlPanel_label = new System.Windows.Forms.Label();
+            this.file_label = new System.Windows.Forms.Label();
             this.panel6 = new System.Windows.Forms.Panel();
             this.panel8 = new System.Windows.Forms.Panel();
             this.AudioTrack = new System.Windows.Forms.Panel();
@@ -61,15 +64,13 @@ namespace RenCloud
             this.VideoTrackPlaceholder = new System.Windows.Forms.Panel();
             this.panel7 = new System.Windows.Forms.Panel();
             this.panel11 = new System.Windows.Forms.Panel();
-            this.Debug = new System.Windows.Forms.Button();
             this.panel1.SuspendLayout();
             this.panel3.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.panel2.SuspendLayout();
             this.panel5.SuspendLayout();
             this.panel13.SuspendLayout();
-            this.PreviewPanel.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.PreviewBox)).BeginInit();
+            this.panel10.SuspendLayout();
             this.panel6.SuspendLayout();
             this.panel8.SuspendLayout();
             this.AudioTrack.SuspendLayout();
@@ -240,6 +241,16 @@ namespace RenCloud
             this.panel13.Size = new System.Drawing.Size(419, 172);
             this.panel13.TabIndex = 2;
             // 
+            // Debug
+            // 
+            this.Debug.Location = new System.Drawing.Point(22, 132);
+            this.Debug.Name = "Debug";
+            this.Debug.Size = new System.Drawing.Size(120, 31);
+            this.Debug.TabIndex = 0;
+            this.Debug.Text = "DataDebug";
+            this.Debug.UseVisualStyleBackColor = true;
+            this.Debug.Click += new System.EventHandler(this.Debug_Click);
+            // 
             // TestGen
             // 
             this.TestGen.Location = new System.Drawing.Point(332, 132);
@@ -287,35 +298,62 @@ namespace RenCloud
             // PreviewPanel
             // 
             this.PreviewPanel.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
-            this.PreviewPanel.Controls.Add(this.PreviewBox);
             this.PreviewPanel.Location = new System.Drawing.Point(419, 30);
             this.PreviewPanel.Margin = new System.Windows.Forms.Padding(0);
             this.PreviewPanel.Name = "PreviewPanel";
             this.PreviewPanel.Size = new System.Drawing.Size(476, 408);
             this.PreviewPanel.TabIndex = 2;
             // 
-            // PreviewBox
-            // 
-            this.PreviewBox.BackColor = System.Drawing.Color.Black;
-            this.PreviewBox.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.PreviewBox.Location = new System.Drawing.Point(0, 0);
-            this.PreviewBox.Margin = new System.Windows.Forms.Padding(0);
-            this.PreviewBox.Name = "PreviewBox";
-            this.PreviewBox.Size = new System.Drawing.Size(472, 404);
-            this.PreviewBox.Spu = -1;
-            this.PreviewBox.TabIndex = 0;
-            this.PreviewBox.Text = "vlcControl1";
-            this.PreviewBox.VlcLibDirectory = new DirectoryInfo(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "lib", "VlcLibs"));
-            this.PreviewBox.VlcMediaplayerOptions = null;
-            // 
             // panel10
             // 
             this.panel10.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.panel10.Controls.Add(this.help_label);
+            this.panel10.Controls.Add(this.controlPanel_label);
+            this.panel10.Controls.Add(this.file_label);
             this.panel10.Location = new System.Drawing.Point(0, 1);
             this.panel10.Margin = new System.Windows.Forms.Padding(0);
             this.panel10.Name = "panel10";
             this.panel10.Size = new System.Drawing.Size(895, 29);
             this.panel10.TabIndex = 0;
+            // 
+            // help_label
+            // 
+            this.help_label.AutoSize = true;
+            this.help_label.Dock = System.Windows.Forms.DockStyle.Left;
+            this.help_label.Font = new System.Drawing.Font("Microsoft JhengHei Light", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.help_label.ForeColor = System.Drawing.Color.White;
+            this.help_label.Location = new System.Drawing.Point(164, 0);
+            this.help_label.Margin = new System.Windows.Forms.Padding(0);
+            this.help_label.Name = "help_label";
+            this.help_label.Size = new System.Drawing.Size(50, 24);
+            this.help_label.TabIndex = 6;
+            this.help_label.Text = "Help";
+            // 
+            // controlPanel_label
+            // 
+            this.controlPanel_label.AutoSize = true;
+            this.controlPanel_label.Dock = System.Windows.Forms.DockStyle.Left;
+            this.controlPanel_label.Font = new System.Drawing.Font("Microsoft JhengHei Light", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.controlPanel_label.ForeColor = System.Drawing.Color.White;
+            this.controlPanel_label.Location = new System.Drawing.Point(38, 0);
+            this.controlPanel_label.Margin = new System.Windows.Forms.Padding(0);
+            this.controlPanel_label.Name = "controlPanel_label";
+            this.controlPanel_label.Size = new System.Drawing.Size(126, 24);
+            this.controlPanel_label.TabIndex = 5;
+            this.controlPanel_label.Text = "Control Panel";
+            // 
+            // file_label
+            // 
+            this.file_label.AutoSize = true;
+            this.file_label.Dock = System.Windows.Forms.DockStyle.Left;
+            this.file_label.Font = new System.Drawing.Font("Microsoft JhengHei Light", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.file_label.ForeColor = System.Drawing.Color.White;
+            this.file_label.Location = new System.Drawing.Point(0, 0);
+            this.file_label.Margin = new System.Windows.Forms.Padding(0);
+            this.file_label.Name = "file_label";
+            this.file_label.Size = new System.Drawing.Size(38, 24);
+            this.file_label.TabIndex = 3;
+            this.file_label.Text = "File";
             // 
             // panel6
             // 
@@ -406,20 +444,10 @@ namespace RenCloud
             this.panel11.Size = new System.Drawing.Size(419, 275);
             this.panel11.TabIndex = 1;
             // 
-            // Debug
-            // 
-            this.Debug.Location = new System.Drawing.Point(22, 132);
-            this.Debug.Name = "Debug";
-            this.Debug.Size = new System.Drawing.Size(120, 31);
-            this.Debug.TabIndex = 0;
-            this.Debug.Text = "DataDebug";
-            this.Debug.UseVisualStyleBackColor = true;
-            this.Debug.Click += new System.EventHandler(this.Debug_Click);
-            // 
             // UserInterfaceForm
             // 
             this.AllowDrop = true;
-            this.AutoScaleDimensions = new System.Drawing.SizeF(10F, 23F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.AutoValidate = System.Windows.Forms.AutoValidate.Disable;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(67)))), ((int)(((byte)(38)))), ((int)(((byte)(88)))));
@@ -444,8 +472,8 @@ namespace RenCloud
             this.panel2.ResumeLayout(false);
             this.panel5.ResumeLayout(false);
             this.panel13.ResumeLayout(false);
-            this.PreviewPanel.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.PreviewBox)).EndInit();
+            this.panel10.ResumeLayout(false);
+            this.panel10.PerformLayout();
             this.panel6.ResumeLayout(false);
             this.panel8.ResumeLayout(false);
             this.AudioTrack.ResumeLayout(false);
@@ -481,10 +509,12 @@ namespace RenCloud
         private System.Windows.Forms.Label TimeStamp;
         private System.Windows.Forms.Button PlayButton;
         private System.Windows.Forms.Button PauseButton;
-        private Vlc.DotNet.Forms.VlcControl PreviewBox;
         private System.Windows.Forms.Button Split;
         private System.Windows.Forms.Button RemoveSegment;
         private System.Windows.Forms.Button TestGen;
         private System.Windows.Forms.Button Debug;
+        private System.Windows.Forms.Label file_label;
+        private System.Windows.Forms.Label help_label;
+        private System.Windows.Forms.Label controlPanel_label;
     }
 }

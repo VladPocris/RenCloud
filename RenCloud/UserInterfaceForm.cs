@@ -24,11 +24,13 @@ namespace RenCloud
         //this.PreviewBox.VlcLibDirectory = new DirectoryInfo(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "lib", "VlcLibs"));//
         private string ffmpegPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "lib", "ffmpeg", "bin", "ffmpeg.exe");
         private string outputPath = Path.Combine(Path.GetTempPath(), "VideoPreviews");
+        private Vlc.DotNet.Forms.VlcControl PreviewBox;
 
         public UserInterfaceForm()
         {
             //INITIALIZATIONS//
             InitializeComponent();
+            PreviewBox_Initialization();
             InitializeRoundCorners();
             InitializeDragFunctionality();
             InitializeAutoScrollTimer();
@@ -210,8 +212,9 @@ namespace RenCloud
                         }
                         else
                         {
-                            if (selectedAudioBounds.Left < 0.1f) {
-                                UpdateBarsForLeftDraggingFix(index + 1); 
+                            if (selectedAudioBounds.Left < 0.1f)
+                            {
+                                UpdateBarsForLeftDraggingFix(index + 1);
                             }
                         }
                     }
@@ -275,7 +278,7 @@ namespace RenCloud
                     );
                     if (initialSegmentBounds.Left > currentLeft)
                     {
-                        if(currentLeft != 0)
+                        if (currentLeft != 0)
                         {
                             UpdateBarsForLeftDragging();
                         }
@@ -2700,11 +2703,17 @@ namespace RenCloud
                 null, control, new object[] { true });
         }
 
+        ///
+        /// Generation Test btn
+        ///
         private void TestGen_Click(object sender, EventArgs e)
         {
             GeneratePreview();
         }
 
+        ///
+        /// Data debug btn
+        ///
         private void Debug_Click(object sender, EventArgs e)
         {
             Console.WriteLine("\nVIDEO\n");
@@ -2720,13 +2729,38 @@ namespace RenCloud
             Console.WriteLine($"Editing Ruller Width: {EditingRuller.Width}\nVideo Track Width: {VideoTrack.Width}\nAudio Track Width: {AudioTrack.Width}");
         }
 
+        ///
+        /// Track paint/re-paint/invalidation for debug purposes 
+        ///
         protected override void WndProc(ref Message m)
         {
-            if (m.Msg == 0x000F) // WM_PAINT
+            if (m.Msg == 0x000F)
             {
                 Console.WriteLine($"WM_PAINT at {DateTime.Now}");
             }
             base.WndProc(ref m);
         }
-    }
+
+        ///
+        /// Fix for reassign vlc lib directory from .resx file serialization/Create programatically instead.
+        ///
+        private void PreviewBox_Initialization()
+        {
+            PreviewBox = new Vlc.DotNet.Forms.VlcControl();
+            ((System.ComponentModel.ISupportInitialize)(PreviewBox)).BeginInit();
+            PreviewBox.BackColor = System.Drawing.Color.Black;
+            PreviewBox.Dock = System.Windows.Forms.DockStyle.Fill;
+            PreviewBox.Location = new System.Drawing.Point(0, 0);
+            PreviewBox.Margin = new System.Windows.Forms.Padding(0);
+            PreviewBox.Name = "PreviewBox";
+            PreviewBox.Size = new System.Drawing.Size(472, 404);
+            PreviewBox.Spu = -1;
+            PreviewBox.TabIndex = 0;
+            PreviewBox.Text = "vlcControl1";
+            PreviewBox.VlcMediaplayerOptions = null;
+            PreviewBox.VlcLibDirectory = new DirectoryInfo(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "lib", "VlcLibs"));
+            ((System.ComponentModel.ISupportInitialize)(PreviewBox)).EndInit();
+            this.PreviewPanel.Controls.Add(this.PreviewBox);
+        }
+    }   
 }
