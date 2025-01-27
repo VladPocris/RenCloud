@@ -310,6 +310,7 @@ namespace RenCloud
                                 UpdateBarsForLeftDraggingFix(index + 1);
                             }
                         }
+                        GeneratePreview();
                     }
                     else
                     {
@@ -325,7 +326,6 @@ namespace RenCloud
                 ResetDraggingState();
             }
             AudioTrack.Invalidate();
-            GeneratePreview();
         }
 
         ///
@@ -528,6 +528,7 @@ namespace RenCloud
                         VideoTrack.Invalidate();
                         return;
                     }
+                    GeneratePreview();
                 }
                 else
                 {
@@ -541,7 +542,6 @@ namespace RenCloud
                 Console.WriteLine("MouseUp detected without dragging.");
             }
             VideoTrack.Invalidate();
-            GeneratePreview();
         }
 
         ///
