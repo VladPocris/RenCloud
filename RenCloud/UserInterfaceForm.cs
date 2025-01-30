@@ -24,6 +24,8 @@ namespace RenCloud
         //this.PreviewBox.VlcLibDirectory = new DirectoryInfo(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "lib", "VlcLibs"));//
         private string ffmpegPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "lib", "ffmpeg", "bin", "ffmpeg.exe");
         private string outputPath = Path.Combine(Path.GetTempPath(), "VideoPreviews");
+        private bool tempCheckAudio = false;
+        private bool tempCheckVideo = false;
         private Vlc.DotNet.Forms.VlcControl PreviewBox;
 
         public UserInterfaceForm()
@@ -68,7 +70,6 @@ namespace RenCloud
         private int segmentsToLeft = 0;
         private bool isActive = false;
         private bool isDraggingSegment = false;
-        private bool swapping = false;
         private bool rightMv = false;
         private Point initialMousePosition;
         private RectangleF initialSegmentBounds;
@@ -260,18 +261,12 @@ namespace RenCloud
                     if (otherSegment != updatedBounds)
                     {
                         float otherSegmentMidpoint = otherSegment.Left + (otherSegment.Width / 2);
-                        if (updatedBounds.Left <= otherSegmentMidpoint && updatedBounds.Right >= otherSegmentMidpoint)
-                        {
-                            swapping = true;
-                            break;
-                        }
                     }
                 }
                 selectedAudioBounds = updatedBounds;
                 AudioTrack.Invalidate();
             }
         }
-
 
         ///
         /// MouseUp handler for the audio track; on release specifies logic whether to move the segment or not and clearing information.
@@ -302,15 +297,20 @@ namespace RenCloud
                         {
                             UpdateBarsForRightDraggingFix();
                             rightMv = false;
+                            if(tempCheckAudio == false)
+                            {
+                                UpdateBarsForLeftDraggingFix(index);
+                                tempCheckAudio = true;
+                            }
                         }
                         else
                         {
                             if (selectedAudioBounds.Left < 0.1f)
                             {
-                                UpdateBarsForLeftDraggingFix(index + 1);
+                                UpdateBarsForLeftDraggingFix(index+1);
+                                tempCheckAudio = false;
                             }
                         }
-                        GeneratePreview();
                     }
                     else
                     {
@@ -318,6 +318,7 @@ namespace RenCloud
                         ResetDraggingState();
                         return;
                     }
+                    _ = GeneratePreview();
                 }
                 else
                 {
@@ -471,11 +472,6 @@ namespace RenCloud
                     if (otherSegment != updatedBounds)
                     {
                         float otherSegmentMidpoint = otherSegment.Left + (otherSegment.Width / 2);
-                        if (updatedBounds.Left <= otherSegmentMidpoint && updatedBounds.Right >= otherSegmentMidpoint)
-                        {
-                            swapping = true;
-                            break;
-                        }
                     }
                 }
                 selectedVideoBounds = updatedBounds;
@@ -506,18 +502,33 @@ namespace RenCloud
                         NormalizeSegmentPositions();
                         SyncFullVideoRender();
                         UpdateThumbnailPositions(index);
+                        var tempBounds = selectedVideoBounds;
                         selectedVideoBounds = allVideoBounds[index];
                         draggedSegment = selectedVideoBounds;
                         if (rightMv)
                         {
-                            FixImages(draggedSegment);
                             rightMv = false;
+                            if (selectedVideoBounds.Left == 0)
+                            {
+                                Console.WriteLine("First Call");
+                                UpdateThumbnailsForLeftDraggingFix(index);
+                                tempCheckAudio = false;
+                            }
+                            else
+                            {
+                                FixImages(draggedSegment);
+                            }
                         }
                         else
                         {
-                            if (selectedVideoBounds.Left < 0.01f)
+                            if (tempBounds.Left == 0)
                             {
                                 UpdateThumbnailsForLeftDraggingFix(index + 1);
+                                tempCheckAudio = false;
+                            }
+                            else
+                            {
+                                UpdateThumbnailsForLeftDraggingFix(index);
                             }
                         }
                     }
@@ -525,21 +536,15 @@ namespace RenCloud
                     {
                         RevertSegmentAndThumbnails();
                         ResetDraggingState();
-                        VideoTrack.Invalidate();
                         return;
                     }
-                    GeneratePreview();
+                    _ = GeneratePreview();
                 }
                 else
                 {
                     Console.WriteLine("Error: Dragged segment index not found.");
                 }
-
                 ResetDraggingState();
-            }
-            else
-            {
-                Console.WriteLine("MouseUp detected without dragging.");
             }
             VideoTrack.Invalidate();
         }
@@ -1131,7 +1136,7 @@ namespace RenCloud
             {
                 string filePath = openFileDialog.FileName;
                 Console.WriteLine(GetVideoDuration(filePath, ffmpegPath));
-                AddVideoToTimeline(filePath);
+                _ = AddVideoToTimeline(filePath);
             }
         }
 
@@ -1865,7 +1870,7 @@ namespace RenCloud
                 Console.WriteLine($"ID: {segment.Id} | Start: {segment.StartTime:F2} | End: {segment.EndTime:F2}");
             }
             SyncMediaTracks();
-            GeneratePreview();
+            _ = GeneratePreview();
         }
 
         //---------------------------------------------------------------------------------------//
@@ -2726,6 +2731,7 @@ namespace RenCloud
         ///
         private void UpdateBarsForLeftDraggingFix(int nextBoundsIndex)
         {
+            Console.WriteLine("Called fix NOW");
             var draggedBarsIds = draggedBars.Select(t => t.id).ToList();
             var currentBounds = selectedAudioBounds;
 
@@ -2834,7 +2840,7 @@ namespace RenCloud
         ///
         private void TestGen_Click(object sender, EventArgs e)
         {
-            GeneratePreview();
+            _ = GeneratePreview();
         }
 
         ///
@@ -2855,17 +2861,17 @@ namespace RenCloud
             Console.WriteLine($"Editing Ruller Width: {EditingRuller.Width}\nVideo Track Width: {VideoTrack.Width}\nAudio Track Width: {AudioTrack.Width}");
         }
 
-        ///
-        /// Track paint/re-paint/invalidation for debug purposes 
-        ///
-        protected override void WndProc(ref Message m)
-        {
-            if (m.Msg == 0x000F)
-            {
-                Console.WriteLine($"WM_PAINT at {DateTime.Now}");
-            }
-            base.WndProc(ref m);
-        }
+        /////
+        ///// Track paint/re-paint/invalidation for debug purposes 
+        /////
+        //protected override void WndProc(ref Message m)
+        //{
+        //    if (m.Msg == 0x000F)
+        //    {
+        //        Console.WriteLine($"WM_PAINT at {DateTime.Now}");
+        //    }
+        //    base.WndProc(ref m);
+        //}
 
         ///
         /// Fix for reassign vlc lib directory from .resx file serialization/Create programatically instead.
