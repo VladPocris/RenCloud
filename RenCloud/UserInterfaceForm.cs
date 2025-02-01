@@ -888,6 +888,84 @@ namespace RenCloud
 
             if (selectedAudioBounds != RectangleF.Empty)
             {
+                if (trackerPosition < selectedAudioBounds.Left || trackerPosition > selectedAudioBounds.Right)
+                {
+                    MessageBox.Show("Tracker is outside the selected audio segment range.",
+                                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+                float oldStartTime = selectedAudioBounds.Left / pixelsPerSecond;
+                float splitOffset = trackerPosition - selectedAudioBounds.Left;
+                var originalAudio = fullAudioRender.FirstOrDefault(a =>
+                    Math.Abs(a.TimeLinePosition * pixelsPerSecond - selectedAudioBounds.Left) < float.Epsilon);
+                if (originalAudio == null)
+                {
+                    MessageBox.Show("Could not find the original audio segment for the selected bounds.",
+                                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+                if (splitOffset <= 0 || splitOffset >= selectedAudioBounds.Width)
+                {
+                    MessageBox.Show("Cannot split at the boundary.",
+                                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+                RectangleF firstSegment = new RectangleF(selectedAudioBounds.Left, selectedAudioBounds.Top, splitOffset, selectedAudioBounds.Height);
+                RectangleF secondSegment = new RectangleF(trackerPosition, selectedAudioBounds.Top, selectedAudioBounds.Right - trackerPosition, selectedAudioBounds.Height);
+                int oldAudioId = originalAudio.Id;
+                int audioIndex = allAudioSegments.IndexOf(selectedAudioBounds);
+                allAudioSegments.RemoveAt(audioIndex);
+                allAudioSegments.Insert(audioIndex, firstSegment);
+                allAudioSegments.Insert(audioIndex + 1, secondSegment);
+                fullAudioRender.RemoveAt(audioIndex);
+                var firstAudioRender = new AudioRenderSegment
+                {
+                    FilePath = originalAudio.FilePath,
+                    StartTime = originalAudio.StartTime,
+                    EndTime = originalAudio.StartTime + (splitOffset / pixelsPerSecond),
+                    TimeLinePosition = firstSegment.Left / pixelsPerSecond,
+                    Id = oldAudioId
+                };
+                var secondAudioRender = new AudioRenderSegment
+                {
+                    FilePath = originalAudio.FilePath,
+                    StartTime = originalAudio.StartTime + (splitOffset / pixelsPerSecond),
+                    EndTime = originalAudio.EndTime,
+                    TimeLinePosition = secondSegment.Left / pixelsPerSecond,
+                    Id = oldAudioId + 1
+                };
+                fullAudioRender.Insert(audioIndex, firstAudioRender);
+                fullAudioRender.Insert(audioIndex + 1, secondAudioRender);
+                for (int i = audioIndex + 2; i < fullAudioRender.Count; i++)
+                {
+                    fullAudioRender[i].Id++;
+                }
+                selectedAudioBounds = firstSegment;
+                float boundaryX = trackerPosition;
+                for (int i = 0; i < allAudioAmplitudeBars.Count; i++)
+                {
+                    var (barRect, barId) = allAudioAmplitudeBars[i];
+
+                    if (barRect.Left < boundaryX && barRect.Right > boundaryX)
+                    {
+                        float leftWidth = boundaryX - barRect.Left;
+                        float rightWidth = barRect.Right - boundaryX;
+
+                        if (leftWidth < 1f || rightWidth < 1f)
+                            continue;
+
+                        RectangleF firstBar = new RectangleF(barRect.Left - 1.6f, barRect.Y, leftWidth, barRect.Height);
+                        allAudioAmplitudeBars[i] = (firstBar, barId);
+
+                        RectangleF secondBar = new RectangleF(boundaryX + 1.4f, barRect.Y, rightWidth - 0.4f, barRect.Height);
+                        int newBarId = ampID++;
+
+                        allAudioAmplitudeBars.Insert(i + 1, (secondBar, newBarId));
+
+                        i++;
+                        ampID++;
+                    }
+                }
                 NormalizeAudioSegmentPositions();
                 NormalizeSegmentPositions();
                 AudioTrack.Invalidate();
@@ -2178,49 +2256,56 @@ namespace RenCloud
         private void FixImages(RectangleF selectedSegment)
         {
             float segmentLeft = selectedSegment.Left;
-            float segmentRight = selectedSegment.Left + selectedSegment.Width;
+            float segmentRight = selectedSegment.Right;
 
-            var draggedThumbnailIds = draggedThumbnails.Select(t => t.thumbnail).ToList();
+            var draggedThumbnailSet = new HashSet<Image>(
+                draggedThumbnails.Select(t => t.thumbnail)
+            );
 
-            var updates = new List<(Image thumbnail, float revertedPosition)>();
+            var updates = new List<(Image thumbnail, float newPosition)>();
 
             foreach (var (thumbnail, originalPosition) in tempPositions)
             {
-                if (draggedThumbnailIds.Contains(thumbnail))
+                if (draggedThumbnailSet.Contains(thumbnail))
                     continue;
 
-                float currentPosition = allThumbnailsWithPositions
-                    .FirstOrDefault(t => t.thumbnail == thumbnail)
-                    .position;
+                int thumbIdx = allThumbnailsWithPositions.FindIndex(t => t.thumbnail == thumbnail);
+                if (thumbIdx == -1)
+                    continue;
+
+                var (_, currentPosition, thumbWidth) = allThumbnailsWithPositions[thumbIdx];
 
                 bool wasMoved = Math.Abs(currentPosition - originalPosition) > 0.01f;
                 if (!wasMoved)
-                {
                     continue;
-                }
-                if (originalPosition >= segmentRight)
+
+                float originalLeft = originalPosition;
+                float originalRight = originalPosition + thumbWidth;
+
+                if (originalLeft > segmentRight)
                 {
+                    Console.WriteLine("Called Second (Thumbnail originally outside, revert)");
                     updates.Add((thumbnail, originalPosition));
                 }
-                else if (originalPosition < segmentLeft)
+                else if (originalRight > segmentLeft && originalLeft < segmentRight)
                 {
+                    Console.WriteLine("Called Middle (Thumbnail was in segment, needs shift)");
                     float newPos = originalPosition - selectedSegment.Width;
                     updates.Add((thumbnail, newPos));
                 }
             }
-
-            foreach (var (thumbnail, revertedPosition) in updates)
+            foreach (var (thumbnail, newPosition) in updates)
             {
                 int thumbIdx = allThumbnailsWithPositions.FindIndex(t => t.thumbnail == thumbnail);
                 if (thumbIdx != -1)
                 {
-                    allThumbnailsWithPositions[thumbIdx] = (thumbnail, revertedPosition, allThumbnailsWithPositions[thumbIdx].thumbnailWidth);
+                    var (tThumb, _, tWidth) = allThumbnailsWithPositions[thumbIdx];
+                    allThumbnailsWithPositions[thumbIdx] = (tThumb, newPosition, tWidth);
                 }
             }
 
             VideoTrack.Invalidate();
         }
-
 
         ///
         /// Fix Bars positioning bug on right drag.
