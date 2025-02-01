@@ -1637,6 +1637,7 @@ namespace RenCloud
             }
             List<Image> thumbnails = new List<Image>();
             int thumbnailCount = (int)(videoDuration / intervalSeconds);
+            var thumbnailArray = new Image[thumbnailCount];
             var parallelOptions = new ParallelOptions
             {
                 MaxDegreeOfParallelism = maxDegreeOfParallelism
@@ -1673,13 +1674,12 @@ namespace RenCloud
                     {
                         using (var tempImage = Image.FromFile(outputFile))
                         {
-                            lock (thumbnails)
-                            {
-                                thumbnails.Add(new Bitmap(tempImage));
-                            }
+                            thumbnailArray[i] = new Bitmap(tempImage);
                         }
                         File.Delete(outputFile);
+                        File.Delete(outputFile);
                     }
+                    thumbnails = new List<Image>(thumbnailArray);
                 }
                 catch (Exception ex)
                 {
@@ -1819,13 +1819,21 @@ namespace RenCloud
             float intervalInPixels = 4.0f * pixelsPerSecond;
             float videoStartPosition = widthVideo - newWidth;
             float audioStartPosition = widthAudio - newWidth;
+            float position = 0;
             float thumbnailWidth = 100f;
 
             this.Invoke(new Action(() =>
             {
                 for (int i = 0; i < thumbnailCount; i++)
                 {
-                    float position = videoStartPosition + intervalInPixels * (i + 1);
+                    if (i == 0)
+                    {
+                        position = videoStartPosition + intervalInPixels * (i) + 6;
+                    }
+                    else
+                    {
+                        position = videoStartPosition + intervalInPixels * (i) - 50;
+                    }
                     if (position + thumbnailWidth > videoStartPosition + newWidth)
                         break;
 
