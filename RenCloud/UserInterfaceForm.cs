@@ -24,6 +24,7 @@ namespace RenCloud
         //this.PreviewBox.VlcLibDirectory = new DirectoryInfo(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "lib", "VlcLibs"));//
         private string ffmpegPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "lib", "ffmpeg", "bin", "ffmpeg.exe");
         private string outputPath = Path.Combine(Path.GetTempPath(), "VideoPreviews");
+        private int ampID = 0;
         private bool tempCheckAudio = false;
         private bool tempCheckVideo = false;
         private Vlc.DotNet.Forms.VlcControl PreviewBox;
@@ -77,7 +78,7 @@ namespace RenCloud
         private readonly Color _hoverColor = Color.FromArgb(50, Color.Gray);
         private readonly Color _clickedColor = Color.FromArgb(120, Color.Gray);
         private List<(Image thumbnail, float position)> tempPositions = new List<(Image, float)>();
-        private List<(Image thumbnail, float position)> draggedThumbnails = new List<(Image, float)>();
+        private List<(Image thumbnail, float position, float width)> draggedThumbnails = new List<(Image, float, float)>();
         private List<(Image thumbnail, float position)> draggedThumbnailsInitialPosition = new List<(Image, float)>();
         private List<(RectangleF bar, int id)> tempPositionsBars = new List<(RectangleF bar, int id)>();
         private List<(RectangleF bar, int id)> draggedBars = new List<(RectangleF bar, int id)>();
@@ -289,26 +290,42 @@ namespace RenCloud
                         index = newIndex > draggedIndex ? newIndex - 1 : newIndex;
                         MoveAudioSegment(draggedIndex, newIndex);
                         NormalizeAudioSegmentPositions();
+                        var tempBounds = selectedAudioBounds;
                         selectedAudioBounds = allAudioSegments[index];
                         SyncFullAudioRender();
                         UpdateBarPositions(index);
                         draggedSegment = selectedAudioBounds;
                         if (rightMv)
                         {
-                            UpdateBarsForRightDraggingFix();
                             rightMv = false;
-                            if(tempCheckAudio == false)
+                            if(selectedAudioBounds.Left == 0)
                             {
+                                Console.WriteLine("First Call");
                                 UpdateBarsForLeftDraggingFix(index);
-                                tempCheckAudio = true;
+                                tempCheckVideo = false;
+                            } else
+                            {
+                                Console.WriteLine("Fifth Call");
+                                UpdateBarsForRightDraggingFix();
                             }
                         }
                         else
                         {
-                            if (selectedAudioBounds.Left < 0.1f)
+                            tempCheckAudio = true;
+                            if (tempBounds.Left == 0)
                             {
-                                UpdateBarsForLeftDraggingFix(index+1);
+                                Console.WriteLine("Second Call");
+                                UpdateBarsForLeftDraggingFix(index + 1);
                                 tempCheckAudio = false;
+                            }
+                            else if (selectedAudioBounds.Left == 0 && tempCheckAudio == true)
+                            {
+                                Console.WriteLine("Third Call");
+                                UpdateBarsForLeftDraggingFix(index + 1);
+                            } else
+                            {
+                                Console.WriteLine("Fourth Call");
+                                UpdateBarsForLeftDraggingFix(index);
                             }
                         }
                     }
@@ -405,7 +422,7 @@ namespace RenCloud
             draggedThumbnails.Clear();
             draggedThumbnailsInitialPosition.Clear();
 
-            foreach (var (thumbnail, position) in allThumbnailsWithPositions)
+            foreach (var (thumbnail, position, width) in allThumbnailsWithPositions)
             {
                 tempPositions.Add((thumbnail, position));
             }
@@ -418,11 +435,11 @@ namespace RenCloud
                     initialMousePosition = e.Location;
                     initialSegmentBounds = bounds;
 
-                    foreach (var (thumbnail, position) in allThumbnailsWithPositions)
+                    foreach (var (thumbnail, position, width) in allThumbnailsWithPositions)
                     {
                         if (position >= bounds.Left && position < bounds.Right)
                         {
-                            draggedThumbnails.Add((thumbnail, position));
+                            draggedThumbnails.Add((thumbnail, position, width));
                             draggedThumbnailsInitialPosition.Add((thumbnail, position));
                         }
                     }
@@ -457,14 +474,14 @@ namespace RenCloud
 
                 for (int i = 0; i < draggedThumbnails.Count; i++)
                 {
-                    var (thumbnail, originalPosition) = draggedThumbnails[i];
+                    var (thumbnail, originalPosition, width) = draggedThumbnails[i];
                     float newPosition = originalPosition + segmentOffset;
-                    draggedThumbnails[i] = (thumbnail, newPosition);
+                    draggedThumbnails[i] = (thumbnail, newPosition, width);
 
                     int globalIndex = allThumbnailsWithPositions.FindIndex(t => t.thumbnail == thumbnail && t.position == originalPosition);
                     if (globalIndex != -1)
                     {
-                        allThumbnailsWithPositions[globalIndex] = (thumbnail, newPosition);
+                        allThumbnailsWithPositions[globalIndex] = (thumbnail, newPosition, allThumbnailsWithPositions[globalIndex].thumbnailWidth);
                     }
                 }
                 foreach (RectangleF otherSegment in allVideoBounds)
@@ -512,10 +529,11 @@ namespace RenCloud
                             {
                                 Console.WriteLine("First Call");
                                 UpdateThumbnailsForLeftDraggingFix(index);
-                                tempCheckAudio = false;
+                                tempCheckVideo = false;
                             }
                             else
                             {
+                                Console.WriteLine("Right Call");
                                 FixImages(draggedSegment);
                             }
                         }
@@ -523,11 +541,13 @@ namespace RenCloud
                         {
                             if (tempBounds.Left == 0)
                             {
+                                Console.WriteLine("Second Call");
                                 UpdateThumbnailsForLeftDraggingFix(index + 1);
-                                tempCheckAudio = false;
+                                tempCheckVideo = false;
                             }
                             else
                             {
+                                Console.WriteLine("Third Call");
                                 UpdateThumbnailsForLeftDraggingFix(index);
                             }
                         }
@@ -749,8 +769,6 @@ namespace RenCloud
         ///
         private void Split_Click(object sender, EventArgs e)
         {
-            float epsilon = 0.01f;
-
             if (selectedVideoBounds == RectangleF.Empty && selectedAudioBounds == RectangleF.Empty)
             {
                 MessageBox.Show("No segment selected. Please select a video or audio segment to split.",
@@ -769,11 +787,17 @@ namespace RenCloud
                     return;
                 }
 
-                float oldStartTime = selectedVideoBounds.Left / pixelsPerSecond;
                 float splitOffset = trackerPosition - selectedVideoBounds.Left;
+                if (splitOffset <= 0 || splitOffset >= selectedVideoBounds.Width)
+                {
+                    MessageBox.Show("Cannot split at the boundary.",
+                                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
 
-                var originalVideo = fullVideoRender.FirstOrDefault(v =>
-                    Math.Abs(v.TimeLinePosition - oldStartTime) < epsilon);
+                float oldStartTime = selectedVideoBounds.Left / pixelsPerSecond;
+                var originalVideo = fullVideoRender.FirstOrDefault(
+                    v => Math.Abs(v.TimeLinePosition - oldStartTime) < float.Epsilon);
 
                 if (originalVideo == null)
                 {
@@ -782,39 +806,81 @@ namespace RenCloud
                     return;
                 }
 
-                if (splitOffset <= 0 || splitOffset >= selectedVideoBounds.Width)
-                {
-                    MessageBox.Show("Cannot split at the boundary.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
-                }
+                RectangleF firstSegment = new RectangleF(
+                    selectedVideoBounds.Left,
+                    selectedVideoBounds.Top,
+                    splitOffset,
+                    selectedVideoBounds.Height
+                );
+                RectangleF secondSegment = new RectangleF(
+                    trackerPosition,
+                    selectedVideoBounds.Top,
+                    selectedVideoBounds.Right - trackerPosition,
+                    selectedVideoBounds.Height
+                );
 
-                RectangleF firstSegment = new RectangleF(selectedVideoBounds.Left, selectedVideoBounds.Top, splitOffset, selectedVideoBounds.Height);
-                RectangleF secondSegment = new RectangleF(trackerPosition, selectedVideoBounds.Top, selectedVideoBounds.Right - trackerPosition, selectedVideoBounds.Height);
-
+                int oldId = originalVideo.Id;
                 int index = allVideoBounds.IndexOf(selectedVideoBounds);
+
                 allVideoBounds.RemoveAt(index);
                 allVideoBounds.Insert(index, firstSegment);
                 allVideoBounds.Insert(index + 1, secondSegment);
 
                 fullVideoRender.RemoveAt(index);
-                fullVideoRender.Insert(index, new VideoRenderSegment
+                var firstRenderSegment = new VideoRenderSegment
                 {
                     FilePath = originalVideo.FilePath,
                     StartTime = originalVideo.StartTime,
                     EndTime = originalVideo.StartTime + (splitOffset / pixelsPerSecond),
                     TimeLinePosition = firstSegment.Left / pixelsPerSecond,
-                    Id = ++segmentsVideoCount
-                });
-                fullVideoRender.Insert(index + 1, new VideoRenderSegment
+                    Id = oldId
+                };
+                var secondRenderSegment = new VideoRenderSegment
                 {
                     FilePath = originalVideo.FilePath,
                     StartTime = originalVideo.StartTime + (splitOffset / pixelsPerSecond),
                     EndTime = originalVideo.EndTime,
                     TimeLinePosition = secondSegment.Left / pixelsPerSecond,
-                    Id = ++segmentsVideoCount
-                });
+                    Id = oldId + 1
+                };
+                fullVideoRender.Insert(index, firstRenderSegment);
+                fullVideoRender.Insert(index + 1, secondRenderSegment);
+
+                for (int i = index + 2; i < fullVideoRender.Count; i++)
+                {
+                    fullVideoRender[i].Id++;
+                }
 
                 selectedVideoBounds = firstSegment;
+
+                for (int i = 0; i < allThumbnailsWithPositions.Count; i++)
+                {
+                    var (origImage, thumbX, origWidth) = allThumbnailsWithPositions[i];
+
+                    float thumbLeft = thumbX;
+                    float thumbRight = thumbX + origWidth;
+
+                    if (trackerPosition > thumbLeft && trackerPosition < thumbRight)
+                    {
+                        float leftPartWidth = trackerPosition - thumbLeft;
+                        float rightPartWidth = thumbRight - trackerPosition;
+
+                        if (leftPartWidth < 1 || rightPartWidth < 1)
+                            continue;
+                        Image leftImage = CropImage(
+                            origImage,
+                            new Rectangle(0, 0, (int)leftPartWidth, origImage.Height)
+                        );
+                        Image rightImage = CropImage(
+                            origImage,
+                            new Rectangle((int)leftPartWidth, 0, (int)rightPartWidth, origImage.Height)
+                        );
+                        allThumbnailsWithPositions.RemoveAt(i);
+                        allThumbnailsWithPositions.Insert(allThumbnailsWithPositions.Count - 1, (leftImage, thumbLeft - 3f, leftPartWidth));
+                        allThumbnailsWithPositions.Insert(allThumbnailsWithPositions.Count, (rightImage, trackerPosition + 3f, rightPartWidth));
+                        i++;
+                    }
+                }
 
                 NormalizeSegmentPositions();
                 VideoTrack.Invalidate();
@@ -822,67 +888,11 @@ namespace RenCloud
 
             if (selectedAudioBounds != RectangleF.Empty)
             {
-                if (trackerPosition < selectedAudioBounds.Left || trackerPosition > selectedAudioBounds.Right)
-                {
-                    MessageBox.Show("Tracker is outside the selected audio segment range.",
-                                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
-                }
-
-                float oldStartTime = selectedAudioBounds.Left / pixelsPerSecond;
-                float splitOffset = trackerPosition - selectedAudioBounds.Left;
-
-                var originalAudio = fullAudioRender.FirstOrDefault(a =>
-                    Math.Abs((a.TimeLinePosition * pixelsPerSecond) - selectedAudioBounds.Left) < epsilon);
-
-                if (originalAudio == null)
-                {
-                    MessageBox.Show("Could not find the original audio segment for the selected bounds.",
-                                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
-                }
-
-                if (splitOffset <= 0 || splitOffset >= selectedAudioBounds.Width)
-                {
-                    MessageBox.Show("Cannot split at the boundary.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
-                }
-
-                RectangleF firstSegment = new RectangleF(selectedAudioBounds.Left, selectedAudioBounds.Top, splitOffset, selectedAudioBounds.Height);
-                RectangleF secondSegment = new RectangleF(trackerPosition, selectedAudioBounds.Top, selectedAudioBounds.Right - trackerPosition, selectedAudioBounds.Height);
-
-                int index = allAudioSegments.IndexOf(selectedAudioBounds);
-                allAudioSegments.RemoveAt(index);
-                allAudioSegments.Insert(index, firstSegment);
-                allAudioSegments.Insert(index + 1, secondSegment);
-
-                fullAudioRender.RemoveAt(index);
-                fullAudioRender.Insert(index, new AudioRenderSegment
-                {
-                    FilePath = originalAudio.FilePath,
-                    StartTime = originalAudio.StartTime,
-                    EndTime = originalAudio.StartTime + (splitOffset / pixelsPerSecond),
-                    TimeLinePosition = firstSegment.Left / pixelsPerSecond,
-                    Id = ++segmentsAudioCount
-                });
-                fullAudioRender.Insert(index + 1, new AudioRenderSegment
-                {
-                    FilePath = originalAudio.FilePath,
-                    StartTime = originalAudio.StartTime + (splitOffset / pixelsPerSecond),
-                    EndTime = originalAudio.EndTime,
-                    TimeLinePosition = secondSegment.Left / pixelsPerSecond,
-                    Id = ++segmentsAudioCount
-                });
-
-                selectedAudioBounds = firstSegment;
-
                 NormalizeAudioSegmentPositions();
                 NormalizeSegmentPositions();
                 AudioTrack.Invalidate();
             }
         }
-
-
 
         ///
         /// Removes selected segment from timeline.
@@ -925,14 +935,14 @@ namespace RenCloud
 
                 for (int i = allThumbnailsWithPositions.Count - 1; i >= 0; i--)
                 {
-                    var (thumbnail, position) = allThumbnailsWithPositions[i];
+                    var (thumbnail, position, width) = allThumbnailsWithPositions[i];
                     if (position >= selectedVideoBounds.Left && position < selectedVideoBounds.Right)
                     {
                         allThumbnailsWithPositions.RemoveAt(i);
                     }
                     else if (position >= selectedVideoBounds.Right)
                     {
-                        allThumbnailsWithPositions[i] = (thumbnail, position - removedWidthVideo);
+                        allThumbnailsWithPositions[i] = (thumbnail, position - removedWidthVideo, allThumbnailsWithPositions[i].thumbnailWidth);
                     }
                 }
 
@@ -1444,7 +1454,7 @@ namespace RenCloud
         //---------------------------------------------------------------------------------------//
 
         ////VARIABLES & OBJECTS///
-        private readonly List<(Image thumbnail, float position)> allThumbnailsWithPositions = new List<(Image, float)>();
+        private readonly List<(Image thumbnail, float position, float thumbnailWidth)> allThumbnailsWithPositions = new List<(Image, float, float)>();
         private List<VideoRenderSegment> fullVideoRender = new List<VideoRenderSegment>();
         private List<RectangleF> allVideoBounds = new List<RectangleF>();
         private RectangleF selectedVideoBounds = RectangleF.Empty;
@@ -1525,6 +1535,7 @@ namespace RenCloud
             {
                 g.FillRectangle(backgroundBrush, 0, 0, widthVideo, VideoTrack.Height);
             }
+
             using (Pen borderPen = new Pen(Color.Green, 2))
             {
                 foreach (var bounds in allVideoBounds)
@@ -1535,15 +1546,18 @@ namespace RenCloud
                     }
                 }
             }
-            foreach (var (thumbnail, position) in allThumbnailsWithPositions)
+
+            foreach (var (thumbImage, thumbPos, thumbWidth) in allThumbnailsWithPositions)
             {
-                if (!draggedThumbnails.Any(t => t.thumbnail == thumbnail))
+                bool isDragged = draggedThumbnails.Any(dt => dt.thumbnail == thumbImage);
+                if (!isDragged)
                 {
                     float thumbnailHeight = VideoTrack.Height - 20f;
                     float thumbnailY = 10f;
-                    g.DrawImage(thumbnail, position, thumbnailY, 100, thumbnailHeight);
+                    g.DrawImage(thumbImage, thumbPos, thumbnailY, thumbWidth, thumbnailHeight);
                 }
             }
+
             if (selectedVideoBounds != RectangleF.Empty)
             {
                 using (Pen selectedPen = new Pen(Color.Red, 3))
@@ -1553,18 +1567,22 @@ namespace RenCloud
                     g.DrawRectangle(selectedPen, Rectangle.Round(selectedVideoBounds));
                 }
 
-                foreach (var (thumbnail, position) in draggedThumbnails)
+                foreach (var (thumbImage, thumbPos, thumbWidth) in draggedThumbnails)
                 {
                     float thumbnailHeight = VideoTrack.Height - 20f;
                     float thumbnailY = 10f;
-                    g.DrawImage(thumbnail, position, thumbnailY, 100, thumbnailHeight);
+                    g.DrawImage(thumbImage, thumbPos, thumbnailY, thumbWidth, thumbnailHeight);
                 }
             }
+
             using (Pen trackerPen = new Pen(Color.Blue, 2))
             {
                 g.DrawLine(trackerPen, trackerXPosition, 0, trackerXPosition, VideoTrack.Height);
             }
         }
+
+
+
 
         ///
         /// Calculates the duration of a video using FFmpeg.
@@ -1627,7 +1645,7 @@ namespace RenCloud
             {
                 double timestamp = i * intervalSeconds;
                 string outputFile = Path.Combine(tempDir, $"thumbnail_{i:D3}.jpg");
-                string ffmpegCommand = $"-ss {timestamp} -i \"{videoFilePath}\" -vframes 1 -vf \"scale=150:100\" -q:v 2 " +
+                string ffmpegCommand = $"-ss {timestamp} -i \"{videoFilePath}\" -vframes 1 -vf \"scale=100:100\" -q:v 2 " +
                                        $"-threads {Environment.ProcessorCount} " +
                                        $"\"{outputFile}\"";
                 try
@@ -1811,7 +1829,7 @@ namespace RenCloud
                     if (position + thumbnailWidth > videoStartPosition + newWidth)
                         break;
 
-                    allThumbnailsWithPositions.Add((videoThumbnails[i], position));
+                    allThumbnailsWithPositions.Add((videoThumbnails[i], position, 100f));
                 }
 
                 var videoBounds = new RectangleF(videoStartPosition, 0f, newWidth, VideoTrack.Height - 2f);
@@ -1839,7 +1857,8 @@ namespace RenCloud
                     float barYPosition = AudioTrack.Height - amplitudeHeight;
                     if (barXPosition + barWidth > audioStartPosition + newWidth)
                         break;
-                    allAudioAmplitudeBars.Add((new RectangleF(barXPosition, barYPosition, barWidth, amplitudeHeight), i));
+                    allAudioAmplitudeBars.Add((new RectangleF(barXPosition, barYPosition, barWidth, amplitudeHeight), ampID));
+                    ampID++;
                 }
 
 
@@ -2150,28 +2169,50 @@ namespace RenCloud
         ///
         private void FixImages(RectangleF selectedSegment)
         {
-            float segmentEndPoint = selectedSegment.Left + selectedSegment.Width;
-            List<(Image thumbnail, float originalPosition)> updates = new List<(Image thumbnail, float originalPosition)>();
+            float segmentLeft = selectedSegment.Left;
+            float segmentRight = selectedSegment.Left + selectedSegment.Width;
+
+            var draggedThumbnailIds = draggedThumbnails.Select(t => t.thumbnail).ToList();
+
+            var updates = new List<(Image thumbnail, float revertedPosition)>();
+
             foreach (var (thumbnail, originalPosition) in tempPositions)
             {
-                float currentPosition = allThumbnailsWithPositions.FirstOrDefault(t => t.thumbnail == thumbnail).position;
-                if (originalPosition > segmentEndPoint && originalPosition != currentPosition)
+                if (draggedThumbnailIds.Contains(thumbnail))
+                    continue;
+
+                float currentPosition = allThumbnailsWithPositions
+                    .FirstOrDefault(t => t.thumbnail == thumbnail)
+                    .position;
+
+                bool wasMoved = Math.Abs(currentPosition - originalPosition) > 0.01f;
+                if (!wasMoved)
+                {
+                    continue;
+                }
+                if (originalPosition >= segmentRight)
                 {
                     updates.Add((thumbnail, originalPosition));
                 }
+                else if (originalPosition < segmentLeft)
+                {
+                    float newPos = originalPosition - selectedSegment.Width;
+                    updates.Add((thumbnail, newPos));
+                }
             }
 
-            foreach (var (thumbnail, originalPosition) in updates)
+            foreach (var (thumbnail, revertedPosition) in updates)
             {
-                int thumbnailIndex = allThumbnailsWithPositions.FindIndex(t => t.thumbnail == thumbnail);
-                if (thumbnailIndex != -1)
+                int thumbIdx = allThumbnailsWithPositions.FindIndex(t => t.thumbnail == thumbnail);
+                if (thumbIdx != -1)
                 {
-                    allThumbnailsWithPositions[thumbnailIndex] = (thumbnail, originalPosition);
+                    allThumbnailsWithPositions[thumbIdx] = (thumbnail, revertedPosition, allThumbnailsWithPositions[thumbIdx].thumbnailWidth);
                 }
             }
 
             VideoTrack.Invalidate();
         }
+
 
         ///
         /// Fix Bars positioning bug on right drag.
@@ -2182,7 +2223,7 @@ namespace RenCloud
             var draggedBarsIds = draggedBars.Select(t => t.id).ToList();
             var currentBounds = selectedAudioBounds;
             var nextBounds = allAudioSegments
-                .Where(segment => segment.Right <= currentBounds.Left + 1)
+                .Where(segment => segment.Right <= currentBounds.Left)
                 .OrderByDescending(segment => segment.Right)
                 .FirstOrDefault();
 
@@ -2397,7 +2438,7 @@ namespace RenCloud
                 int thumbnailIndex = allThumbnailsWithPositions.FindIndex(t => t.thumbnail == thumbnail);
                 if (thumbnailIndex != -1)
                 {
-                    allThumbnailsWithPositions[thumbnailIndex] = (thumbnail, initialPosition);
+                    allThumbnailsWithPositions[thumbnailIndex] = (thumbnail, initialPosition, allThumbnailsWithPositions[thumbnailIndex].thumbnailWidth);
                 }
             }
             selectedVideoBounds = initialSegmentBounds;
@@ -2446,12 +2487,12 @@ namespace RenCloud
                     int index = allThumbnailsWithPositions.FindIndex(t => t.thumbnail == thumbnail);
                     if (index != -1)
                     {
-                        allThumbnailsWithPositions[index] = (thumbnail, newPosition);
+                        allThumbnailsWithPositions[index] = (thumbnail, newPosition, allThumbnailsWithPositions[index].thumbnailWidth);
                     }
                     int draggedIndex = draggedThumbnails.FindIndex(t => t.thumbnail == thumbnail);
                     if (draggedIndex != -1)
                     {
-                        draggedThumbnails[draggedIndex] = (thumbnail, newPosition);
+                        draggedThumbnails[draggedIndex] = (thumbnail, newPosition, draggedThumbnails[draggedIndex].width);
                     }
                 }
             }
@@ -2501,7 +2542,7 @@ namespace RenCloud
         {
             float offset = newLeft - segment.Left;
 
-            foreach (var (thumbnail, originalPosition) in allThumbnailsWithPositions.ToList())
+            foreach (var (thumbnail, originalPosition, width) in allThumbnailsWithPositions.ToList())
             {
                 if (originalPosition >= segment.Left && originalPosition < segment.Right)
                 {
@@ -2510,7 +2551,7 @@ namespace RenCloud
                     int thumbnailIndex = allThumbnailsWithPositions.FindIndex(t => t.thumbnail == thumbnail);
                     if (thumbnailIndex != -1)
                     {
-                        allThumbnailsWithPositions[thumbnailIndex] = (thumbnail, newThumbnailPosition);
+                        allThumbnailsWithPositions[thumbnailIndex] = (thumbnail, newThumbnailPosition, allThumbnailsWithPositions[thumbnailIndex].thumbnailWidth);
                     }
                 }
             }
@@ -2591,7 +2632,7 @@ namespace RenCloud
                         segment.Height
                     );
 
-                    foreach (var (thumbnail, originalPosition) in allThumbnailsWithPositions.ToList())
+                    foreach (var (thumbnail, originalPosition, width) in allThumbnailsWithPositions.ToList())
                     {
                         if (originalPosition >= segment.Left && originalPosition < segment.Right)
                         {
@@ -2615,7 +2656,7 @@ namespace RenCloud
                 int thumbnailIndex = allThumbnailsWithPositions.FindIndex(t => t.thumbnail == thumbnail);
                 if (thumbnailIndex != -1)
                 {
-                    allThumbnailsWithPositions[thumbnailIndex] = (thumbnail, newPosition);
+                    allThumbnailsWithPositions[thumbnailIndex] = (thumbnail, newPosition, allThumbnailsWithPositions[thumbnailIndex].thumbnailWidth);
                 }
             }
             VideoTrack.Invalidate();
@@ -2693,27 +2734,28 @@ namespace RenCloud
             var draggedThumbnailsIds = draggedThumbnails.Select(t => t.thumbnail).ToList();
             var currentBounds = selectedVideoBounds;
 
-            var updatedBars = new List<(Image thumbnail, float position)>();
+            var updatedBars = new List<(Image thumbnail, float position, float width)>();
 
             var nextBounds = allVideoBounds[nextBoundsIndex];
 
             var leftEdge = Math.Min(currentBounds.Left, nextBounds.Left);
             var rightEdge = Math.Max(currentBounds.Right, nextBounds.Right);
 
-            foreach (var (thumbnail, position) in allThumbnailsWithPositions)
+            foreach (var (thumbnail, position, width) in allThumbnailsWithPositions)
             {
                 if (!draggedThumbnailsIds.Contains(thumbnail) && position >= leftEdge && position < rightEdge)
                 {
                     updatedBars.Add((
                         thumbnail,
-                        position + currentBounds.Width
+                        position + currentBounds.Width,
+                        width
                     ));
                 }
             }
 
             for (int i = 0; i < allThumbnailsWithPositions.Count; i++)
             {
-                var (thumbnail, position) = allThumbnailsWithPositions[i];
+                var (thumbnail, position, width) = allThumbnailsWithPositions[i];
                 var updatedBar = updatedBars.FirstOrDefault(t => t.thumbnail == thumbnail);
                 if (updatedBar != default)
                 {
@@ -2914,6 +2956,30 @@ namespace RenCloud
             dropDownPanel.Controls.Add(option2Label);
             dropDownPanel.Controls.Add(option1Label);
             this.Controls.Add(dropDownPanel);
+        }
+
+        //
+        // Helper to crop an Image to a given rectangle
+        //
+        private Image CropImage(Image source, Rectangle cropArea)
+        {
+            if (cropArea.Width <= 0 || cropArea.Height <= 0 ||
+                cropArea.Right > source.Width || cropArea.Bottom > source.Height)
+            {
+                return source;
+            }
+
+            Bitmap cropped = new Bitmap(cropArea.Width, cropArea.Height);
+            using (Graphics g = Graphics.FromImage(cropped))
+            {
+                g.DrawImage(
+                    source,
+                    new Rectangle(0, 0, cropArea.Width, cropArea.Height),
+                    cropArea,
+                    GraphicsUnit.Pixel
+                );
+            }
+            return cropped;
         }
     }   
 }
