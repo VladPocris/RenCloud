@@ -179,7 +179,7 @@ namespace RenCloud
             this.button3.Size = new System.Drawing.Size(49, 58);
             this.button3.TabIndex = 13;
             this.button3.UseVisualStyleBackColor = true;
-            this.button3.Click += new System.EventHandler(this.button3_Click);
+            this.button3.Click += new System.EventHandler(this.Button3_Click);
             // 
             // panel5
             // 
@@ -293,7 +293,7 @@ namespace RenCloud
             this.button4.TabIndex = 0;
             this.button4.Text = "TestAdd";
             this.button4.UseVisualStyleBackColor = true;
-            this.button4.Click += new System.EventHandler(this.button4_Click);
+            this.button4.Click += new System.EventHandler(this.Button4_Click);
             // 
             // PreviewPanel
             // 

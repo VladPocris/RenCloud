@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Data;
 using System.Diagnostics;
@@ -22,11 +23,10 @@ namespace RenCloud
     {
         //VARIABLES & OBJECTS//
         //this.PreviewBox.VlcLibDirectory = new DirectoryInfo(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "lib", "VlcLibs"));//
-        private string ffmpegPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "lib", "ffmpeg", "bin", "ffmpeg.exe");
-        private string outputPath = Path.Combine(Path.GetTempPath(), "VideoPreviews");
+        private readonly string ffmpegPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "lib", "ffmpeg", "bin", "ffmpeg.exe");
+        private readonly string outputPath = Path.Combine(Path.GetTempPath(), "VideoPreviews");
         private int ampID = 0;
         private bool tempCheckAudio = false;
-        private bool tempCheckVideo = false;
         private Vlc.DotNet.Forms.VlcControl PreviewBox;
 
         public UserInterfaceForm()
@@ -77,12 +77,12 @@ namespace RenCloud
         private readonly Color _transparentColor = Color.Transparent;
         private readonly Color _hoverColor = Color.FromArgb(50, Color.Gray);
         private readonly Color _clickedColor = Color.FromArgb(120, Color.Gray);
-        private List<(Image thumbnail, float position)> tempPositions = new List<(Image, float)>();
-        private List<(Image thumbnail, float position, float width)> draggedThumbnails = new List<(Image, float, float)>();
-        private List<(Image thumbnail, float position)> draggedThumbnailsInitialPosition = new List<(Image, float)>();
-        private List<(RectangleF bar, int id)> tempPositionsBars = new List<(RectangleF bar, int id)>();
-        private List<(RectangleF bar, int id)> draggedBars = new List<(RectangleF bar, int id)>();
-        private List<(RectangleF bar, int id)> draggedBarsInitialPosition = new List<(RectangleF bar, int id)>();
+        private readonly List<(Image thumbnail, float position)> tempPositions = new List<(Image, float)>();
+        private readonly List<(Image thumbnail, float position, float width)> draggedThumbnails = new List<(Image, float, float)>();
+        private readonly List<(Image thumbnail, float position)> draggedThumbnailsInitialPosition = new List<(Image, float)>();
+        private readonly List<(RectangleF bar, int id)> tempPositionsBars = new List<(RectangleF bar, int id)>();
+        private readonly List<(RectangleF bar, int id)> draggedBars = new List<(RectangleF bar, int id)>();
+        private readonly List<(RectangleF bar, int id)> draggedBarsInitialPosition = new List<(RectangleF bar, int id)>();
 
         ////FEATURES & EVENT HANDLERS & INTERACTIONS////
 
@@ -274,7 +274,7 @@ namespace RenCloud
         /// 
         private void AudioTrack_MouseUpHandler(object sender, MouseEventArgs e)
         {
-            int index = 0;
+            int index;
             if (isDraggingSegment)
             {
                 int draggedIndex = allAudioSegments.IndexOf(selectedAudioBounds);
@@ -294,7 +294,6 @@ namespace RenCloud
                         selectedAudioBounds = allAudioSegments[index];
                         SyncFullAudioRender();
                         UpdateBarPositions(index);
-                        draggedSegment = selectedAudioBounds;
                         if (rightMv)
                         {
                             rightMv = false;
@@ -302,7 +301,6 @@ namespace RenCloud
                             {
                                 Console.WriteLine("First Call");
                                 UpdateBarsForLeftDraggingFix(index);
-                                tempCheckVideo = false;
                             } else
                             {
                                 Console.WriteLine("Fifth Call");
@@ -422,7 +420,7 @@ namespace RenCloud
             draggedThumbnails.Clear();
             draggedThumbnailsInitialPosition.Clear();
 
-            foreach (var (thumbnail, position, width) in allThumbnailsWithPositions)
+            foreach (var (thumbnail, position, _) in allThumbnailsWithPositions)
             {
                 tempPositions.Add((thumbnail, position));
             }
@@ -505,7 +503,7 @@ namespace RenCloud
             {
                 int draggedIndex = allVideoBounds.IndexOf(selectedVideoBounds);
                 RectangleF draggedSegment = selectedVideoBounds;
-                int index = 0;
+                int index;
 
                 if (draggedIndex != -1)
                 {
@@ -529,7 +527,6 @@ namespace RenCloud
                             {
                                 Console.WriteLine("First Call");
                                 UpdateThumbnailsForLeftDraggingFix(index);
-                                tempCheckVideo = false;
                             }
                             else
                             {
@@ -543,7 +540,6 @@ namespace RenCloud
                             {
                                 Console.WriteLine("Second Call");
                                 UpdateThumbnailsForLeftDraggingFix(index + 1);
-                                tempCheckVideo = false;
                             }
                             else
                             {
@@ -682,8 +678,10 @@ namespace RenCloud
         ///
         public void InitializeAutoScrollTimer()
         {
-            autoScrollTimer = new Timer();
-            autoScrollTimer.Interval = 2;
+            autoScrollTimer = new Timer
+            {
+                Interval = 2
+            };
             autoScrollTimer.Tick += new EventHandler(AutoScrollTimer_Tick);
             autoScrollTimer.Tick += new EventHandler(AutoScrollTimer_Tick);
             autoScrollTimer.Enabled = false;
@@ -694,8 +692,10 @@ namespace RenCloud
         ///
         public void InitializePlayBackTimer()
         {
-            playbackTimer = new Timer();
-            playbackTimer.Interval = 1;
+            playbackTimer = new Timer
+            {
+                Interval = 1
+            };
             playbackTimer.Tick += new EventHandler(PlaybackTimer_Tick);
         }
 
@@ -740,10 +740,13 @@ namespace RenCloud
         private void PausePreview()
         {
             UpdatePlaybackLabel(PreviewBox.Time);
+            currentPlaybackTime = trackerXPosition / pixelsPerMillisecond;
+            EditingRuller.Invalidate();
             if (PreviewBox.IsPlaying)
             {
                 PreviewBox.Pause();
                 playbackTimer.Stop();
+                playbackStopwatch.Restart();
                 playbackStopwatch.Stop();
             }
         }
@@ -1204,7 +1207,7 @@ namespace RenCloud
         ///
         /// Exits the application when the close button is clicked.
         ///
-        private void button3_Click(object sender, EventArgs e)
+        private void Button3_Click(object sender, EventArgs e)
         {
             Application.Exit();
         }
@@ -1212,7 +1215,7 @@ namespace RenCloud
         ///
         /// Updates the tracker's position based on VLC time or interpolated system time, ensuring smooth playback.
         ///
-        private void button4_Click(object sender, EventArgs e)
+        private void Button4_Click(object sender, EventArgs e)
         {
             OpenFileDialog openFileDialog = new OpenFileDialog
             {
@@ -1235,14 +1238,15 @@ namespace RenCloud
         ////VARIABLES & OBJECTS///
         private Timer autoScrollTimer;
         private Timer playbackTimer;
+        private readonly Stopwatch seekTimer = Stopwatch.StartNew();
         private Stopwatch playbackStopwatch;
         private int autoScrollDirection = 0;
         private const int seekUpdateThreshold = 50;
         private long lastKnownVlcTime = 0;
         private float trackerXPosition = 0f;
         private float currentPlaybackTime = 0f;
-        private float pixelsPerSecond = 50f;
-        private float pixelsPerMillisecond;
+        private readonly float pixelsPerSecond = 50f;
+        private readonly float pixelsPerMillisecond;
         private long lastSeekUpdate = 0;
         private bool wasPlayingBeforeDrag = false;
         private bool isDraggingTracker = false;
@@ -1349,8 +1353,8 @@ namespace RenCloud
                 trackerXPosition = proposedX;
                 currentPlaybackTime = trackerXPosition / pixelsPerMillisecond;
 
-                long now = Environment.TickCount;
-                if (now - lastSeekUpdate > seekUpdateThreshold)
+                long now = seekTimer.ElapsedMilliseconds;
+                if (now - lastSeekUpdate >= seekUpdateThreshold)
                 {
                     lastSeekUpdate = now;
 
@@ -1361,6 +1365,7 @@ namespace RenCloud
                         try
                         {
                             PreviewBox.Time = (long)currentPlaybackTime;
+                            PreviewBox.Refresh();
                         }
                         catch (Exception ex)
                         {
@@ -1371,6 +1376,10 @@ namespace RenCloud
                             isUpdatingPreview = false;
                         }
                     }
+                } else
+                {
+                    Console.WriteLine("Update Problem");
+                    Console.WriteLine($"{now - lastSeekUpdate}");
                 }
 
                 if (!wasPlayingBeforeDrag)
@@ -1533,13 +1542,12 @@ namespace RenCloud
 
         ////VARIABLES & OBJECTS///
         private readonly List<(Image thumbnail, float position, float thumbnailWidth)> allThumbnailsWithPositions = new List<(Image, float, float)>();
-        private List<VideoRenderSegment> fullVideoRender = new List<VideoRenderSegment>();
-        private List<RectangleF> allVideoBounds = new List<RectangleF>();
+        private readonly List<VideoRenderSegment> fullVideoRender = new List<VideoRenderSegment>();
+        private readonly List<RectangleF> allVideoBounds = new List<RectangleF>();
         private RectangleF selectedVideoBounds = RectangleF.Empty;
         private int segmentsVideoCount = 0;
         private float widthVideo = 0f;
         private float widthAudio = 0f;
-        private float widthEditing = 0f;
 
         class VideoRenderSegment
         {
@@ -1868,6 +1876,7 @@ namespace RenCloud
             float barSpacing = 2f;
             float barWidthIncludingSpacing = barWidth + barSpacing;
             float newWidth = videoDuration * pixelsPerSecond;
+            float widthEditing;
 
             if ((widthVideo + newWidth) / pixelsPerSecond > 600)
             {
@@ -1984,10 +1993,10 @@ namespace RenCloud
 
         ////VARIABLES & OBJECTS///
         private RectangleF selectedAudioBounds = RectangleF.Empty;
-        private Dictionary<RectangleF, RectangleF> videoToAudioMapping = new Dictionary<RectangleF, RectangleF>();
-        private List<RectangleF> allAudioSegments = new List<RectangleF>();
-        private List<(RectangleF bar, int id)> allAudioAmplitudeBars = new List<(RectangleF bar, int id)>();
-        private List<AudioRenderSegment> fullAudioRender = new List<AudioRenderSegment>();
+        private readonly Dictionary<RectangleF, RectangleF> videoToAudioMapping = new Dictionary<RectangleF, RectangleF>();
+        private readonly List<RectangleF> allAudioSegments = new List<RectangleF>();
+        private readonly List<(RectangleF bar, int id)> allAudioAmplitudeBars = new List<(RectangleF bar, int id)>();
+        private readonly List<AudioRenderSegment> fullAudioRender = new List<AudioRenderSegment>();
         private int segmentsAudioCount = 0;
 
         class AudioRenderSegment
@@ -2052,7 +2061,7 @@ namespace RenCloud
             }
             using (Brush barBrush = new SolidBrush(Color.LightGreen))
             {
-                foreach ((RectangleF bar, int id) in allAudioAmplitudeBars)
+                foreach ((RectangleF bar, _) in allAudioAmplitudeBars)
                 {
                     g.FillRectangle(barBrush, bar);
                 }
