@@ -322,10 +322,10 @@ namespace RenCloud
             this.help_label.Dock = System.Windows.Forms.DockStyle.Left;
             this.help_label.Font = new System.Drawing.Font("Microsoft JhengHei Light", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.help_label.ForeColor = System.Drawing.Color.White;
-            this.help_label.Location = new System.Drawing.Point(200, 0);
+            this.help_label.Location = new System.Drawing.Point(130, 0);
             this.help_label.Margin = new System.Windows.Forms.Padding(0);
             this.help_label.Name = "help_label";
-            this.help_label.Size = new System.Drawing.Size(62, 29);
+            this.help_label.Size = new System.Drawing.Size(40, 19);
             this.help_label.TabIndex = 6;
             this.help_label.Text = "Help";
             // 
@@ -335,10 +335,10 @@ namespace RenCloud
             this.controlPanel_label.Dock = System.Windows.Forms.DockStyle.Left;
             this.controlPanel_label.Font = new System.Drawing.Font("Microsoft JhengHei Light", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.controlPanel_label.ForeColor = System.Drawing.Color.White;
-            this.controlPanel_label.Location = new System.Drawing.Point(48, 0);
+            this.controlPanel_label.Location = new System.Drawing.Point(31, 0);
             this.controlPanel_label.Margin = new System.Windows.Forms.Padding(0);
             this.controlPanel_label.Name = "controlPanel_label";
-            this.controlPanel_label.Size = new System.Drawing.Size(152, 29);
+            this.controlPanel_label.Size = new System.Drawing.Size(99, 19);
             this.controlPanel_label.TabIndex = 5;
             this.controlPanel_label.Text = "Control Panel";
             // 
@@ -351,7 +351,7 @@ namespace RenCloud
             this.file_label.Location = new System.Drawing.Point(0, 0);
             this.file_label.Margin = new System.Windows.Forms.Padding(0);
             this.file_label.Name = "file_label";
-            this.file_label.Size = new System.Drawing.Size(48, 29);
+            this.file_label.Size = new System.Drawing.Size(31, 19);
             this.file_label.TabIndex = 3;
             this.file_label.Text = "File";
             // 
@@ -447,7 +447,7 @@ namespace RenCloud
             // UserInterfaceForm
             // 
             this.AllowDrop = true;
-            this.AutoScaleDimensions = new System.Drawing.SizeF(10F, 23F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.AutoValidate = System.Windows.Forms.AutoValidate.Disable;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(67)))), ((int)(((byte)(38)))), ((int)(((byte)(88)))));
