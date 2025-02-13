@@ -1,0 +1,71 @@
+name: Build & Sonar
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v1
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: 17
+
+      - name: Cache SonarCloud scanner
+        id: cache-sonar-scanner
+        uses: actions/cache@v4
+        with:
+          path: .\.sonar\scanner
+          key: ${{ runner.os }}-sonar-scanner
+          restore-keys: ${{ runner.os }}-sonar-scanner
+
+      - name: Install SonarQube scanner
+        if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
+        shell: powershell
+        run: |
+          New-Item -Path .\.sonar\scanner -ItemType Directory -Force
+          dotnet tool install dotnet-sonarscanner --tool-path .\.sonar\scanner
+
+      - name: Restore (NuGet)
+        shell: powershell
+        run: nuget restore .\RenCloud\RenCloud.sln
+
+      - name: Build with MSBuild
+        shell: powershell
+        run: msbuild .\RenCloud\RenCloud.sln /p:Configuration=Release
+
+      # Sonar Begin with a hard-coded token
+      - name: Sonar Begin
+        shell: powershell
+        run: |
+          .\.sonar\scanner\dotnet-sonarscanner.exe begin `
+            /k:"rencloud_rencloud" `
+            /o:"rencloud" `
+            /d:sonar.token="368a03945fcda4a9a8721c26102995580ff54c33" `
+            /d:sonar.host.url="https://sonarcloud.io" `
+            /d:sonar.inclusions="**/*.cs" `
+            /d:sonar.scanner.skipJreProvisioning=true
+
+      - name: Re-Build for Sonar
+        shell: powershell
+        run: msbuild .\RenCloud\RenCloud.sln /p:Configuration=Release
+
+      # Sonar End with a hard-coded token
+      - name: Sonar End
+        shell: powershell
+        run: |
+          .\.sonar\scanner\dotnet-sonarscanner.exe end `
+            /d:sonar.token="368a03945fcda4a9a8721c26102995580ff54c33"
