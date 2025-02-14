@@ -12,21 +12,21 @@ jobs:
     steps:
 
       # ------------------------------------------------------
-      # 1) Checkout
+      # 1) Checkout Repository
       # ------------------------------------------------------
-      - name: Checkout
+      - name: Checkout Code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       # ------------------------------------------------------
-      # 2) Setup MSBuild (for old .NET Framework w/ COM references)
+      # 2) Setup MSBuild (For .NET Framework Projects)
       # ------------------------------------------------------
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v1
 
       # ------------------------------------------------------
-      # 3) Setup Java 17 for Sonar
+      # 3) Setup Java 17 (Required for Sonar)
       # ------------------------------------------------------
       - name: Setup Java 17
         uses: actions/setup-java@v4
@@ -35,9 +35,9 @@ jobs:
           java-version: 17
 
       # ------------------------------------------------------
-      # 4) Cache Sonar scanner
+      # 4) Cache SonarQube Scanner
       # ------------------------------------------------------
-      - name: Cache SonarCloud scanner
+      - name: Cache SonarCloud Scanner
         id: cache-sonar-scanner
         uses: actions/cache@v4
         with:
@@ -46,9 +46,9 @@ jobs:
           restore-keys: ${{ runner.os }}-sonar-scanner
 
       # ------------------------------------------------------
-      # 5) Install SonarQube scanner if not in cache
+      # 5) Install SonarQube Scanner if Missing
       # ------------------------------------------------------
-      - name: Install SonarQube scanner
+      - name: Install SonarQube Scanner
         if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
         shell: powershell
         run: |
@@ -56,32 +56,32 @@ jobs:
           dotnet tool install dotnet-sonarscanner --tool-path .sonar\scanner
 
       # ------------------------------------------------------
-      # 6) Restore main solution (NuGet)
+      # 6) Restore NuGet Packages (Including Coverlet)
       # ------------------------------------------------------
-      - name: Restore main solution
+      - name: Restore NuGet Packages
         shell: powershell
         run: |
           nuget restore .\RenCloud\RenCloud.sln
           dotnet add .\TestRenCloud\TestRenCloud.csproj package coverlet.collector
 
       # ------------------------------------------------------
-      # 7) Build main solution w/ msbuild
+      # 7) Build Main Solution
       # ------------------------------------------------------
-      - name: Build main solution
+      - name: Build Main Solution
         shell: powershell
         run: msbuild .\RenCloud\RenCloud.sln /p:Configuration=Debug
 
       # ------------------------------------------------------
-      # 8) Build SDK-style MSTest project w/ msbuild
+      # 8) Build Test Project
       # ------------------------------------------------------
-      - name: Build MSTest SDK-style
+      - name: Build Test Project
         shell: powershell
         run: msbuild .\TestRenCloud\TestRenCloud.csproj /p:Configuration=Debug
 
       # ------------------------------------------------------
-      # 9) Sonar Begin (Updated coverage report path)
+      # 9) SonarQube: Begin Analysis
       # ------------------------------------------------------
-      - name: Sonar Begin
+      - name: SonarQube Begin
         shell: powershell
         run: |
           .\.sonar\scanner\dotnet-sonarscanner.exe begin `
@@ -96,27 +96,29 @@ jobs:
       # ------------------------------------------------------
       # 10) Re-Build for Sonar
       # ------------------------------------------------------
-      - name: Re-Build for Sonar
+      - name: Re-Build Solution for Sonar
         shell: powershell
         run: msbuild .\RenCloud\RenCloud.sln /p:Configuration=Debug
 
       # ------------------------------------------------------
-      # 11) Run MSTest with Coverlet (Ensure correct coverage collection)
+      # 11) Run Tests & Generate Code Coverage
       # ------------------------------------------------------
-      - name: Run MSTest with coverlet
+      - name: Run Tests with Coverlet
         shell: powershell
         run: |
           $testResultsDir = ".\TestRenCloud\TestResults"
           if (-Not (Test-Path $testResultsDir)) {
+            Write-Host "Creating missing TestResults directory..."
             New-Item -Path $testResultsDir -ItemType Directory -Force
           }
 
+          Write-Host "Running tests with Coverlet..."
           dotnet test .\TestRenCloud\TestRenCloud.csproj `
             --configuration Debug `
             --no-build `
-            --collect:"XPlat Code Coverage" `
             --logger:trx `
             --results-directory $testResultsDir `
+            /p:CollectCoverage=true `
             /p:CoverletOutputFormat=opencover `
             /p:CoverletOutput=$testResultsDir\coverage.opencover.xml
 
@@ -125,53 +127,47 @@ jobs:
             exit 1
           }
 
-
       # ------------------------------------------------------
-      # 12) Debug TestResults Folder (Check Where Coverage is Generated)
+      # 12) Debug TestResults Folder
       # ------------------------------------------------------
-      - name: Debug TestResults Folder
+      - name: Check If TestResults Exists
         shell: powershell
         run: |
           Write-Host "Checking TestResults directory..."
-          if (Test-Path ".\RenCloud\TestResults") {
-            Get-ChildItem -Path .\RenCloud\TestResults\ -Recurse
+          if (Test-Path ".\TestRenCloud\TestResults") {
+            Write-Host "✅ TestResults directory found!"
           } else {
-            Write-Error "🚨 TestResults directory NOT FOUND! No coverage report generated."
+            Write-Error "🚨 TestResults directory NOT FOUND!"
             exit 1
           }
 
+      # ------------------------------------------------------
+      # 13) List All Files in TestResults (Debugging Step)
+      # ------------------------------------------------------
       - name: List All Files in TestResults
         shell: powershell
         run: |
           Write-Host "🔍 Listing all files in TestResults directory..."
-          if (Test-Path ".\RenCloud\TestResults") {
-            Get-ChildItem -Path .\RenCloud\TestResults\ -Recurse -Force | Format-Table -AutoSize
-          } else {
-            Write-Error "🚨 TestResults directory NOT FOUND! No coverage report generated."
-            exit 1
-          }
+          Get-ChildItem -Path .\TestRenCloud\TestResults\ -Recurse -Force | Format-Table -AutoSize
 
       # ------------------------------------------------------
-      # 13) Debug coverage.opencover.xml (Ensure File Exists)
+      # 14) Check for coverage.opencover.xml
       # ------------------------------------------------------
-      - name: Debug TestResults Folder (List Everything)
+      - name: Validate Coverage File
         shell: powershell
         run: |
-          Write-Host "Checking TestResults directory..."
-          if (Test-Path ".\RenCloud\TestResults") {
-            Write-Host "TestResults directory found! Listing contents:"
-            Get-ChildItem -Path .\RenCloud\TestResults\ -Recurse -Force | Format-Table -AutoSize
+          $coverageFile = Get-ChildItem -Path .\TestRenCloud\TestResults\ -Recurse -Filter "coverage.opencover.xml" | Select-Object -First 1
+          if ($coverageFile) {
+            Write-Host "✅ Found coverage.opencover.xml at $($coverageFile.FullName)"
           } else {
-            Write-Error "TestResults directory NOT FOUND! No coverage report generated."
+            Write-Error "🚨 coverage.opencover.xml NOT FOUND!"
             exit 1
           }
 
-
-
       # ------------------------------------------------------
-      # 14) Sonar End
+      # 15) SonarQube: End Analysis
       # ------------------------------------------------------
-      - name: Sonar End
+      - name: SonarQube End
         shell: powershell
         run: |
           .\.sonar\scanner\dotnet-sonarscanner.exe end `
