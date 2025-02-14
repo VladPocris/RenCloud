@@ -121,7 +121,7 @@ jobs:
             /p:CoverletOutput=$testResultsDir\coverage.opencover.xml
 
           if ($LASTEXITCODE -ne 0) {
-            Write-Error "🚨 Tests failed! No coverage file will be generated."
+            Write-Error "Tests failed! No coverage file will be generated."
             exit 1
           }
 
@@ -131,7 +131,7 @@ jobs:
       - name: Validate Coverage File (Dynamic Search)
         shell: powershell
         run: |
-          Write-Host "🔍 Searching for coverage.opencover.xml anywhere in the workspace..."
+          Write-Host "Searching for coverage.opencover.xml anywhere in the workspace..."
           $coverageFile = Get-ChildItem -Path . -Recurse -Filter "coverage.opencover.xml" | Select-Object -First 1
           if ($coverageFile) {
             Write-Host "Found coverage.opencover.xml at $($coverageFile.FullName)"
