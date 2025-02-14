@@ -108,11 +108,9 @@ jobs:
         run: |
           $testResultsDir = ".\TestRenCloud\TestResults"
           if (-Not (Test-Path $testResultsDir)) {
-            Write-Host "Creating missing TestResults directory..."
             New-Item -Path $testResultsDir -ItemType Directory -Force
           }
 
-          Write-Host "Running tests with Coverlet..."
           dotnet test .\TestRenCloud\TestRenCloud.csproj `
             --configuration Debug `
             --no-build `
@@ -128,32 +126,7 @@ jobs:
           }
 
       # ------------------------------------------------------
-      # 12) Debug TestResults Folder
-      # ------------------------------------------------------
-      - name: Check If TestResults Exists
-        shell: powershell
-        run: |
-          Write-Host "Checking TestResults directory..."
-          if (Test-Path ".\TestRenCloud\TestResults") {
-            Write-Host "✅ TestResults directory found!"
-          } else {
-            Write-Error "🚨 TestResults directory NOT FOUND!"
-            exit 1
-          }
-
-      # ------------------------------------------------------
-      # 13) List All Files in TestResults (Debugging Step)
-      # ------------------------------------------------------
-      - name: List All Files in TestResults
-        shell: powershell
-        run: |
-          Write-Host "Listing all files in TestResults directory..."
-          Get-ChildItem -Path .\TestRenCloud\TestResults\ -Recurse -Force | Format-Table -AutoSize
-
-
-
-      # ------------------------------------------------------
-      # 14) Check for coverage.opencover.xml
+      # 12) Validate Coverage File
       # ------------------------------------------------------
       - name: Validate Coverage File
         shell: powershell
@@ -167,7 +140,7 @@ jobs:
           }
 
       # ------------------------------------------------------
-      # 15) SonarQube: End Analysis
+      # 13) SonarQube: End Analysis
       # ------------------------------------------------------
       - name: SonarQube End
         shell: powershell
