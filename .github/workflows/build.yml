@@ -106,17 +106,25 @@ jobs:
       - name: Run MSTest with coverlet
         shell: powershell
         run: |
+          $testResultsDir = ".\TestRenCloud\TestResults"
+          if (-Not (Test-Path $testResultsDir)) {
+            New-Item -Path $testResultsDir -ItemType Directory -Force
+          }
+
           dotnet test .\TestRenCloud\TestRenCloud.csproj `
             --configuration Debug `
             --no-build `
             --collect:"XPlat Code Coverage" `
             --logger:trx `
-            --results-directory ".\TestRenCloud\TestResults"
+            --results-directory $testResultsDir `
+            /p:CoverletOutputFormat=opencover `
+            /p:CoverletOutput=$testResultsDir\coverage.opencover.xml
 
           if ($LASTEXITCODE -ne 0) {
             Write-Error "🚨 Tests failed! No coverage file will be generated."
             exit 1
           }
+
 
       # ------------------------------------------------------
       # 12) Debug TestResults Folder (Check Where Coverage is Generated)
