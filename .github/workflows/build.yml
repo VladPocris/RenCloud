@@ -11,135 +11,24 @@ jobs:
     runs-on: windows-latest
     steps:
 
-      # ------------------------------------------------------
-      # 1) Checkout
-      # ------------------------------------------------------
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # ------------------------------------------------------
-      # 2) Setup MSBuild (for old .NET Framework w/ COM references)
-      # ------------------------------------------------------
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v1
 
-      # ------------------------------------------------------
-      # 3) Setup Java 17 for Sonar
-      # ------------------------------------------------------
       - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: 17
 
-      # ------------------------------------------------------
-      # 4) Cache Sonar scanner
-      # ------------------------------------------------------
       - name: Cache SonarCloud scanner
         id: cache-sonar-scanner
         uses: actions/cache@v4
         with:
           path: .sonar/scanner
           key: ${{ runner.os }}-sonar-scanner
-          restore-keys: ${{ runner.os }}-sonar-scanner
-
-      # ------------------------------------------------------
-      # 5) Install SonarQube scanner if not in cache
-      # ------------------------------------------------------
-      - name: Install SonarQube scanner
-        if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
-        shell: powershell
-        run: |
-          New-Item -Path .sonar\scanner -ItemType Directory -Force
-          dotnet tool install dotnet-sonarscanner --tool-path .sonar\scanner
-
-      # ------------------------------------------------------
-      # 6) Restore main solution (NuGet)
-      # ------------------------------------------------------
-      - name: Restore main solution
-        shell: powershell
-        run: nuget restore .\RenCloud\RenCloud.sln
-
-      # ------------------------------------------------------
-      # 7) Build main solution w/ msbuild
-      # ------------------------------------------------------
-      - name: Build main solution
-        shell: powershell
-        run: msbuild .\RenCloud\RenCloud.sln /p:Configuration=Debug
-
-      # ------------------------------------------------------
-      # 8) Build SDK-style MSTest project w/ msbuild
-      # ------------------------------------------------------
-      - name: Build MSTest SDK-style
-        shell: powershell
-        run: msbuild .\TestRenCloud\TestRenCloud.csproj /p:Configuration=Debug
-
-      # ------------------------------------------------------
-      # 9) Sonar Begin (Updated coverage report path)
-      # ------------------------------------------------------
-      - name: Sonar Begin
-        shell: powershell
-        run: |
-          .\.sonar\scanner\dotnet-sonarscanner.exe begin `
-            /k:"rencloud_rencloud" `
-            /o:"rencloud" `
-            /d:sonar.token="368a03945fcda4a9a8721c26102995580ff54c33" `
-            /d:sonar.host.url="https://sonarcloud.io" `
-            /d:sonar.inclusions="**/*.cs" `
-            /d:sonar.scanner.skipJreProvisioning=true `
-            /d:sonar.cs.opencover.reportsPaths="TestRenCloud/TestResults/**/coverage.opencover.xml"
-
-      # ------------------------------------------------------
-      # 10) Re-Build for Sonar
-      # ------------------------------------------------------
-      - name: Re-Build for Sonar
-        shell: powershell
-        run: msbuild .\RenCloud\RenCloud.sln /p:Configuration=Debug
-
-      # ------------------------------------------------------
-      # 11) Run MSTest with Coverlet (Ensure correct coverage collection)
-      # ------------------------------------------------------
-      - name: Run MSTest with coverlet
-        shell: powershell
-        run: |
-          dotnet test .\TestRenCloud\TestRenCloud.csproj `
-            --configuration Debug `
-            --no-build `
-            --collect:"XPlat Code Coverage" `
-            --logger:trx `
-            --results-directory ".\TestRenCloud\TestResults"
-
-      # ------------------------------------------------------
-      # 12) Debug TestResults Folder (Check Where Coverage is Generated)
-      # ------------------------------------------------------
-      - name: Debug TestResults Folder
-        shell: powershell
-        run: |
-          Write-Host "Checking TestResults directory..."
-          Get-ChildItem -Path .\TestRenCloud\TestResults\ -Recurse
-
-      # ------------------------------------------------------
-      # 13) Debug coverage.opencover.xml (Ensure File Exists)
-      # ------------------------------------------------------
-      - name: Debug coverage.opencover.xml
-        shell: powershell
-        run: |
-          $coverageFile = Get-ChildItem -Path .\TestRenCloud\TestResults\ -Recurse -Filter "coverage.opencover.xml" | Select-Object -First 1
-          if ($coverageFile) {
-            Write-Host "Found coverage.opencover.xml at $($coverageFile.FullName)"
-            Get-Content $coverageFile.FullName | Select-Object -First 20
-          } else {
-            Write-Error "coverage.opencover.xml NOT FOUND!"
-            exit 1
-          }
-
-      # ------------------------------------------------------
-      # 14) Sonar End
-      # ------------------------------------------------------
-      - name: Sonar End
-        shell: powershell
-        run: |
-          .\.sonar\scanner\dotnet-sonarscanner.exe end `
-            /d:sonar.token="368a03945fcda4a9a8721c26102995580ff54c33"
+          restore-keys: ${{ runner.os }}-sonar-s
