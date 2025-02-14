@@ -109,13 +109,13 @@ jobs:
       - name: Find Coverage File & Update SonarQube Path
         shell: powershell
         run: |
-          Write-Host "🔍 Searching for coverage.opencover.xml..."
+          Write-Host "Searching for coverage.opencover.xml..."
           $coverageFile = Get-ChildItem -Path . -Recurse -Filter "coverage.opencover.xml" | Select-Object -First 1
           if ($coverageFile) {
-            Write-Host "✅ Found coverage.opencover.xml at: $($coverageFile.FullName)"
+            Write-Host "Found coverage.opencover.xml at: $($coverageFile.FullName)"
             echo "SONAR_COVERAGE_PATH=$($coverageFile.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8
           } else {
-            Write-Error "🚨 SonarQube cannot access coverage.opencover.xml!"
+            Write-Error "SonarQube cannot access coverage.opencover.xml!"
             exit 1
           }
 
@@ -149,12 +149,12 @@ jobs:
       - name: Verify Coverage File Before Sonar End
         shell: powershell
         run: |
-          Write-Host "🔍 Checking if coverage.opencover.xml still exists..."
+          Write-Host "Checking if coverage.opencover.xml still exists..."
           $coverageFile = Get-ChildItem -Path . -Recurse -Filter "coverage.opencover.xml" | Select-Object -First 1
           if ($coverageFile) {
-            Write-Host "✅ File exists at: $($coverageFile.FullName)"
+            Write-Host "File exists at: $($coverageFile.FullName)"
           } else {
-            Write-Error "🚨 coverage.opencover.xml has disappeared!"
+            Write-Error "coverage.opencover.xml has disappeared!"
             exit 1
           }
 
