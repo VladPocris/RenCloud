@@ -128,16 +128,18 @@ jobs:
       # ------------------------------------------------------
       # 12) Validate Coverage File
       # ------------------------------------------------------
-      - name: Validate Coverage File
+      - name: Validate Coverage File (Dynamic Search)
         shell: powershell
         run: |
-          $coverageFile = Get-ChildItem -Path .\TestRenCloud\TestResults\ -Recurse -Filter "coverage.opencover.xml" | Select-Object -First 1
+          Write-Host "🔍 Searching for coverage.opencover.xml anywhere in the workspace..."
+          $coverageFile = Get-ChildItem -Path . -Recurse -Filter "coverage.opencover.xml" | Select-Object -First 1
           if ($coverageFile) {
             Write-Host "✅ Found coverage.opencover.xml at $($coverageFile.FullName)"
           } else {
             Write-Error "🚨 coverage.opencover.xml NOT FOUND!"
             exit 1
           }
+
 
       # ------------------------------------------------------
       # 13) SonarQube: End Analysis
