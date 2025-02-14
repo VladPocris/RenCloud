@@ -91,7 +91,7 @@ jobs:
             /d:sonar.host.url="https://sonarcloud.io" `
             /d:sonar.inclusions="**/*.cs" `
             /d:sonar.scanner.skipJreProvisioning=true `
-            /d:sonar.cs.opencover.reportsPaths="TestRenCloud/TestResults/**/coverage.opencover.xml"
+            /d:sonar.cs.opencover.reportsPaths="TestRenCloud/TestResults/coverage.opencover.xml"
 
       # ------------------------------------------------------
       # 10) Re-Build for Sonar
@@ -149,6 +149,7 @@ jobs:
         run: |
           Write-Host "🔍 Listing all files in TestResults directory..."
           Get-ChildItem -Path .\TestRenCloud\TestResults\ -Recurse -Force | Format-Table -AutoSize
+
 
       # ------------------------------------------------------
       # 14) Check for coverage.opencover.xml
