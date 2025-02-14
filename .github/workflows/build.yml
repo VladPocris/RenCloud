@@ -54,6 +54,7 @@ jobs:
         run: |
           New-Item -Path .sonar\scanner -ItemType Directory -Force
           dotnet tool install dotnet-sonarscanner --tool-path .sonar\scanner
+
       # ------------------------------------------------------
       # 6) Restore main solution (NuGet)
       # ------------------------------------------------------
@@ -62,7 +63,7 @@ jobs:
         run: nuget restore .\RenCloud\RenCloud.sln
 
       # ------------------------------------------------------
-      # 7) Build main solution w/ msbuild (COM references need .NET Framework MSBuild)
+      # 7) Build main solution w/ msbuild
       # ------------------------------------------------------
       - name: Build main solution
         shell: powershell
@@ -70,15 +71,13 @@ jobs:
 
       # ------------------------------------------------------
       # 8) Build SDK-style MSTest project w/ msbuild
-      #    This assumes your new test project is "MySdkTestProject.csproj" targeting net48
       # ------------------------------------------------------
       - name: Build MSTest SDK-style
         shell: powershell
         run: msbuild .\TestRenCloud\TestRenCloud.csproj /p:Configuration=Debug
 
       # ------------------------------------------------------
-      # 9) Sonar Begin
-      #    Telling Sonar: we'll produce coverage in MySdkTestProject/TestResults/coverage.opencover.xml
+      # 9) Sonar Begin (Updated coverage report path)
       # ------------------------------------------------------
       - name: Sonar Begin
         shell: powershell
@@ -90,16 +89,17 @@ jobs:
             /d:sonar.host.url="https://sonarcloud.io" `
             /d:sonar.inclusions="**/*.cs" `
             /d:sonar.scanner.skipJreProvisioning=true `
-            /d:sonar.cs.opencover.reportsPaths="TestRenCloud/TestResults/coverage.opencover.xml"
+            /d:sonar.cs.opencover.reportsPaths="TestRenCloud/TestResults/**/coverage.opencover.xml"
+
       # ------------------------------------------------------
-      # 10) Re-build main solution for Sonar
+      # 10) Re-Build for Sonar
       # ------------------------------------------------------
       - name: Re-Build for Sonar
         shell: powershell
         run: msbuild .\RenCloud\RenCloud.sln /p:Configuration=Debug
 
       # ------------------------------------------------------
-      # 11) dotnet test MSTest (no-build) w/ coverlet => coverage.opencover.xml
+      # 11) Run MSTest with Coverlet (Ensure correct coverage collection)
       # ------------------------------------------------------
       - name: Run MSTest with coverlet
         shell: powershell
@@ -107,27 +107,36 @@ jobs:
           dotnet test .\TestRenCloud\TestRenCloud.csproj `
             --configuration Debug `
             --no-build `
-            --collect "XPlat Code Coverage" `
+            --collect:"XPlat Code Coverage" `
             --logger:trx `
-            --results-directory ".\TestRenCloud\TestResults" `
-            /p:CoverletOutput=.\TestRenCloud\TestResults\coverage.opencover.xml `
-            /p:CoverletOutputFormat=opencover
+            --results-directory ".\TestRenCloud\TestResults"
+
       # ------------------------------------------------------
-      # 12) Debug coverage file
+      # 12) Debug TestResults Folder (Check Where Coverage is Generated)
+      # ------------------------------------------------------
+      - name: Debug TestResults Folder
+        shell: powershell
+        run: |
+          Write-Host "Checking TestResults directory..."
+          Get-ChildItem -Path .\TestRenCloud\TestResults\ -Recurse
+
+      # ------------------------------------------------------
+      # 13) Debug coverage.opencover.xml (Ensure File Exists)
       # ------------------------------------------------------
       - name: Debug coverage.opencover.xml
         shell: powershell
         run: |
-          $coverageXml = ".\TestRenCloud\TestResults\coverage.opencover.xml"
-          if (Test-Path $coverageXml) {
-            Write-Host "Showing first 20 lines of coverage.opencover.xml"
-            Get-Content $coverageXml | Select-Object -First 20
+          $coverageFile = Get-ChildItem -Path .\TestRenCloud\TestResults\ -Recurse -Filter "coverage.opencover.xml" | Select-Object -First 1
+          if ($coverageFile) {
+            Write-Host "Found coverage.opencover.xml at $($coverageFile.FullName)"
+            Get-Content $coverageFile.FullName | Select-Object -First 20
           } else {
             Write-Error "coverage.opencover.xml NOT FOUND!"
             exit 1
           }
+
       # ------------------------------------------------------
-      # 13) Sonar End
+      # 14) Sonar End
       # ------------------------------------------------------
       - name: Sonar End
         shell: powershell
