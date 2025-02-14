@@ -157,14 +157,15 @@ jobs:
       - name: Debug TestResults Folder (List Everything)
         shell: powershell
         run: |
-          Write-Host "🔍 Checking TestResults directory..."
+          Write-Host "Checking TestResults directory..."
           if (Test-Path ".\TestRenCloud\TestResults") {
-            Write-Host "✅ TestResults directory found! Listing contents:"
+            Write-Host "TestResults directory found! Listing contents:"
             Get-ChildItem -Path .\TestRenCloud\TestResults\ -Recurse -Force | Format-Table -AutoSize
           } else {
-            Write-Error "🚨 TestResults directory NOT FOUND! No coverage report generated."
+            Write-Error "TestResults directory NOT FOUND! No coverage report generated."
             exit 1
           }
+
 
 
       # ------------------------------------------------------
