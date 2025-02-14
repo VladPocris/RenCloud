@@ -140,6 +140,17 @@ jobs:
             exit 1
           }
 
+      - name: List All Files in TestResults
+        shell: powershell
+        run: |
+          Write-Host "🔍 Listing all files in TestResults directory..."
+          if (Test-Path ".\TestRenCloud\TestResults") {
+            Get-ChildItem -Path .\TestRenCloud\TestResults\ -Recurse -Force | Format-Table -AutoSize
+          } else {
+            Write-Error "🚨 TestResults directory NOT FOUND! No coverage report generated."
+            exit 1
+          }
+
       # ------------------------------------------------------
       # 13) Debug coverage.opencover.xml (Ensure File Exists)
       # ------------------------------------------------------
