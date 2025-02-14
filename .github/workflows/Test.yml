@@ -1,0 +1,87 @@
+name: Test Coverage Debug
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    types: [ opened, synchronize, reopened ]
+
+jobs:
+  test-coverage:
+    runs-on: windows-latest
+    steps:
+
+      # ------------------------------------------------------
+      # 1) Checkout Code
+      # ------------------------------------------------------
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # ------------------------------------------------------
+      # 2) Setup .NET
+      # ------------------------------------------------------
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 6.0.x  # Adjust to match your project's version
+
+      # ------------------------------------------------------
+      # 3) Restore Dependencies
+      # ------------------------------------------------------
+      - name: Restore Dependencies
+        shell: powershell
+        run: dotnet restore .\TestRenCloud\TestRenCloud.csproj
+
+      # ------------------------------------------------------
+      # 4) Build Test Project
+      # ------------------------------------------------------
+      - name: Build Test Project
+        shell: powershell
+        run: dotnet build .\TestRenCloud\TestRenCloud.csproj --configuration Debug
+
+      # ------------------------------------------------------
+      # 5) Run Tests & Generate Coverage Report
+      # ------------------------------------------------------
+      - name: Run Tests with Coverage
+        shell: powershell
+        run: |
+          $testResultsDir = ".\TestRenCloud\TestResults"
+          if (-Not (Test-Path $testResultsDir)) {
+            New-Item -Path $testResultsDir -ItemType Directory -Force
+          }
+          
+          dotnet test .\TestRenCloud\TestRenCloud.csproj `
+            --configuration Debug `
+            --no-build `
+            --collect:"XPlat Code Coverage" `
+            --logger:trx `
+            --results-directory $testResultsDir
+
+      # ------------------------------------------------------
+      # 6) Debug TestResults Folder
+      # ------------------------------------------------------
+      - name: List TestResults Contents
+        shell: powershell
+        run: |
+          Write-Host "Listing files in TestResults..."
+          if (Test-Path ".\TestRenCloud\TestResults") {
+            Get-ChildItem -Path .\TestRenCloud\TestResults\ -Recurse
+          } else {
+            Write-Error "TestResults directory NOT FOUND!"
+            exit 1
+          }
+
+      # ------------------------------------------------------
+      # 7) Check for Coverage File
+      # ------------------------------------------------------
+      - name: Check for coverage.opencover.xml
+        shell: powershell
+        run: |
+          $coverageFile = Get-ChildItem -Path .\TestRenCloud\TestResults\ -Recurse -Filter "coverage.opencover.xml" | Select-Object -First 1
+          if ($coverageFile) {
+            Write-Host "✅ Found coverage.opencover.xml at $($coverageFile.FullName)"
+            Get-Content $coverageFile.FullName | Select-Object -First 20
+          } else {
+            Write-Error "🚨 coverage.opencover.xml NOT FOUND!"
+            exit 1
+          }
