@@ -1,24 +1,18 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using RenCloud;
-using static RenCloud.Program;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
-
-namespace TestRenCloud
+﻿namespace TestRenCloud
 {
     [TestClass]
     public class InputsValidation
     {
-        private UsernameValidator usernameValidator;
-        private PasswordValidator passwordValidator;
-        private EmailValidator emailValidator;
+        private RenCloud.Program.UsernameValidator usernameValidator;
+        private RenCloud.Program.PasswordValidator passwordValidator;
+        private RenCloud.Program.EmailValidator emailValidator;
 
         [TestInitialize]
         public void Setup()
         {
-            usernameValidator = new UsernameValidator();
-            passwordValidator = new PasswordValidator();
-            emailValidator = new EmailValidator();
+            usernameValidator = new RenCloud.Program.UsernameValidator();
+            passwordValidator = new RenCloud.Program.PasswordValidator();
+            emailValidator = new RenCloud.Program.EmailValidator();
         }
 
         //UsernameValidation START//

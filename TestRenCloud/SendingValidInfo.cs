@@ -1,15 +1,12 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using System.Windows.Forms;
-using static RenCloud.Program;
+﻿using System.Windows.Forms;
 
-namespace RenCloud.Tests
+namespace TestRenCloud
 {
     [TestClass]
     public class LogInFormTests
     {
 
-        private LogInForm loginForm;
+        private RenCloud.LogInForm loginForm;
         private TextBox tbusername;
         private TextBox tbpassword;
         private Button loginButton;
@@ -21,7 +18,7 @@ namespace RenCloud.Tests
         [TestInitialize]
         public void Setup()
         {
-            loginForm = new LogInForm();
+            loginForm = new RenCloud.LogInForm();
             tbpassword = loginForm.PasswordTextBox;
             tbusername = loginForm.UsernameTextBox;
             loginButton = loginForm.LoginButton;
