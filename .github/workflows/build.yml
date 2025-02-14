@@ -79,32 +79,7 @@ jobs:
         run: msbuild .\TestRenCloud\TestRenCloud.csproj /p:Configuration=Debug
 
       # ------------------------------------------------------
-      # 9) SonarQube: Begin Analysis
-      # ------------------------------------------------------
-      - name: SonarQube Begin
-        shell: powershell
-        run: |
-          .\.sonar\scanner\dotnet-sonarscanner.exe begin `
-            /k:"rencloud_rencloud" `
-            /o:"rencloud" `
-            /d:sonar.token="368a03945fcda4a9a8721c26102995580ff54c33" `
-            /d:sonar.host.url="https://sonarcloud.io" `
-            /d:sonar.inclusions="**/*.cs" `
-            /d:sonar.scanner.skipJreProvisioning=true `
-            /d:sonar.cs.opencover.reportsPaths="$(pwd)/TestRenCloud/TestResults/coverage.opencover.xml" `
-            /d:sonar.sources="$(pwd)/RenCloud" `
-            /d:sonar.coverage.exclusions="**/TestRenCloud/**"
-
-
-      # ------------------------------------------------------
-      # 10) Re-Build for Sonar
-      # ------------------------------------------------------
-      - name: Re-Build Solution for Sonar
-        shell: powershell
-        run: msbuild .\RenCloud\RenCloud.sln /p:Configuration=Debug
-
-      # ------------------------------------------------------
-      # 11) Run Tests & Generate Code Coverage
+      # 9) Run Tests & Generate Code Coverage
       # ------------------------------------------------------
       - name: Run Tests with Coverlet
         shell: powershell
@@ -129,36 +104,62 @@ jobs:
           }
 
       # ------------------------------------------------------
-      # 12) Validate Coverage File
+      # 10) Find Coverage File & Set SonarQube Path
       # ------------------------------------------------------
-      - name: Validate Coverage File (Dynamic Search)
+      - name: Find Coverage File & Update SonarQube Path
         shell: powershell
         run: |
-          Write-Host "Searching for coverage.opencover.xml anywhere in the workspace..."
+          Write-Host "🔍 Searching for coverage.opencover.xml..."
           $coverageFile = Get-ChildItem -Path . -Recurse -Filter "coverage.opencover.xml" | Select-Object -First 1
           if ($coverageFile) {
-            Write-Host "Found coverage.opencover.xml at $($coverageFile.FullName)"
-          } else {
-            Write-Error "coverage.opencover.xml NOT FOUND!"
-            exit 1
-          }
-
-      - name: Debug Coverage File Before Sonar End
-        shell: powershell
-        run: |
-          Write-Host "Checking if SonarQube can access coverage.opencover.xml..."
-          $coverageFile = Get-ChildItem -Path "$(pwd)/TestRenCloud/TestResults/" -Recurse -Filter "coverage.opencover.xml" | Select-Object -First 1
-          if ($coverageFile) {
-            Write-Host "✅ SonarQube will process: $($coverageFile.FullName)"
-            Get-Content $coverageFile.FullName | Select-Object -First 20
+            Write-Host "✅ Found coverage.opencover.xml at: $($coverageFile.FullName)"
+            echo "SONAR_COVERAGE_PATH=$($coverageFile.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8
           } else {
             Write-Error "🚨 SonarQube cannot access coverage.opencover.xml!"
             exit 1
           }
 
+      # ------------------------------------------------------
+      # 11) SonarQube: Begin Analysis
+      # ------------------------------------------------------
+      - name: SonarQube Begin
+        shell: powershell
+        run: |
+          .\.sonar\scanner\dotnet-sonarscanner.exe begin `
+            /k:"rencloud_rencloud" `
+            /o:"rencloud" `
+            /d:sonar.token="368a03945fcda4a9a8721c26102995580ff54c33" `
+            /d:sonar.host.url="https://sonarcloud.io" `
+            /d:sonar.inclusions="**/*.cs" `
+            /d:sonar.scanner.skipJreProvisioning=true `
+            /d:sonar.cs.opencover.reportsPaths="$env:SONAR_COVERAGE_PATH" `
+            /d:sonar.sources="$(pwd)/RenCloud" `
+            /d:sonar.coverage.exclusions="**/TestRenCloud/**"
 
       # ------------------------------------------------------
-      # 13) SonarQube: End Analysis
+      # 12) Re-Build for Sonar
+      # ------------------------------------------------------
+      - name: Re-Build Solution for Sonar
+        shell: powershell
+        run: msbuild .\RenCloud\RenCloud.sln /p:Configuration=Debug
+
+      # ------------------------------------------------------
+      # 13) Verify Coverage File Exists Before SonarQube
+      # ------------------------------------------------------
+      - name: Verify Coverage File Before Sonar End
+        shell: powershell
+        run: |
+          Write-Host "🔍 Checking if coverage.opencover.xml still exists..."
+          $coverageFile = Get-ChildItem -Path . -Recurse -Filter "coverage.opencover.xml" | Select-Object -First 1
+          if ($coverageFile) {
+            Write-Host "✅ File exists at: $($coverageFile.FullName)"
+          } else {
+            Write-Error "🚨 coverage.opencover.xml has disappeared!"
+            exit 1
+          }
+
+      # ------------------------------------------------------
+      # 14) SonarQube: End Analysis
       # ------------------------------------------------------
       - name: SonarQube End
         shell: powershell
