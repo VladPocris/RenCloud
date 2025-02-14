@@ -154,17 +154,18 @@ jobs:
       # ------------------------------------------------------
       # 13) Debug coverage.opencover.xml (Ensure File Exists)
       # ------------------------------------------------------
-      - name: Debug coverage.opencover.xml
+      - name: Debug TestResults Folder (List Everything)
         shell: powershell
         run: |
-          $coverageFile = Get-ChildItem -Path .\TestRenCloud\TestResults\ -Recurse -Filter "coverage.cobertura.xml" | Select-Object -First 1
-          if ($coverageFile) {
-            Write-Host "✅ Found coverage.cobertura.xml at $($coverageFile.FullName)"
-            Get-Content $coverageFile.FullName | Select-Object -First 20
+          Write-Host "🔍 Checking TestResults directory..."
+          if (Test-Path ".\TestRenCloud\TestResults") {
+            Write-Host "✅ TestResults directory found! Listing contents:"
+            Get-ChildItem -Path .\TestRenCloud\TestResults\ -Recurse -Force | Format-Table -AutoSize
           } else {
-            Write-Error "🚨 coverage.opencover.xml NOT FOUND!"
+            Write-Error "🚨 TestResults directory NOT FOUND! No coverage report generated."
             exit 1
           }
+
 
       # ------------------------------------------------------
       # 14) Sonar End
