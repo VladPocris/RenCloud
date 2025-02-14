@@ -92,7 +92,8 @@ jobs:
             /d:sonar.inclusions="**/*.cs" `
             /d:sonar.scanner.skipJreProvisioning=true `
             /d:sonar.cs.opencover.reportsPaths="$(pwd)/TestRenCloud/TestResults/coverage.opencover.xml" `
-            /d:sonar.coverage.exclusions="**/Migrations/**, **/TestRenCloud/**"
+            /d:sonar.sources="$(pwd)/RenCloud" `
+            /d:sonar.coverage.exclusions="**/TestRenCloud/**"
 
 
       # ------------------------------------------------------
@@ -139,6 +140,19 @@ jobs:
             Write-Host "Found coverage.opencover.xml at $($coverageFile.FullName)"
           } else {
             Write-Error "coverage.opencover.xml NOT FOUND!"
+            exit 1
+          }
+
+      - name: Debug Coverage File Before Sonar End
+        shell: powershell
+        run: |
+          Write-Host "Checking if SonarQube can access coverage.opencover.xml..."
+          $coverageFile = Get-ChildItem -Path "$(pwd)/TestRenCloud/TestResults/" -Recurse -Filter "coverage.opencover.xml" | Select-Object -First 1
+          if ($coverageFile) {
+            Write-Host "✅ SonarQube will process: $($coverageFile.FullName)"
+            Get-Content $coverageFile.FullName | Select-Object -First 20
+          } else {
+            Write-Error "🚨 SonarQube cannot access coverage.opencover.xml!"
             exit 1
           }
 
