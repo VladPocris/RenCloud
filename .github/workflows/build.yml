@@ -147,8 +147,9 @@ jobs:
       - name: List All Files in TestResults
         shell: powershell
         run: |
-          Write-Host "🔍 Listing all files in TestResults directory..."
+          Write-Host "Listing all files in TestResults directory..."
           Get-ChildItem -Path .\TestRenCloud\TestResults\ -Recurse -Force | Format-Table -AutoSize
+
 
 
       # ------------------------------------------------------
