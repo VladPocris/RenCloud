@@ -18,29 +18,51 @@ jobs:
         uses: actions/checkout@v4
 
       # ------------------------------------------------------
-      # 2) Setup .NET
+      # 2) Setup MSBuild (For .NET Framework)
       # ------------------------------------------------------
-      - name: Setup .NET
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v1
+
+      # ------------------------------------------------------
+      # 3) Setup .NET SDK (For NuGet Restore)
+      # ------------------------------------------------------
+      - name: Setup .NET SDK
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: 6.0.x  # Adjust to match your project's version
+          dotnet-version: 6.0.x  # Adjust to match your project
 
       # ------------------------------------------------------
-      # 3) Restore Dependencies
+      # 4) Restore NuGet Packages
       # ------------------------------------------------------
-      - name: Restore Dependencies
+      - name: Restore NuGet Packages
         shell: powershell
-        run: dotnet restore .\TestRenCloud\TestRenCloud.csproj
+        run: nuget restore .\RenCloud\RenCloud.sln
 
       # ------------------------------------------------------
-      # 4) Build Test Project
+      # 5) Install Missing Dependencies
+      # ------------------------------------------------------
+      - name: Install Vlc.DotNet Dependencies
+        shell: powershell
+        run: |
+          dotnet add .\RenCloud\RenCloud.csproj package Vlc.DotNet.Core --version 3.1.0
+          dotnet add .\RenCloud\RenCloud.csproj package Vlc.DotNet.Forms --version 3.1.0
+
+      # ------------------------------------------------------
+      # 6) Build the Solution Using MSBuild
+      # ------------------------------------------------------
+      - name: Build Solution with MSBuild (NET Framework)
+        shell: powershell
+        run: msbuild .\RenCloud\RenCloud.sln /p:Configuration=Debug /p:Platform="Any CPU"
+
+      # ------------------------------------------------------
+      # 7) Build the Test Project
       # ------------------------------------------------------
       - name: Build Test Project
         shell: powershell
-        run: dotnet build .\TestRenCloud\TestRenCloud.csproj --configuration Debug
+        run: msbuild .\TestRenCloud\TestRenCloud.csproj /p:Configuration=Debug /p:Platform="Any CPU"
 
       # ------------------------------------------------------
-      # 5) Run Tests & Generate Coverage Report
+      # 8) Run Tests & Generate Coverage
       # ------------------------------------------------------
       - name: Run Tests with Coverage
         shell: powershell
@@ -58,21 +80,7 @@ jobs:
             --results-directory $testResultsDir
 
       # ------------------------------------------------------
-      # 6) Debug TestResults Folder
-      # ------------------------------------------------------
-      - name: List TestResults Contents
-        shell: powershell
-        run: |
-          Write-Host "Listing files in TestResults..."
-          if (Test-Path ".\TestRenCloud\TestResults") {
-            Get-ChildItem -Path .\TestRenCloud\TestResults\ -Recurse
-          } else {
-            Write-Error "TestResults directory NOT FOUND!"
-            exit 1
-          }
-
-      # ------------------------------------------------------
-      # 7) Check for Coverage File
+      # 9) Check for coverage.opencover.xml
       # ------------------------------------------------------
       - name: Check for coverage.opencover.xml
         shell: powershell
