@@ -1,0 +1,16 @@
+<Project Sdk="WixToolset.Sdk/6.0.0">
+  <PropertyGroup>
+    <PackageOutputName>RenCloud_Setup</PackageOutputName>
+    <TargetName>RenCloud_Setup</TargetName>
+    <DefineConstants>
+      RenCloud.TargetDir=$(MSBuildThisFileDirectory)..\RenCloud\bin\$(Configuration)\
+    </DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <Wix Include="Product.wxs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="WixToolset.UI.wixext"   Version="6.0.0" />
+    <PackageReference Include="WixToolset.Util.wixext" Version="6.0.0" />
+  </ItemGroup>
+</Project>

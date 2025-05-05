@@ -1,0 +1,61 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.11.35312.102
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RenCloud", "RenCloud.csproj", "{79D353A7-9A80-4C28-84A9-1D66B8E93348}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestRenCloud", "..\TestRenCloud\TestRenCloud.csproj", "{E5D78515-6C4C-40A4-8287-E21E9D442419}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|ARM64 = Debug|ARM64
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|Any CPU = Release|Any CPU
+		Release|ARM64 = Release|ARM64
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{79D353A7-9A80-4C28-84A9-1D66B8E93348}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{79D353A7-9A80-4C28-84A9-1D66B8E93348}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{79D353A7-9A80-4C28-84A9-1D66B8E93348}.Debug|ARM64.ActiveCfg = Debug|Any CPU
+		{79D353A7-9A80-4C28-84A9-1D66B8E93348}.Debug|ARM64.Build.0 = Debug|Any CPU
+		{79D353A7-9A80-4C28-84A9-1D66B8E93348}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{79D353A7-9A80-4C28-84A9-1D66B8E93348}.Debug|x64.Build.0 = Debug|Any CPU
+		{79D353A7-9A80-4C28-84A9-1D66B8E93348}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{79D353A7-9A80-4C28-84A9-1D66B8E93348}.Debug|x86.Build.0 = Debug|Any CPU
+		{79D353A7-9A80-4C28-84A9-1D66B8E93348}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{79D353A7-9A80-4C28-84A9-1D66B8E93348}.Release|Any CPU.Build.0 = Release|Any CPU
+		{79D353A7-9A80-4C28-84A9-1D66B8E93348}.Release|ARM64.ActiveCfg = Release|Any CPU
+		{79D353A7-9A80-4C28-84A9-1D66B8E93348}.Release|ARM64.Build.0 = Release|Any CPU
+		{79D353A7-9A80-4C28-84A9-1D66B8E93348}.Release|x64.ActiveCfg = Release|Any CPU
+		{79D353A7-9A80-4C28-84A9-1D66B8E93348}.Release|x64.Build.0 = Release|Any CPU
+		{79D353A7-9A80-4C28-84A9-1D66B8E93348}.Release|x86.ActiveCfg = Release|Any CPU
+		{79D353A7-9A80-4C28-84A9-1D66B8E93348}.Release|x86.Build.0 = Release|Any CPU
+		{E5D78515-6C4C-40A4-8287-E21E9D442419}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E5D78515-6C4C-40A4-8287-E21E9D442419}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E5D78515-6C4C-40A4-8287-E21E9D442419}.Debug|ARM64.ActiveCfg = Debug|Any CPU
+		{E5D78515-6C4C-40A4-8287-E21E9D442419}.Debug|ARM64.Build.0 = Debug|Any CPU
+		{E5D78515-6C4C-40A4-8287-E21E9D442419}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{E5D78515-6C4C-40A4-8287-E21E9D442419}.Debug|x64.Build.0 = Debug|Any CPU
+		{E5D78515-6C4C-40A4-8287-E21E9D442419}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{E5D78515-6C4C-40A4-8287-E21E9D442419}.Debug|x86.Build.0 = Debug|Any CPU
+		{E5D78515-6C4C-40A4-8287-E21E9D442419}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E5D78515-6C4C-40A4-8287-E21E9D442419}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E5D78515-6C4C-40A4-8287-E21E9D442419}.Release|ARM64.ActiveCfg = Release|Any CPU
+		{E5D78515-6C4C-40A4-8287-E21E9D442419}.Release|ARM64.Build.0 = Release|Any CPU
+		{E5D78515-6C4C-40A4-8287-E21E9D442419}.Release|x64.ActiveCfg = Release|Any CPU
+		{E5D78515-6C4C-40A4-8287-E21E9D442419}.Release|x64.Build.0 = Release|Any CPU
+		{E5D78515-6C4C-40A4-8287-E21E9D442419}.Release|x86.ActiveCfg = Release|Any CPU
+		{E5D78515-6C4C-40A4-8287-E21E9D442419}.Release|x86.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {0B92768E-CEC5-4AD7-A8ED-6CB31AB19F2E}
+	EndGlobalSection
+EndGlobal

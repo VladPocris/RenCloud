@@ -1,0 +1,205 @@
+name: CI/CD
+
+permissions:
+  contents: write
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    types: [ opened, synchronize, reopened ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v1
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: 17
+
+      - name: Cache SonarCloud Scanner
+        id: cache-sonar-scanner
+        uses: actions/cache@v4
+        with:
+          path: .sonar/scanner
+          key: ${{ runner.os }}-sonar-scanner
+          restore-keys: ${{ runner.os }}-sonar-scanner
+
+      - name: Install SonarQube Scanner
+        if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
+        shell: powershell
+        run: |
+          New-Item -Path .sonar\scanner -ItemType Directory -Force
+          dotnet tool install dotnet-sonarscanner --tool-path .sonar\scanner
+
+      - name: Cache NuGet Packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.nuget/packages
+            !~/.nuget/packages/cache.lock
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+            
+      - name: Restore NuGet Packages
+        shell: powershell
+        run: |
+          nuget restore .\RenCloud\RenCloud.sln
+          dotnet add .\TestRenCloud\TestRenCloud.csproj package coverlet.collector
+
+      - name: Build Main Solution
+        shell: powershell
+        run: msbuild .\RenCloud\RenCloud.sln /p:Configuration=Release
+
+      - name: Build Test Project
+        shell: powershell
+        run: msbuild .\TestRenCloud\TestRenCloud.csproj /p:Configuration=Release
+        
+      - name: Copy RenCloud PDB into test output
+        shell: powershell
+        run: |
+          $appRelease = "$PWD\RenCloud\bin\Release"
+          $p1 = Join-Path $appRelease 'RenCloud.pdb'
+          $p2 = Join-Path $appRelease 'packages\RenCloud.pdb'
+          $pdbCandidates = @($p1, $p2)
+          $sourcePdb = $pdbCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+          if (-not $sourcePdb) { exit 1 }
+          $testBinRelease = "$PWD\TestRenCloud\bin\Release"
+          $testOutput = Get-ChildItem $testBinRelease -Directory |
+                        Where-Object Name -like 'net*' |
+                        Select-Object -First 1
+          if (-not $testOutput) { exit 1 }
+          Copy-Item $sourcePdb -Destination $testOutput.FullName -Force -ErrorAction Stop
+          
+      - name: Run Tests with Coverlet
+        shell: powershell
+        run: |
+          $testResultsDir = ".\TestRenCloud\TestResults"
+          if (-Not (Test-Path $testResultsDir)) {
+            New-Item -Path $testResultsDir -ItemType Directory -Force
+          }
+          dotnet test .\TestRenCloud\TestRenCloud.csproj `
+            --configuration Release `
+            --no-build `
+            --logger:trx `
+            --results-directory $testResultsDir `
+            /p:CollectCoverage=true `
+            /p:CoverletOutputFormat=opencover `
+            /p:CoverletOutput=$testResultsDir\coverage.opencover.xml
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+      - name: Find Coverage File & Update SonarQube Path
+        shell: powershell
+        run: |
+          $coverageFile = Get-ChildItem -Path . -Recurse -Filter "coverage.opencover.xml" | Select-Object -First 1
+          if ($coverageFile) {
+            echo "SONAR_COVERAGE_PATH=$($coverageFile.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8
+          } else {
+            exit 1
+          }
+
+      - name: SonarQube Begin
+        shell: powershell
+        run: |
+          .\.sonar\scanner\dotnet-sonarscanner.exe begin `
+            /k:"rencloud_rencloud" `
+            /o:"rencloud" `
+            /d:sonar.token="368a03945fcda4a9a8721c26102995580ff54c33" `
+            /d:sonar.host.url="https://sonarcloud.io" `
+            /d:sonar.inclusions="**/*.cs" `
+            /d:sonar.scanner.skipJreProvisioning=true `
+            /d:sonar.cs.opencover.reportsPaths="$env:SONAR_COVERAGE_PATH" `
+            /d:sonar.sources="$(pwd)/RenCloud" `
+            /d:sonar.coverage.exclusions="**/TestRenCloud/*"
+            
+      - name: Re-Build Solution for Sonar
+        shell: powershell
+        run: msbuild .\RenCloud\RenCloud.sln /p:Configuration=Release
+        
+      - name: Verify Coverage File Before Sonar End
+        shell: powershell
+        run: |
+          $coverageFile = Get-ChildItem -Path . -Recurse -Filter "coverage.opencover.xml" | Select-Object -First 1
+          if (-not $coverageFile) { exit 1 }
+
+      - name: SonarQube End
+        shell: powershell
+        run: .\.sonar\scanner\dotnet-sonarscanner.exe end `
+            /d:sonar.token="368a03945fcda4a9a8721c26102995580ff54c33"
+
+      - name: Download lib.zip from GitHub Release (Public)
+        shell: powershell
+        run: |
+          $repo = "VladPocris/RenCloud"
+          $file = "lib.zip"
+          $releasesUrl = "https://api.github.com/repos/$repo/releases"
+          $tag = (Invoke-WebRequest -Uri $releasesUrl -UseBasicParsing | ConvertFrom-Json)[0].tag_name
+          $downloadUrl = "https://github.com/$repo/releases/download/$tag/$file"
+          Invoke-WebRequest $downloadUrl -OutFile "lib.zip" -UseBasicParsing
+
+      - name: Extract lib.zip
+        shell: powershell
+        run: Expand-Archive -Path "lib.zip" -DestinationPath "RenCloud\lib" -Force
+
+      - name: Copy libs into app output
+        shell: powershell
+        run: Copy-Item .\RenCloud\lib\* -Destination .\RenCloud\bin\Release -Recurse -Force
+
+      - name: Package RenCloud Build Output
+        shell: powershell
+        run: |
+          $outputFolder = ".\RenCloud\bin\Release"
+          Compress-Archive -Path "$outputFolder\*" -DestinationPath "RenCloud.zip"
+          
+      - name: Restore Installer packages
+        shell: powershell
+        run: msbuild .\Installer\Installer.wixproj /t:Restore /p:Configuration=Release
+
+      - name: Build Installer
+        shell: powershell
+        run: msbuild .\Installer\Installer.wixproj /p:Configuration=Release
+
+      - name: Package Installer Output
+        shell: powershell
+        run: Compress-Archive -Path ".\Installer\bin\Release\*" -DestinationPath "Installer.zip"
+        
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: RenCloud-Build
+          path: RenCloud.zip
+
+      - name: Upload Installer Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: RenCloud-Installer
+          path: Installer.zip
+          
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        continue-on-error: true
+        with:
+          name: RenCloud Release
+          tag_name: v${{ github.run_number }}
+          files: |
+            RenCloud.zip
+            Installer.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Warn GitHub Release fail
+        if: failure()
+        run: | 
+            echo "Warning: Not enough permissions given from repo administrator to create a GitHub release."

@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+  <Package Name="RenCloud"
+           Version="1.0.0.0"
+           Manufacturer="VladPocris"
+           UpgradeCode="E8E701E9-F8EB-4E0D-A2FE-AAA6CA387B58">
+    <Property Id="ApplicationFolderName" Value="RenCloud"/>
+    <Property Id="WixAppFolder"          Value="WixPerMachineFolder"/>
+    <WixVariable Id="WixUILicenseRtf" Value="Binary\License.rtf"/>
+    <MediaTemplate EmbedCab="yes"/>
+    <ui:WixUI Id="WixUI_Advanced"/>
+    <Icon Id="RenCloudIcon" SourceFile="$(var.RenCloud.TargetDir)lib\RenCloud.ico"/>
+    <Property Id="ARPPRODUCTICON" Value="RenCloudIcon"/>
+    <Feature Id="MainFeature" Title="RenCloud core files" Level="1">
+      <Files Directory="APPLICATIONFOLDER"
+         Include="$(var.RenCloud.TargetDir)RenCloud.exe"/>
+      <Files Directory="APPLICATIONFOLDER"
+         Include="$(var.RenCloud.TargetDir)RenCloud.exe.config"/>
+      <Files Directory="PackagesDir"
+             Include="$(var.RenCloud.TargetDir)packages\*.dll;$(var.RenCloud.TargetDir)packages\*.xml;$(var.RenCloud.TargetDir)packages\*.pdb"/>
+      <Files Directory="FfmpegBin"
+             Include="$(var.RenCloud.TargetDir)lib\ffmpeg\bin\*.*"/>
+      <Files Directory="VlcLibs"
+             Include="$(var.RenCloud.TargetDir)lib\VlcLibs\**\*.*"/>
+      <Files Directory="EmptyMediaDir"
+             Include="$(var.RenCloud.TargetDir)lib\EmptyMedia\**\*.*"/>
+      <Files Directory="LibDir"
+             Include="$(var.RenCloud.TargetDir)lib\RenCloud.ico"/>
+    </Feature>
+    <Feature Id="ShortcutFeature" Title="Create Desktop Shortcut" Level="1" AllowAdvertise="no" AllowAbsent="yes">
+      <ComponentRef Id="cmp_Shortcut"/>
+    </Feature>
+  </Package>
+  <Fragment>
+    <Component Id="cmp_Shortcut" Directory="APPLICATIONFOLDER" Guid="*">
+      <Shortcut Id="DesktopShortcut"
+                Directory="DesktopFolder"
+                Name="RenCloud"
+                Target="[APPLICATIONFOLDER]RenCloud.exe"
+                WorkingDirectory="APPLICATIONFOLDER"
+                Icon="RenCloudIcon"/>
+      <RemoveFolder Id="RemoveDesktopShortcut" Directory="DesktopFolder" On="uninstall"/>
+      <RegistryValue Root="HKCU"
+                     Key="Software\VladPocris\RenCloud"
+                     Name="installed"
+                     Type="integer"
+                     Value="1"
+                     KeyPath="yes"/>
+    </Component>
+  </Fragment>
+  <Fragment>
+    <StandardDirectory Id="ProgramFilesFolder"/>
+    <StandardDirectory Id="DesktopFolder"/>
+    <Directory Id="APPLICATIONFOLDER" Name="RenCloud">
+      <Directory Id="PackagesDir" Name="packages"/>
+      <Directory Id="LibDir" Name="lib">
+        <Directory Id="FfmpegBin" Name="ffmpeg\bin"/>
+        <Directory Id="VlcLibs" Name="VlcLibs"/>
+        <Directory Id="EmptyMediaDir" Name="EmptyMedia"/>
+      </Directory>
+    </Directory>
+  </Fragment>
+</Wix>
