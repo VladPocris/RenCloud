@@ -142,7 +142,7 @@ jobs:
       - name: Download lib.zip from GitHub Release (Public)
         shell: powershell
         run: |
-          $repo = "VladPocris/RenCloud"
+          $repo = "VladPocris/CA2-Prep-"
           $file = "lib.zip"
           $releasesUrl = "https://api.github.com/repos/$repo/releases"
           $tag = (Invoke-WebRequest -Uri $releasesUrl -UseBasicParsing | ConvertFrom-Json)[0].tag_name
