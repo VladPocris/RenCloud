@@ -164,7 +164,7 @@ Releases are published automatically to [GitHub Releases](https://github.com/Vla
 
 ## License
 
-[Specify your license here - e.g., MIT, GPL, etc.]
+This project is open source.
 
 ## Support & Documentation
 
